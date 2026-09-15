@@ -1,0 +1,3 @@
+# Ядро бота работает на стандартной библиотеке (sqlite3 + tomllib из Python 3.11).
+# Зависимость нужна только для реального подключения к FunPay.
+FunPayAPI @ git+https://github.com/sidor0912/FunPayAPI.git
