@@ -63,6 +63,26 @@ class LotConfig:
 
 
 @dataclass(frozen=True)
+class TelegramConfig:
+    """Панель управления в Telegram."""
+
+    token: str
+    # Числовые Telegram ID тех, кому можно управлять ботом.
+    # Всё, что приходит от других, игнорируется молча.
+    admin_ids: tuple[int, ...]
+    # Слать ли в Telegram уведомления, которые бот шлёт продавцу на FunPay.
+    notify: bool = True
+    # Таймаут длинного опроса Telegram, секунды.
+    poll_timeout: int = 25
+
+    def is_admin(self, user_id: int | str) -> bool:
+        try:
+            return int(user_id) in self.admin_ids
+        except (TypeError, ValueError):
+            return False
+
+
+@dataclass(frozen=True)
 class Config:
     golden_key: str
     user_agent: str
@@ -78,6 +98,7 @@ class Config:
     sync_listings_on_start: bool = False
     # Пауза между запросами на изменение лотов, секунды.
     listing_delay: float = 3.0
+    telegram: TelegramConfig | None = None
 
     def lot(self, lot_id: str) -> LotConfig | None:
         return self.lots.get(str(lot_id))
@@ -168,6 +189,7 @@ def load(path: str | Path = "config.toml", *, require_golden_key: bool = True) -
         )
 
     return Config(
+        telegram=_parse_telegram(raw.get("telegram")),
         golden_key=golden_key,
         user_agent=funpay.get("user_agent", DEFAULT_USER_AGENT),
         db_path=db_path,
@@ -179,6 +201,45 @@ def load(path: str | Path = "config.toml", *, require_golden_key: bool = True) -
         request_delay=float(bot.get("request_delay", 1.0)),
         sync_listings_on_start=bool(bot.get("sync_listings_on_start", False)),
         listing_delay=listing_delay,
+    )
+
+
+def _parse_telegram(raw: dict | None) -> TelegramConfig | None:
+    if not raw:
+        return None
+    if not bool(raw.get("enabled", True)):
+        return None
+
+    token = os.environ.get("TELEGRAM_BOT_TOKEN") or str(raw.get("token", "")).strip()
+    if not token:
+        raise ConfigError(
+            "Секция [telegram] есть, но нет token. Укажите его там или в "
+            "переменной окружения TELEGRAM_BOT_TOKEN, либо поставьте enabled = false."
+        )
+
+    try:
+        admin_ids = tuple(int(i) for i in raw.get("admin_ids", []))
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(
+            "telegram.admin_ids должен быть списком числовых Telegram ID, "
+            "например [123456789]. Узнать свой можно у @userinfobot."
+        ) from exc
+
+    if not admin_ids:
+        raise ConfigError(
+            "Не заполнен telegram.admin_ids. Без него панель управления была бы "
+            "доступна любому, кто найдёт бота."
+        )
+
+    poll_timeout = int(raw.get("poll_timeout", 25))
+    if not 0 < poll_timeout <= 60:
+        raise ConfigError("telegram.poll_timeout должен быть от 1 до 60 секунд.")
+
+    return TelegramConfig(
+        token=token,
+        admin_ids=admin_ids,
+        notify=bool(raw.get("notify", True)),
+        poll_timeout=poll_timeout,
     )
 
 

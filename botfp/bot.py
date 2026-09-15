@@ -28,12 +28,13 @@ class Bot:
         transport: Transport,
         self_username: str = "",
         listings: ListingManager | None = None,
+        notifiers=(),
     ):
         self.conn = conn
         self.config = config
         self.transport = transport
         self.listings = listings
-        self.delivery = DeliveryService(conn, config, transport)
+        self.delivery = DeliveryService(conn, config, transport, notifiers=notifiers)
         self.router = CommandRouter(conn, config, transport, self.delivery, self_username)
         self._running = False
         self._poll_errors = 0

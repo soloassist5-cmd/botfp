@@ -49,6 +49,7 @@ def run_checks(
     checks += _check_database(conn, config)
     checks += _check_lots(conn, config)
     checks += _check_pending(conn)
+    checks += _check_telegram(config)
     if lots_api is not None:
         checks += _check_funpay(conn, config, lots_api)
     return checks
@@ -163,6 +164,33 @@ def _check_pending(conn: sqlite3.Connection) -> list[Check]:
             "Посмотреть: botfp pending | Повторить: botfp retry --all",
         )
     ]
+
+
+def _check_telegram(config: Config) -> list[Check]:
+    if config.telegram is None:
+        return [
+            Check(
+                OK,
+                "панель Telegram не настроена",
+                "Управление через CLI и команды в чате FunPay. "
+                "Включить панель: секция [telegram] в конфиге.",
+            )
+        ]
+
+    checks = [
+        Check(OK, f"панель Telegram включена, админов: {len(config.telegram.admin_ids)}")
+    ]
+
+    if not os.environ.get("TELEGRAM_BOT_TOKEN"):
+        checks.append(
+            Check(
+                WARN,
+                "токен Telegram лежит в файле конфига",
+                "Надёжнее: export TELEGRAM_BOT_TOKEN='...'",
+            )
+        )
+
+    return checks
 
 
 def _check_funpay(conn: sqlite3.Connection, config: Config, lots_api) -> list[Check]:

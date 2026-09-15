@@ -216,3 +216,68 @@ def test_too_fast_listing_updates_are_rejected(tmp_path):
     text = LISTING.replace('admins = ["seller"]', 'admins = ["seller"]\nlisting_delay = 0.1')
     with pytest.raises(ConfigError, match="флуд"):
         config_module.load(write(tmp_path, text))
+
+
+# --- панель Telegram ---------------------------------------------------------
+
+TELEGRAM = BASE + """
+[telegram]
+token = "123:abc"
+admin_ids = [111, 222]
+"""
+
+
+def test_telegram_section_is_parsed(tmp_path):
+    tg = config_module.load(write(tmp_path, TELEGRAM)).telegram
+
+    assert tg.admin_ids == (111, 222)
+    assert tg.notify is True
+    assert tg.is_admin(111) is True
+    assert tg.is_admin(333) is False
+
+
+def test_telegram_is_optional(tmp_path):
+    assert config_module.load(write(tmp_path, BASE)).telegram is None
+
+
+def test_telegram_can_be_switched_off(tmp_path):
+    text = TELEGRAM + "enabled = false\n"
+
+    assert config_module.load(write(tmp_path, text)).telegram is None
+
+
+def test_telegram_token_from_env_wins(tmp_path, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "from-env")
+
+    assert config_module.load(write(tmp_path, TELEGRAM)).telegram.token == "from-env"
+
+
+def test_telegram_without_token_is_rejected(tmp_path, monkeypatch):
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    with pytest.raises(ConfigError, match="token"):
+        config_module.load(write(tmp_path, TELEGRAM.replace('token = "123:abc"', "")))
+
+
+def test_telegram_without_admins_is_rejected(tmp_path):
+    """Иначе панель была бы доступна любому, кто найдёт бота."""
+    with pytest.raises(ConfigError, match="admin_ids"):
+        config_module.load(write(tmp_path, TELEGRAM.replace("admin_ids = [111, 222]", "admin_ids = []")))
+
+
+def test_non_numeric_admin_id_is_rejected(tmp_path):
+    text = TELEGRAM.replace("admin_ids = [111, 222]", 'admin_ids = ["@mynick"]')
+    with pytest.raises(ConfigError, match="числовых"):
+        config_module.load(write(tmp_path, text))
+
+
+def test_bad_poll_timeout_is_rejected(tmp_path):
+    with pytest.raises(ConfigError, match="poll_timeout"):
+        config_module.load(write(tmp_path, TELEGRAM + "poll_timeout = 120\n"))
+
+
+def test_is_admin_handles_garbage(tmp_path):
+    tg = config_module.load(write(tmp_path, TELEGRAM)).telegram
+
+    assert tg.is_admin(None) is False
+    assert tg.is_admin("не число") is False
+    assert tg.is_admin("111") is True

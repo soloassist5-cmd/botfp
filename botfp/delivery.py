@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from collections.abc import Sequence
+from typing import Protocol
 
 from . import stock, templates
 from .config import Config, LotConfig
@@ -13,13 +15,28 @@ from .transport import NewOrderEvent, Transport, TransportError
 log = logging.getLogger(__name__)
 
 
+class Notifier(Protocol):
+    """Дополнительный канал уведомлений продавцу."""
+
+    def notify(self, text: str) -> None: ...
+
+
 class DeliveryService:
     """Обрабатывает оплаченные заказы и повторные попытки выдачи."""
 
-    def __init__(self, conn: sqlite3.Connection, config: Config, transport: Transport):
+    def __init__(
+        self,
+        conn: sqlite3.Connection,
+        config: Config,
+        transport: Transport,
+        notifiers: Sequence[Notifier] = (),
+    ):
         self.conn = conn
         self.config = config
         self.transport = transport
+        # Дополнительные каналы уведомлений (Telegram) — в дополнение к личке
+        # на FunPay, а не вместо неё.
+        self.notifiers = tuple(notifiers)
 
     # ------------------------------------------------------------------
     # Публичное API
@@ -99,6 +116,13 @@ class DeliveryService:
                 self.transport.send_to_user(admin, text)
             except TransportError as exc:
                 log.error("Не смог уведомить админа %s: %s", admin, exc)
+
+        for notifier in self.notifiers:
+            try:
+                notifier.notify(text)
+            except Exception:
+                # Падение стороннего канала не должно ронять выдачу.
+                log.exception("Уведомление через %s не ушло", type(notifier).__name__)
 
     # ------------------------------------------------------------------
     # Внутреннее

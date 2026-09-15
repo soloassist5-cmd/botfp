@@ -77,6 +77,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="дополнительно проверить связь с FunPay и состояние объявлений",
     )
 
+    sub.add_parser(
+        "panel", help="запустить только панель Telegram (без слушателя заказов)"
+    )
+
     backup = sub.add_parser("backup", help="снять резервную копию базы")
     backup.add_argument(
         "--dir", default="backups", help="куда складывать копии (по умолчанию ./backups)"
@@ -119,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         or (args.command == "run" and not args.console)
         or (args.command == "lots" and args.lots_command in ("sync", "refresh"))
         or (args.command == "doctor" and args.online)
+        or args.command == "panel"
     )
 
     try:
@@ -139,6 +144,7 @@ def main(argv: list[str] | None = None) -> int:
             "lots": cmd_lots,
             "doctor": cmd_doctor,
             "backup": cmd_backup,
+            "panel": cmd_panel,
         }
         return handlers[args.command](args, cfg, conn)
     finally:
@@ -194,11 +200,89 @@ def cmd_run(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> 
         return 3
 
     listings = ListingManager(conn, cfg, transport) if cfg.listable_lots else None
-    bot = Bot(conn, cfg, transport, self_username=username, listings=listings)
+    panel, panel_thread, notifiers = _start_panel(cfg, transport, args.config)
+
+    bot = Bot(
+        conn, cfg, transport, self_username=username, listings=listings, notifiers=notifiers
+    )
     try:
         bot.run_forever()
     finally:
         transport.stop()
+        if panel is not None:
+            panel.stop()
+        if panel_thread is not None:
+            panel_thread.join(timeout=5)
+    return 0
+
+
+def _start_panel(cfg: Config, transport, config_path: str):
+    """Поднимает панель Telegram в фоновом потоке.
+
+    У панели своё подключение к базе: соединение sqlite3 нельзя делить между
+    потоками, а WAL и busy_timeout позволяют двум писать в одну базу.
+    """
+    if cfg.telegram is None:
+        return None, None, ()
+
+    import threading
+
+    from .delivery import DeliveryService
+    from .listings import ListingManager
+    from .telegram_panel import TelegramClient, TelegramNotifier, TelegramPanel
+
+    client = TelegramClient(cfg.telegram.token)
+    notifiers = (TelegramNotifier(client, cfg.telegram),) if cfg.telegram.notify else ()
+
+    panel_conn = db.connect(cfg.db_path)
+    panel = TelegramPanel(
+        panel_conn,
+        cfg,
+        client,
+        delivery=DeliveryService(panel_conn, cfg, transport),
+        listings=ListingManager(panel_conn, cfg, transport) if cfg.listable_lots else None,
+        config_path=config_path,
+    )
+
+    thread = threading.Thread(target=panel.run_forever, name="telegram-panel", daemon=True)
+    thread.start()
+    return panel, thread, notifiers
+
+
+def cmd_panel(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> int:
+    from .delivery import DeliveryService
+    from .funpay_transport import FunPayTransport
+    from .listings import ListingManager
+    from .telegram_panel import TelegramClient, TelegramPanel
+    from .transport import TransportError
+
+    if cfg.telegram is None:
+        print(
+            "Секция [telegram] не настроена или выключена — панель запускать нечем.",
+            file=sys.stderr,
+        )
+        return 2
+
+    transport = FunPayTransport(cfg)
+    try:
+        transport.connect()
+    except TransportError as exc:
+        print(f"Ошибка подключения к FunPay: {exc}", file=sys.stderr)
+        return 3
+
+    panel = TelegramPanel(
+        conn,
+        cfg,
+        TelegramClient(cfg.telegram.token),
+        delivery=DeliveryService(conn, cfg, transport),
+        listings=ListingManager(conn, cfg, transport) if cfg.listable_lots else None,
+        config_path=args.config,
+    )
+    print("Панель запущена. Напишите боту /start в Telegram. Ctrl+C — выход.")
+    try:
+        panel.run_forever()
+    except KeyboardInterrupt:
+        panel.stop()
     return 0
 
 
