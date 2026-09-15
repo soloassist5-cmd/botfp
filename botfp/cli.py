@@ -51,6 +51,23 @@ def build_parser() -> argparse.ArgumentParser:
 
     stock_sub.add_parser("count", help="показать остатки")
 
+    lots_cmd = sub.add_parser("lots", help="объявления на FunPay")
+    lots_sub = lots_cmd.add_subparsers(dest="lots_command", required=True)
+
+    sync = lots_sub.add_parser(
+        "sync", help="создать/обновить объявления по конфигу (по умолчанию сухой прогон)"
+    )
+    sync.add_argument(
+        "--apply",
+        action="store_true",
+        help="действительно изменить витрину; без этого флага бот только покажет план",
+    )
+
+    lots_sub.add_parser("list", help="показать связь лотов из конфига с объявлениями")
+    lots_sub.add_parser(
+        "refresh", help="снять с витрины лоты с пустым складом и вернуть пополненные"
+    )
+
     sub.add_parser("pending", help="заказы, требующие внимания")
     sub.add_parser("stats", help="сводка по складу и выдачам")
 
@@ -80,7 +97,11 @@ def main(argv: list[str] | None = None) -> int:
 
     # Ключ нужен только тем командам, которые реально ходят на FunPay.
     # Работа со складом и отчёты — чисто локальные, и просить ключ для них незачем.
-    needs_funpay = args.command == "retry" or (args.command == "run" and not args.console)
+    needs_funpay = (
+        args.command == "retry"
+        or (args.command == "run" and not args.console)
+        or (args.command == "lots" and args.lots_command in ("sync", "refresh"))
+    )
 
     try:
         cfg = config_module.load(args.config, require_golden_key=needs_funpay)
@@ -97,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
             "stats": cmd_stats,
             "retry": cmd_retry,
             "release": cmd_release,
+            "lots": cmd_lots,
         }
         return handlers[args.command](args, cfg, conn)
     finally:
@@ -140,6 +162,7 @@ def cmd_run(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> 
             return 0
 
     from .funpay_transport import FunPayTransport
+    from .listings import ListingManager
     from .transport import TransportError
 
     transport = FunPayTransport(cfg)
@@ -150,7 +173,8 @@ def cmd_run(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> 
         print(f"Ошибка подключения: {exc}", file=sys.stderr)
         return 3
 
-    bot = Bot(conn, cfg, transport, self_username=username)
+    listings = ListingManager(conn, cfg, transport) if cfg.listable_lots else None
+    bot = Bot(conn, cfg, transport, self_username=username, listings=listings)
     try:
         bot.run_forever()
     finally:
@@ -236,6 +260,75 @@ def cmd_retry(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -
         return 0 if ok == total else 1
 
     return 0 if service.retry(args.order_id) else 1
+
+
+def cmd_lots(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> int:
+    from .listings import ListingManager, all_links
+
+    if args.lots_command == "list":
+        links = {link.lot_id: link for link in all_links(conn)}
+        if not cfg.listable_lots:
+            print("Ни у одного лота нет секции listing — автосоздание не настроено.")
+            return 0
+        for lot in cfg.listable_lots:
+            link = links.get(lot.lot_id)
+            if link is None or not link.funpay_lot_id:
+                state = "не создано" + (f" ({link.last_error})" if link and link.last_error else "")
+            else:
+                state = f"FunPay #{link.funpay_lot_id}, " + (
+                    "на витрине" if link.active else "снято с витрины"
+                )
+            print(f"{lot.display}: {state}")
+        return 0
+
+    manager = _connected_manager(cfg, conn)
+    if manager is None:
+        return 3
+
+    if args.lots_command == "refresh":
+        changed = manager.refresh_availability()
+        print(f"Изменено объявлений: {len(changed)}." if changed else "Всё уже в нужном состоянии.")
+        return 0
+
+    dry_run = not args.apply
+    if dry_run:
+        print("Сухой прогон — витрина не меняется. Для применения добавьте --apply.\n")
+
+    result = manager.sync(dry_run=dry_run)
+    for lot_id in result.created:
+        print(f"  {'создал бы' if dry_run else 'создано'}: {lot_id}")
+    for lot_id in result.adopted:
+        print(f"  привязано к существующему: {lot_id}")
+    for lot_id in result.updated:
+        print(f"  {'обновил бы' if dry_run else 'обновлено'}: {lot_id}")
+    for lot_id, error in result.failed:
+        print(f"  ОШИБКА {lot_id}: {error}", file=sys.stderr)
+
+    print(f"\nИтого: {result.summary()}")
+    if dry_run:
+        print("Это был сухой прогон. Повторите с --apply, когда план устроит.")
+    return 0 if result.ok else 1
+
+
+def _connected_manager(cfg: Config, conn: sqlite3.Connection):
+    from .funpay_transport import FunPayTransport
+    from .listings import ListingManager
+    from .transport import TransportError
+
+    if not cfg.listable_lots:
+        print(
+            "Ни у одного лота нет секции listing — нечего синхронизировать.",
+            file=sys.stderr,
+        )
+        return None
+
+    transport = FunPayTransport(cfg)
+    try:
+        transport.connect()
+    except TransportError as exc:
+        print(f"Ошибка подключения: {exc}", file=sys.stderr)
+        return None
+    return ListingManager(conn, cfg, transport)
 
 
 def cmd_release(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> int:

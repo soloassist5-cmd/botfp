@@ -39,6 +39,7 @@ def config() -> Config:
         poll_interval=4.0,
         low_stock_threshold=2,
         ask_for_review=True,
+        listing_delay=0.0,  # в тестах не спим между правками лотов
     )
 
 

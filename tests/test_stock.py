@@ -122,7 +122,7 @@ def test_last_delivery_lookup_is_case_insensitive(conn):
     found = stock.last_delivery_for_buyer(conn, "bob")
 
     assert found is not None
-    assert found[1].payload == "secret"
+    assert found[1] == "secret"
 
 
 def test_last_delivery_ignores_undelivered_orders(conn):

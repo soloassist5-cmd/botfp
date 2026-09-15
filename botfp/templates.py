@@ -55,6 +55,7 @@ REPEAT_NOT_FOUND = (
 )
 
 STOCK_LINE = "• {lot_title} — {count} шт."
+STOCK_UNLIMITED_LINE = "• {lot_title} — в наличии"
 STOCK_EMPTY_LINE = "• {lot_title} — нет в наличии"
 
 STOCK_HEADER = "Наличие на складе:\n{lines}"

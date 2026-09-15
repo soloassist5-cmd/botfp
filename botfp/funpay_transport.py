@@ -20,6 +20,7 @@ import threading
 from collections.abc import Iterable
 
 from .config import Config
+from .listings import ListingSpec, RemoteLot
 from .transport import Event, NewMessageEvent, NewOrderEvent, TransportError
 
 log = logging.getLogger(__name__)
@@ -92,25 +93,179 @@ class FunPayTransport:
                 return events
 
     def send_message(self, chat_id: str, text: str) -> None:
-        if self._account is None:
-            raise TransportError("Нет подключения к FunPay.")
+        account = self._require_account()
         try:
-            self._account.send_message(int(chat_id), text)
+            account.send_message(int(chat_id), text)
         except Exception as exc:
             raise TransportError(f"Не удалось отправить сообщение в чат {chat_id}: {exc}") from exc
 
     def send_to_user(self, username: str, text: str) -> None:
-        if self._account is None:
-            raise TransportError("Нет подключения к FunPay.")
+        account = self._require_account()
         try:
-            chat = self._account.get_chat_by_name(username, make_request=True)
+            chat = account.get_chat_by_name(username, make_request=True)
             if chat is None:
                 raise TransportError(f"Пользователь {username} не найден на FunPay.")
-            self._account.send_message(chat.id, text)
+            account.send_message(chat.id, text)
         except TransportError:
             raise
         except Exception as exc:
             raise TransportError(f"Не удалось написать пользователю {username}: {exc}") from exc
+
+    # ------------------------------------------------------------------
+    # Объявления (LotsAPI)
+    # ------------------------------------------------------------------
+
+    def list_my_lots(self) -> list[RemoteLot]:
+        """Активные объявления продавца.
+
+        Снятые с публикации лоты в профиле не показываются, поэтому всё, что
+        сюда попало, считается активным.
+        """
+        account = self._require_account()
+        try:
+            profile = account.get_user(account.id)
+            lots = profile.get_lots()
+        except Exception as exc:
+            raise TransportError(f"Не удалось получить список лотов: {exc}") from exc
+
+        out: list[RemoteLot] = []
+        for lot in lots:
+            node_id = getattr(getattr(lot, "subcategory", None), "id", None)
+            if node_id is None:
+                continue
+            out.append(
+                RemoteLot(
+                    funpay_lot_id=str(lot.id),
+                    node_id=int(node_id),
+                    title=str(getattr(lot, "description", "") or ""),
+                    active=True,
+                )
+            )
+        return out
+
+    def create_lot(self, spec: ListingSpec) -> str:
+        """Создаёт объявление, копируя форму с существующего лота той же подкатегории.
+
+        У каждой подкатегории FunPay свой набор полей. Гадать их вслепую —
+        верный способ создать кривой лот, поэтому бот берёт форму с вашего
+        уже существующего лота и меняет в ней только название, описание,
+        цену и количество.
+        """
+        account = self._require_account()
+        template_id = self._template_lot_id(spec.node_id)
+        if template_id is None:
+            raise TransportError(
+                f"В подкатегории {spec.node_id} нет ни одного вашего лота. "
+                f"Форма лота на FunPay у каждой подкатегории своя, и бот копирует "
+                f"её с существующего объявления, а не выдумывает. "
+                f"Заведите здесь один лот руками — остальные бот создаст сам."
+            )
+
+        try:
+            fields = account.get_lot_fields(template_id)
+        except Exception as exc:
+            raise TransportError(f"Не удалось прочитать форму лота {template_id}: {exc}") from exc
+
+        self._apply_spec(fields, spec, as_new=True)
+
+        try:
+            account.save_lot(fields)
+        except Exception as exc:
+            raise TransportError(f"Не удалось сохранить новое объявление: {exc}") from exc
+
+        created = self._find_by_title(spec)
+        if created is None:
+            raise TransportError(
+                f"Объявление «{spec.title}» сохранено, но не найдено в профиле. "
+                f"Проверьте витрину вручную, прежде чем запускать синхронизацию снова."
+            )
+        return created
+
+    def update_lot(self, funpay_lot_id: str, spec: ListingSpec) -> None:
+        account = self._require_account()
+        try:
+            fields = account.get_lot_fields(int(funpay_lot_id))
+        except Exception as exc:
+            raise TransportError(f"Не удалось прочитать лот {funpay_lot_id}: {exc}") from exc
+
+        self._apply_spec(fields, spec, as_new=False)
+
+        try:
+            account.save_lot(fields)
+        except Exception as exc:
+            raise TransportError(f"Не удалось обновить лот {funpay_lot_id}: {exc}") from exc
+
+    def set_lot_active(self, funpay_lot_id: str, active: bool) -> None:
+        account = self._require_account()
+        try:
+            fields = account.get_lot_fields(int(funpay_lot_id))
+            self._set(fields, "active", active)
+            account.save_lot(fields)
+        except TransportError:
+            raise
+        except Exception as exc:
+            verb = "вернуть на витрину" if active else "снять с витрины"
+            raise TransportError(f"Не удалось {verb} лот {funpay_lot_id}: {exc}") from exc
+
+    # ------------------------------------------------------------------
+
+    def _apply_spec(self, fields: object, spec: ListingSpec, *, as_new: bool) -> None:
+        """Переносит наши поля в форму FunPay.
+
+        Названия полей различаются между версиями FunPayAPI, поэтому каждое
+        ставится по возможности: чего нет — то пропускается, а не роняет всё.
+        """
+        if as_new:
+            # Обнуляем идентификаторы, иначе сохранится правка шаблона,
+            # а не создание нового лота.
+            self._set(fields, "lot_id", 0)
+            raw = getattr(fields, "fields", None)
+            if isinstance(raw, dict):
+                raw["offer_id"] = "0"
+                raw.pop("deleted", None)
+
+        self._set(fields, "node_id", spec.node_id)
+        self._set(fields, "price", spec.price)
+        self._set(fields, "active", spec.active)
+        for attr in ("title_ru", "summary_ru"):
+            self._set(fields, attr, spec.title)
+        for attr in ("title_en", "summary_en"):
+            self._set(fields, attr, spec.title)
+        if spec.description:
+            for attr in ("description_ru", "desc_ru"):
+                self._set(fields, attr, spec.description)
+        if spec.amount is not None:
+            self._set(fields, "amount", spec.amount)
+
+    @staticmethod
+    def _set(target: object, attr: str, value: object) -> bool:
+        if not hasattr(target, attr):
+            return False
+        try:
+            setattr(target, attr, value)
+        except Exception as exc:  # pragma: no cover - зависит от версии библиотеки
+            log.debug("Поле %s не принято формой лота: %s", attr, exc)
+            return False
+        return True
+
+    def _template_lot_id(self, node_id: int) -> int | None:
+        """Любой существующий лот в этой подкатегории — как образец формы."""
+        for lot in self.list_my_lots():
+            if lot.node_id == node_id:
+                return int(lot.funpay_lot_id)
+        return None
+
+    def _find_by_title(self, spec: ListingSpec) -> str | None:
+        wanted = spec.title.casefold().strip()
+        for lot in self.list_my_lots():
+            if lot.node_id == spec.node_id and lot.title.casefold().strip() == wanted:
+                return lot.funpay_lot_id
+        return None
+
+    def _require_account(self):
+        if self._account is None:
+            raise TransportError("Нет подключения к FunPay.")
+        return self._account
 
     # ------------------------------------------------------------------
     # Фоновый слушатель

@@ -7,7 +7,7 @@ import sqlite3
 
 from . import stock, templates
 from .config import Config, LotConfig
-from .stock import ClaimStatus, Delivery, StockItem
+from .stock import ClaimStatus, Delivery
 from .transport import NewOrderEvent, Transport, TransportError
 
 log = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ class DeliveryService:
             buyer=event.buyer,
             lot_id=event.lot_id,
             chat_id=event.chat_id,
+            unlimited_payload=lot.payload if lot.is_unlimited else None,
         )
 
         if claim.status is ClaimStatus.ALREADY_DELIVERED:
@@ -58,8 +59,8 @@ class DeliveryService:
             )
             return claim.status
 
-        assert claim.item is not None  # гарантировано CLAIMED/RESUME
-        self._deliver(claim.delivery, claim.item, lot)
+        assert claim.payload is not None  # гарантировано CLAIMED/RESUME
+        self._deliver(claim.delivery, claim.payload, lot)
         return claim.status
 
     def retry(self, order_id: str) -> bool:
@@ -103,8 +104,8 @@ class DeliveryService:
     # Внутреннее
     # ------------------------------------------------------------------
 
-    def _deliver(self, delivery: Delivery, item: StockItem, lot: LotConfig) -> None:
-        text = self.render_delivery(lot, item.payload)
+    def _deliver(self, delivery: Delivery, payload: str, lot: LotConfig) -> None:
+        text = self.render_delivery(lot, payload)
 
         try:
             self._send_to_buyer(delivery, text)
@@ -148,6 +149,8 @@ class DeliveryService:
             log.error("Не смог написать покупателю %s: %s", delivery.buyer, exc)
 
     def _warn_if_low(self, lot: LotConfig) -> None:
+        if lot.is_unlimited:
+            return  # безлимитный товар не кончается
         left = stock.available_count(self.conn, lot.lot_id)
         if left <= self.config.low_stock_threshold:
             self.notify_admins(

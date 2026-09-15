@@ -114,12 +114,21 @@ class CommandRouter:
     def _cmd_stock(self, event: NewMessageEvent, args: list[str]) -> str:
         counts = stock.available_counts(self.conn)
         lines = []
+        anything_available = False
+
         for lot in self.config.lots.values():
+            if lot.is_unlimited:
+                # Безлимитный товар не кончается — счётчик покупателю не нужен.
+                lines.append(templates.STOCK_UNLIMITED_LINE.format(lot_title=lot.title))
+                anything_available = True
+                continue
+
             count = counts.get(lot.lot_id, 0)
             template = templates.STOCK_LINE if count else templates.STOCK_EMPTY_LINE
             lines.append(template.format(lot_title=lot.title, count=count))
+            anything_available = anything_available or count > 0
 
-        if not any(counts.get(lot.lot_id, 0) for lot in self.config.lots.values()):
+        if not anything_available:
             return templates.STOCK_ALL_EMPTY
         return templates.STOCK_HEADER.format(lines="\n".join(lines))
 
@@ -135,10 +144,10 @@ class CommandRouter:
         if found is None:
             return templates.REPEAT_NOT_FOUND
 
-        delivery, item = found
+        delivery, payload = found
         lot = self.config.lot(delivery.lot_id)
         title = lot.title if lot else delivery.lot_id
-        return templates.REPEAT_OK.format(lot_title=title, payload=item.payload)
+        return templates.REPEAT_OK.format(lot_title=title, payload=payload)
 
     def _cmd_human(self, event: NewMessageEvent, args: list[str]) -> str:
         self.delivery.notify_admins(
@@ -149,7 +158,9 @@ class CommandRouter:
     def _cmd_stats(self, event: NewMessageEvent, args: list[str]) -> str:
         counts = stock.available_counts(self.conn)
         lines = "\n".join(
-            templates.STOCK_LINE.format(
+            templates.STOCK_UNLIMITED_LINE.format(lot_title=lot.title)
+            if lot.is_unlimited
+            else templates.STOCK_LINE.format(
                 lot_title=lot.title, count=counts.get(lot.lot_id, 0)
             )
             for lot in self.config.lots.values()

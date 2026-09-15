@@ -12,6 +12,7 @@ from . import db
 from .commands import CommandRouter
 from .config import Config
 from .delivery import DeliveryService
+from .listings import ListingManager
 from .transport import Event, NewMessageEvent, NewOrderEvent, Transport
 
 log = logging.getLogger(__name__)
@@ -26,10 +27,12 @@ class Bot:
         config: Config,
         transport: Transport,
         self_username: str = "",
+        listings: ListingManager | None = None,
     ):
         self.conn = conn
         self.config = config
         self.transport = transport
+        self.listings = listings
         self.delivery = DeliveryService(conn, config, transport)
         self.router = CommandRouter(conn, config, transport, self.delivery, self_username)
         self._running = False
@@ -46,6 +49,7 @@ class Bot:
         """
         if isinstance(event, NewOrderEvent):
             self.delivery.handle_order(event)
+            self._refresh_listings()
         elif isinstance(event, NewMessageEvent):
             if db.mark_event_seen(self.conn, event.key):
                 self.router.handle_message(event)
@@ -74,6 +78,7 @@ class Bot:
             self.config.poll_interval,
         )
         self._report_pending_on_start()
+        self._sync_listings_on_start()
 
         ticks = 0
         while self._running:
@@ -99,6 +104,35 @@ class Bot:
         self._running = False
 
     # ------------------------------------------------------------------
+
+    def _sync_listings_on_start(self) -> None:
+        """Приводит витрину в соответствие с конфигом при активации бота."""
+        if self.listings is None or not self.config.sync_listings_on_start:
+            return
+
+        log.info("Синхронизирую объявления...")
+        result = self.listings.sync()
+        log.info("Объявления: %s", result.summary())
+        for lot_id, error in result.failed:
+            log.error("Лот %s: %s", lot_id, error)
+        if not result.ok:
+            self.delivery.notify_admins(
+                f"⚠️ Синхронизация объявлений прошла с ошибками: {result.summary()}. "
+                f"Подробности в логе бота."
+            )
+
+    def _refresh_listings(self) -> None:
+        """Прячет с витрины то, чего не осталось на складе.
+
+        Сетевой вызов происходит только когда состояние действительно
+        изменилось: сам метод сначала сверяется с локальной базой.
+        """
+        if self.listings is None:
+            return
+        try:
+            self.listings.refresh_availability()
+        except Exception:
+            log.exception("Не удалось обновить состояние объявлений")
 
     def _report_pending_on_start(self) -> None:
         from . import stock

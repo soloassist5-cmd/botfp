@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS stock_items (
@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS deliveries (
     stock_item_id  INTEGER REFERENCES stock_items (id),
     status         TEXT    NOT NULL
                    CHECK (status IN ('sending', 'delivered', 'out_of_stock', 'failed')),
+    -- Что именно ушло покупателю у безлимитных лотов: у них нет строки на
+    -- складе, а «!повтор» и разбор спорной выдачи требуют точного текста.
+    payload_snapshot TEXT,
     attempts       INTEGER NOT NULL DEFAULT 0,
     created_at     TEXT    NOT NULL,
     updated_at     TEXT    NOT NULL,
@@ -50,6 +53,16 @@ CREATE INDEX IF NOT EXISTS ix_deliveries_buyer
 
 CREATE INDEX IF NOT EXISTS ix_deliveries_status
     ON deliveries (status, id);
+
+-- Связь лота из конфига с объявлением на FunPay: чтобы повторная
+-- синхронизация обновляла существующее объявление, а не плодила дубликаты.
+CREATE TABLE IF NOT EXISTS lot_links (
+    lot_id         TEXT PRIMARY KEY,
+    funpay_lot_id  TEXT,
+    active         INTEGER NOT NULL DEFAULT 1,
+    synced_at      TEXT,
+    last_error     TEXT
+);
 
 -- Чаты, в которых бот уже поздоровался: приветствие шлём ровно один раз,
 -- чтобы не влезать в живую переписку продавца с покупателем.
@@ -90,6 +103,7 @@ def connect(path: str | Path) -> sqlite3.Connection:
     conn.execute("PRAGMA busy_timeout = 30000")
     conn.execute("PRAGMA synchronous = FULL")
     conn.executescript(_SCHEMA)
+    _migrate(conn)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
     if is_new and str(path) != ":memory:":
@@ -98,6 +112,23 @@ def connect(path: str | Path) -> sqlite3.Connection:
             os.chmod(path, 0o600)
 
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Догоняет схему на базах, созданных прежними версиями бота.
+
+    ``CREATE TABLE IF NOT EXISTS`` создаёт недостающие таблицы, но не
+    добавляет колонки в уже существующие — их добавляем здесь.
+    """
+    _ensure_column(conn, "deliveries", "payload_snapshot", "TEXT")
+
+
+def _ensure_column(
+    conn: sqlite3.Connection, table: str, column: str, ddl: str
+) -> None:
+    existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
 
 
 @contextlib.contextmanager

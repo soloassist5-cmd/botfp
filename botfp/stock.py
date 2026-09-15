@@ -56,6 +56,12 @@ class Delivery:
     status: str
     attempts: int
     error: str | None = None
+    payload_snapshot: str | None = None
+
+    @property
+    def has_goods(self) -> bool:
+        """За заказом уже закреплён товар — уникальный или безлимитный."""
+        return self.stock_item_id is not None or self.payload_snapshot is not None
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> Delivery:
@@ -69,6 +75,7 @@ class Delivery:
             status=row["status"],
             attempts=row["attempts"],
             error=row["error"],
+            payload_snapshot=row["payload_snapshot"],
         )
 
 
@@ -99,6 +106,13 @@ class Claim:
     @property
     def needs_send(self) -> bool:
         return self.status in (ClaimStatus.CLAIMED, ClaimStatus.RESUME)
+
+    @property
+    def payload(self) -> str | None:
+        """Что уходит покупателю: строка склада или безлимитный товар."""
+        if self.item is not None:
+            return self.item.payload
+        return self.delivery.payload_snapshot
 
 
 # --------------------------------------------------------------------------
@@ -165,13 +179,19 @@ def claim_for_order(
     buyer: str,
     lot_id: str,
     chat_id: str | None = None,
+    unlimited_payload: str | None = None,
 ) -> Claim:
-    """Резервирует товар под заказ — атомарно и идемпотентно.
+    """Закрепляет товар за заказом — атомарно и идемпотентно.
+
+    ``unlimited_payload`` задан для безлимитных лотов (гайд, ссылка, файл):
+    такой товар не списывается со склада, но его текст сохраняется в заказе,
+    чтобы «!повтор» и разбор спорной выдачи показывали ровно то, что ушло.
 
     Повторный вызов с тем же ``order_id`` не выдаёт второй товар: он вернёт
-    ``ALREADY_DELIVERED`` либо ``RESUME`` с уже закреплённой единицей.
+    ``ALREADY_DELIVERED`` либо ``RESUME`` с уже закреплённым товаром.
     """
     order_id = str(order_id)
+    unlimited = unlimited_payload is not None
 
     with transaction(conn):
         row = conn.execute(
@@ -184,7 +204,7 @@ def claim_for_order(
             if delivery.status == "delivered":
                 return Claim(ClaimStatus.ALREADY_DELIVERED, delivery, _item(conn, delivery))
 
-            if delivery.stock_item_id is not None:
+            if delivery.has_goods:
                 # Прошлая попытка не дошла до конца — отправляем тот же товар.
                 conn.execute(
                     """
@@ -198,8 +218,8 @@ def claim_for_order(
                 return Claim(ClaimStatus.RESUME, refreshed, _item(conn, refreshed))
 
             # Была нехватка товара — пробуем снова, склад мог пополниться.
-            item = _take_available(conn, lot_id, order_id)
-            if item is None:
+            item = None if unlimited else _take_available(conn, lot_id, order_id)
+            if item is None and not unlimited:
                 conn.execute(
                     "UPDATE deliveries SET attempts = attempts + 1, updated_at = ? WHERE id = ?",
                     (utcnow(), delivery.id),
@@ -209,23 +229,31 @@ def claim_for_order(
             conn.execute(
                 """
                 UPDATE deliveries
-                   SET status = 'sending', stock_item_id = ?, attempts = attempts + 1,
-                       chat_id = COALESCE(?, chat_id), error = NULL, updated_at = ?
+                   SET status = 'sending', stock_item_id = ?, payload_snapshot = ?,
+                       attempts = attempts + 1, chat_id = COALESCE(?, chat_id),
+                       error = NULL, updated_at = ?
                  WHERE id = ?
                 """,
-                (item.id, chat_id, utcnow(), delivery.id),
+                (
+                    item.id if item else None,
+                    unlimited_payload,
+                    chat_id,
+                    utcnow(),
+                    delivery.id,
+                ),
             )
             return Claim(ClaimStatus.CLAIMED, _delivery_by_id(conn, delivery.id), item)
 
         # Заказ видим впервые.
-        item = _take_available(conn, lot_id, order_id)
+        item = None if unlimited else _take_available(conn, lot_id, order_id)
+        served = unlimited or item is not None
         now = utcnow()
         cur = conn.execute(
             """
             INSERT INTO deliveries
-                (order_id, buyer, chat_id, lot_id, stock_item_id, status,
-                 attempts, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+                (order_id, buyer, chat_id, lot_id, stock_item_id, payload_snapshot,
+                 status, attempts, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
             """,
             (
                 order_id,
@@ -233,15 +261,17 @@ def claim_for_order(
                 chat_id,
                 lot_id,
                 item.id if item else None,
-                "sending" if item else "out_of_stock",
+                unlimited_payload,
+                "sending" if served else "out_of_stock",
                 now,
                 now,
             ),
         )
         delivery = _delivery_by_id(conn, int(cur.lastrowid))
 
-    status = ClaimStatus.CLAIMED if item else ClaimStatus.OUT_OF_STOCK
-    return Claim(status, delivery, item)
+    return Claim(
+        ClaimStatus.CLAIMED if served else ClaimStatus.OUT_OF_STOCK, delivery, item
+    )
 
 
 def _take_available(
@@ -370,15 +400,15 @@ def delivery_by_order(conn: sqlite3.Connection, order_id: str) -> Delivery | Non
 
 def last_delivery_for_buyer(
     conn: sqlite3.Connection, buyer: str
-) -> tuple[Delivery, StockItem] | None:
-    """Последняя успешная выдача покупателю — для команды «!повтор»."""
+) -> tuple[Delivery, str] | None:
+    """Последняя успешная выдача покупателю и её содержимое — для «!повтор»."""
     row = conn.execute(
         """
         SELECT d.*
           FROM deliveries d
          WHERE d.buyer = ? COLLATE NOCASE
            AND d.status = 'delivered'
-           AND d.stock_item_id IS NOT NULL
+           AND (d.stock_item_id IS NOT NULL OR d.payload_snapshot IS NOT NULL)
          ORDER BY d.id DESC
          LIMIT 1
         """,
@@ -389,7 +419,8 @@ def last_delivery_for_buyer(
 
     delivery = Delivery.from_row(row)
     item = _item(conn, delivery)
-    return (delivery, item) if item else None
+    payload = item.payload if item else delivery.payload_snapshot
+    return (delivery, payload) if payload else None
 
 
 def pending_deliveries(conn: sqlite3.Connection) -> Sequence[Delivery]:
