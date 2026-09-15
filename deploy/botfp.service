@@ -1,0 +1,57 @@
+# systemd-юнит для botfp.
+#
+#   sudo cp deploy/botfp.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now botfp
+#
+# Пути ниже рассчитаны на установку в /opt/botfp от пользователя botfp.
+# Поправьте User, WorkingDirectory и ExecStart под себя.
+
+[Unit]
+Description=botfp — автовыдача цифровых товаров на FunPay
+Documentation=file:/opt/botfp/docs/RUNBOOK.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=botfp
+Group=botfp
+WorkingDirectory=/opt/botfp
+
+# golden_key живёт здесь, а не в config.toml и не в этом файле:
+# юнит читают все, а /etc/botfp/botfp.env — только root и botfp.
+EnvironmentFile=/etc/botfp/botfp.env
+
+ExecStart=/opt/botfp/.venv/bin/python -m botfp -c /opt/botfp/config.toml run
+
+# FunPay рвёт сессию сам по себе — бота нужно поднимать обратно.
+Restart=always
+RestartSec=10s
+
+# Не даём циклу перезапусков превратиться во флуд запросами к FunPay.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Логи уходят в journalctl.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=botfp
+
+# Ограничения: боту нужен только свой каталог и сеть.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths=/opt/botfp
+
+[Install]
+WantedBy=multi-user.target

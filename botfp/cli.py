@@ -68,6 +68,23 @@ def build_parser() -> argparse.ArgumentParser:
         "refresh", help="снять с витрины лоты с пустым складом и вернуть пополненные"
     )
 
+    doctor = sub.add_parser(
+        "doctor", help="проверить готовность к запуску (делайте это перед run)"
+    )
+    doctor.add_argument(
+        "--online",
+        action="store_true",
+        help="дополнительно проверить связь с FunPay и состояние объявлений",
+    )
+
+    backup = sub.add_parser("backup", help="снять резервную копию базы")
+    backup.add_argument(
+        "--dir", default="backups", help="куда складывать копии (по умолчанию ./backups)"
+    )
+    backup.add_argument(
+        "--keep", type=int, default=48, help="сколько копий хранить (по умолчанию 48)"
+    )
+
     sub.add_parser("pending", help="заказы, требующие внимания")
     sub.add_parser("stats", help="сводка по складу и выдачам")
 
@@ -101,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         args.command == "retry"
         or (args.command == "run" and not args.console)
         or (args.command == "lots" and args.lots_command in ("sync", "refresh"))
+        or (args.command == "doctor" and args.online)
     )
 
     try:
@@ -119,6 +137,8 @@ def main(argv: list[str] | None = None) -> int:
             "retry": cmd_retry,
             "release": cmd_release,
             "lots": cmd_lots,
+            "doctor": cmd_doctor,
+            "backup": cmd_backup,
         }
         return handlers[args.command](args, cfg, conn)
     finally:
@@ -260,6 +280,54 @@ def cmd_retry(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -
         return 0 if ok == total else 1
 
     return 0 if service.retry(args.order_id) else 1
+
+
+def cmd_backup(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> int:
+    from . import backup as backup_module
+
+    if args.keep < 1:
+        print("--keep должен быть не меньше 1.", file=sys.stderr)
+        return 2
+
+    result = backup_module.create(conn, args.dir, keep=args.keep)
+    print(f"Копия готова: {result.path} ({result.size} байт)")
+    if result.removed:
+        print(f"Удалено старых копий: {len(result.removed)}")
+    return 0
+
+
+def cmd_doctor(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> int:
+    from . import doctor
+
+    lots_api = None
+    if args.online:
+        from .funpay_transport import FunPayTransport
+        from .transport import TransportError
+
+        transport = FunPayTransport(cfg)
+        try:
+            username = transport.connect()
+        except TransportError as exc:
+            print(f"✗ вход на FunPay не удался\n    {exc}", file=sys.stderr)
+            return 3
+        print(f"Проверка от имени {username}\n")
+        lots_api = transport
+
+    checks = doctor.run_checks(conn, cfg, Path(args.config), lots_api=lots_api)
+    for check in checks:
+        stream = sys.stderr if check.level == doctor.FAIL else sys.stdout
+        print(check.render(), file=stream)
+
+    level = doctor.worst_level(checks)
+    print()
+    if level == doctor.FAIL:
+        print("Есть блокирующие проблемы — запускать рано.", file=sys.stderr)
+        return 1
+    if level == doctor.WARN:
+        print("Запускаться можно, но посмотрите на предупреждения выше.")
+        return 0
+    print("Всё готово. Запуск: botfp run")
+    return 0
 
 
 def cmd_lots(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> int:
