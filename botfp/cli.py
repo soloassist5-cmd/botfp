@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -36,6 +37,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--console",
         action="store_true",
         help="прогон в терминале без подключения к FunPay",
+    )
+    run.add_argument(
+        "--health-port",
+        type=int,
+        default=None,
+        metavar="PORT",
+        help=(
+            "поднять HTTP-заглушку на этом порту. Нужна хостингам, которые "
+            "считают сервис упавшим, если он не занял порт (Render Web Service). "
+            "По умолчанию берётся из переменной окружения PORT."
+        ),
     )
 
     stock_cmd = sub.add_parser("stock", help="управление складом")
@@ -205,6 +217,8 @@ def cmd_run(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> 
     bot = Bot(
         conn, cfg, transport, self_username=username, listings=listings, notifiers=notifiers
     )
+    health = _start_health(args, bot, username)
+
     try:
         bot.run_forever()
     finally:
@@ -213,7 +227,47 @@ def cmd_run(args: argparse.Namespace, cfg: Config, conn: sqlite3.Connection) -> 
             panel.stop()
         if panel_thread is not None:
             panel_thread.join(timeout=5)
+        if health is not None:
+            health.stop()
     return 0
+
+
+def _health_port(args: argparse.Namespace) -> int | None:
+    """Порт заглушки: из флага, иначе из PORT, который подставляет хостинг."""
+    if args.health_port:
+        return args.health_port
+    raw = os.environ.get("PORT", "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        print(f"Переменная PORT={raw!r} — не число, заглушку не поднимаю.", file=sys.stderr)
+        return None
+
+
+def _start_health(args: argparse.Namespace, bot: Bot, username: str):
+    port = _health_port(args)
+    if port is None:
+        return None
+
+    from .health import HealthServer
+
+    def status() -> dict:
+        return {
+            "status": "ok" if not bot.connection_lost else "funpay_disconnected",
+            "seller": username,
+            "funpay": "disconnected" if bot.connection_lost else "connected",
+            "pending_deliveries": len(stock.pending_deliveries(bot.conn)),
+        }
+
+    try:
+        server = HealthServer(port, status)
+        server.start()
+    except OSError as exc:
+        print(f"Не удалось занять порт {port}: {exc}", file=sys.stderr)
+        return None
+    return server
 
 
 def _start_panel(cfg: Config, transport, config_path: str):

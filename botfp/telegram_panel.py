@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from . import backup as backup_module
+from . import db
 from . import doctor as doctor_module
 from . import listings as listings_module
 from . import stock
@@ -266,11 +267,24 @@ class TelegramPanel:
 
     def _menu(self) -> Reply:
         pending = len(stock.pending_deliveries(self.conn))
-        alarm = f"\n\n⏳ Требуют внимания: <b>{pending}</b>" if pending else ""
+        alarm = f"\n⏳ Требуют внимания: <b>{pending}</b>" if pending else ""
         return Reply(
-            f"<b>Панель управления botfp</b>{alarm}\n\nВыберите раздел:",
+            f"<b>Панель управления botfp</b>\n{self._connection_line()}{alarm}"
+            "\n\nВыберите раздел:",
             MAIN_KEYBOARD,
         )
+
+    def _connection_line(self) -> str:
+        """Связь с FunPay. Без этой строки панель бодро отвечает, пока выдача стоит."""
+        state = db.get_state(self.conn, "funpay_connection")
+        if state is None:
+            return "🔌 Связь с FunPay: неизвестно"
+        value, updated = state
+        if value == "ok":
+            return "🟢 Связь с FunPay: есть"
+        reason = db.get_state(self.conn, "funpay_connection_reason")
+        detail = f"\n    <i>{esc(reason[0])}</i>" if reason and reason[0] else ""
+        return f"🔴 Связь с FunPay: потеряна с {esc(updated)}{detail}"
 
     def _stock(self) -> Reply:
         counts = stock.available_counts(self.conn)

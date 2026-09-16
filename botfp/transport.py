@@ -48,6 +48,30 @@ class TransportError(Exception):
     """Не удалось отправить сообщение или получить события."""
 
 
+# Признаки того, что площадка не приняла нашу сессию, а не просто «сеть легла».
+# Разница важная: сеть починится сама, протухший ключ — нет, его надо менять
+# руками, и продавцу надо сказать об этом прямо.
+_AUTH_MARKERS = (
+    "unauthorized",
+    "unauthenticated",
+    "401",
+    "403",
+    "forbidden",
+    "golden_key",
+    "не авторизован",
+    "авторизаци",
+    "unauthorised",
+    "session expired",
+    "войдите",
+)
+
+
+def looks_like_auth_failure(error: object) -> bool:
+    """Похоже ли, что дело в ключе, а не в связи."""
+    lowered = str(error).casefold()
+    return any(marker in lowered for marker in _AUTH_MARKERS)
+
+
 @runtime_checkable
 class Transport(Protocol):
     """Контракт площадки."""

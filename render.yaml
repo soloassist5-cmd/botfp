@@ -1,0 +1,43 @@
+# Blueprint для Render: https://render.com/docs/blueprint-spec
+#
+# ВАЖНО про бесплатный тариф. Free-инстансы не поддерживают постоянный диск,
+# то есть botfp.db стирается при каждом рестарте и редеплое. Вместе с базой
+# пропадает журнал выдач — а это защита от повторной выдачи: после рестарта
+# бот не знает, какие заказы уже выдал, и может отдать второй товар за тот же
+# заказ. Плюс free-инстансы засыпают при простое, а спящий бот не опрашивает
+# FunPay и не выдаёт заказы.
+#
+# Для боевой работы раскомментируйте блок disk ниже и возьмите платный план.
+
+services:
+  - type: web
+    name: botfp
+    runtime: python
+    plan: free
+    branch: claude/zealous-fermi-jty3aa
+
+    buildCommand: pip install -r requirements.txt
+
+    # --health-port $PORT поднимает HTTP-заглушку: без занятого порта Render
+    # считает Web Service упавшим. Сам бот порт не использует.
+    startCommand: python -m botfp -c /etc/secrets/config.toml run --health-port $PORT
+
+    healthCheckPath: /
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      # Значения задаются в интерфейсе Render, в репозиторий не попадают.
+      - key: FUNPAY_GOLDEN_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+
+    # Постоянный диск. Требует платного плана, но без него база не переживает
+    # рестарт. Путь должен совпадать с db_path в config.toml.
+    # disk:
+    #   name: botfp-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

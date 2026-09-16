@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS stock_items (
@@ -53,6 +53,14 @@ CREATE INDEX IF NOT EXISTS ix_deliveries_buyer
 
 CREATE INDEX IF NOT EXISTS ix_deliveries_status
     ON deliveries (status, id);
+
+-- Состояние рантайма: бот пишет, панель читает. Через базу, потому что
+-- панель живёт в отдельном потоке со своим подключением.
+CREATE TABLE IF NOT EXISTS runtime_state (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+);
 
 -- Связь лота из конфига с объявлением на FunPay: чтобы повторная
 -- синхронизация обновляла существующее объявление, а не плодила дубликаты.
@@ -158,6 +166,25 @@ def mark_event_seen(conn: sqlite3.Connection, event_key: str) -> bool:
         (event_key, utcnow()),
     )
     return cur.rowcount > 0
+
+
+def set_state(conn: sqlite3.Connection, key: str, value: str) -> None:
+    conn.execute(
+        """
+        INSERT INTO runtime_state (key, value, updated_at) VALUES (?, ?, ?)
+        ON CONFLICT (key) DO UPDATE SET value = excluded.value,
+                                        updated_at = excluded.updated_at
+        """,
+        (key, value, utcnow()),
+    )
+
+
+def get_state(conn: sqlite3.Connection, key: str) -> tuple[str, str] | None:
+    """Возвращает ``(значение, когда обновлено)`` или ``None``."""
+    row = conn.execute(
+        "SELECT value, updated_at FROM runtime_state WHERE key = ?", (key,)
+    ).fetchone()
+    return (row["value"], row["updated_at"]) if row else None
 
 
 def mark_greeted(conn: sqlite3.Connection, chat_id: str) -> bool:

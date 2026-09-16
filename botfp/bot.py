@@ -8,14 +8,23 @@ import sqlite3
 import time
 from types import FrameType
 
-from . import db
+from . import db, templates
 from .commands import CommandRouter
 from .config import Config
 from .delivery import DeliveryService
 from .listings import ListingManager
-from .transport import Event, NewMessageEvent, NewOrderEvent, Transport
+from .transport import (
+    Event,
+    NewMessageEvent,
+    NewOrderEvent,
+    Transport,
+    looks_like_auth_failure,
+)
 
 log = logging.getLogger(__name__)
+
+# Ключ в runtime_state: бот пишет, панель Telegram читает.
+STATE_CONNECTION = "funpay_connection"
 
 
 class Bot:
@@ -38,8 +47,15 @@ class Bot:
         self.router = CommandRouter(conn, config, transport, self.delivery, self_username)
         self._running = False
         self._poll_errors = 0
+        self._connection_lost = False
+        self._lost_since = 0.0
 
     # ------------------------------------------------------------------
+
+    @property
+    def connection_lost(self) -> bool:
+        """Потеряна ли связь с FunPay. Читает health-эндпоинт."""
+        return self._connection_lost
 
     def handle_event(self, event: Event) -> None:
         """Обрабатывает одно событие.
@@ -85,9 +101,9 @@ class Bot:
         while self._running:
             try:
                 self.run_once()
-                self._poll_errors = 0
-            except Exception:
-                self._poll_errors += 1
+                self._on_poll_ok()
+            except Exception as exc:
+                self._on_poll_error(exc)
                 delay = min(self.config.poll_interval * 2**self._poll_errors, 300)
                 log.exception("Опрос упал (попытка %d), пауза %.0f с.", self._poll_errors, delay)
                 self._sleep(delay)
@@ -105,6 +121,61 @@ class Bot:
         self._running = False
 
     # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # Состояние связи с FunPay
+    # ------------------------------------------------------------------
+
+    def _on_poll_error(self, exc: BaseException) -> None:
+        """Первый сбой подряд — повод написать продавцу, дальше молчим.
+
+        Без этого бот на хостинге отваливался бы беззвучно: заказы оплачены,
+        выдачи нет, а продавец узнаёт об этом от покупателей.
+        """
+        self._poll_errors += 1
+        if self._connection_lost:
+            return  # уже сообщили, не спамим на каждой попытке
+
+        self._connection_lost = True
+        self._lost_since = time.monotonic()
+        self._record_connection("lost", str(exc))
+
+        template = (
+            templates.ADMIN_KEY_EXPIRED
+            if looks_like_auth_failure(exc)
+            else templates.ADMIN_CONNECTION_LOST
+        )
+        self.delivery.notify_admins(template.format(reason=exc))
+
+    def _on_poll_ok(self) -> None:
+        self._poll_errors = 0
+        if not self._connection_lost:
+            return
+
+        downtime = _humanize(time.monotonic() - self._lost_since)
+        self._connection_lost = False
+        self._record_connection("ok", "")
+        log.info("Связь с FunPay восстановлена, перерыв %s", downtime)
+
+        # После обрыва добираем то, что не доехало: заказы могли оплатить,
+        # пока связи не было.
+        ok, total = self.delivery.retry_all_pending()
+        pending = (
+            templates.ADMIN_RECOVERY_RETRIED.format(ok=ok, total=total)
+            if total
+            else templates.ADMIN_RECOVERY_CLEAN
+        )
+        self.delivery.notify_admins(
+            templates.ADMIN_CONNECTION_RESTORED.format(downtime=downtime, pending=pending)
+        )
+
+    def _record_connection(self, state: str, reason: str) -> None:
+        try:
+            with db.transaction(self.conn):
+                db.set_state(self.conn, STATE_CONNECTION, state)
+                db.set_state(self.conn, f"{STATE_CONNECTION}_reason", reason[:300])
+        except Exception:
+            log.exception("Не смог записать состояние связи")
 
     def _sync_listings_on_start(self) -> None:
         """Приводит витрину в соответствие с конфигом при активации бота."""
@@ -161,3 +232,14 @@ class Bot:
         deadline = time.monotonic() + seconds
         while self._running and time.monotonic() < deadline:
             time.sleep(min(0.5, deadline - time.monotonic()))
+
+
+def _humanize(seconds: float) -> str:
+    """Длительность по-русски: «3 мин.», «2 ч. 15 мин.»."""
+    minutes = int(seconds // 60)
+    if minutes < 1:
+        return "меньше минуты"
+    if minutes < 60:
+        return f"{minutes} мин."
+    hours, rest = divmod(minutes, 60)
+    return f"{hours} ч. {rest} мин." if rest else f"{hours} ч."
