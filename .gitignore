@@ -14,3 +14,6 @@ config.toml
 *.db-shm
 *.sqlite3
 stock*.txt
+
+# Библиотека FunPayAPI достаётся скриптом, в репозиторий не коммитится.
+FunPayAPI/

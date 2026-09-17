@@ -7,6 +7,8 @@
   окружения, а не в репозитории.
 * Слушатель живёт в отдельном потоке: ``Runner.listen()`` блокирующий, а
   остальному боту нужен неблокирующий :meth:`poll`.
+* Библиотека ставится не через pip, а скриптом ``scripts/fetch_funpayapi.sh``:
+  она не опубликована в PyPI и лежит папкой внутри проекта FunPayCardinal.
 
 Импорты FunPayAPI намеренно ленивые — без установленной библиотеки пакет
 остаётся рабочим (консольный режим, тесты, работа со складом).
@@ -47,8 +49,12 @@ class FunPayTransport:
             from FunPayAPI import Account
         except ImportError as exc:  # pragma: no cover - зависит от окружения
             raise TransportError(
-                "Не установлена библиотека FunPayAPI. "
-                "Поставьте её: pip install -r requirements.txt"
+                "Не установлена библиотека FunPayAPI.\n"
+                "Она не ставится через pip — это папка внутри проекта "
+                "FunPayCardinal, а не пакет PyPI.\n"
+                "Поставьте так:  sh scripts/fetch_funpayapi.sh\n"
+                "На хостинге добавьте этот вызов в build-команду:\n"
+                "  pip install -r requirements.txt && sh scripts/fetch_funpayapi.sh"
             ) from exc
 
         try:
@@ -144,27 +150,20 @@ class FunPayTransport:
         return out
 
     def create_lot(self, spec: ListingSpec) -> str:
-        """Создаёт объявление, копируя форму с существующего лота той же подкатегории.
+        """Создаёт объявление.
 
-        У каждой подкатегории FunPay свой набор полей. Гадать их вслепую —
-        верный способ создать кривой лот, поэтому бот берёт форму с вашего
-        уже существующего лота и меняет в ней только название, описание,
-        цену и количество.
+        ``get_lot_fields(0, node_id=...)`` открывает пустую форму создания для
+        подкатегории — у каждой из них на FunPay свой набор полей, и так мы
+        получаем именно её форму, ничего не выдумывая.
         """
         account = self._require_account()
-        template_id = self._template_lot_id(spec.node_id)
-        if template_id is None:
-            raise TransportError(
-                f"В подкатегории {spec.node_id} нет ни одного вашего лота. "
-                f"Форма лота на FunPay у каждой подкатегории своя, и бот копирует "
-                f"её с существующего объявления, а не выдумывает. "
-                f"Заведите здесь один лот руками — остальные бот создаст сам."
-            )
 
         try:
-            fields = account.get_lot_fields(template_id)
+            fields = account.get_lot_fields(0, node_id=spec.node_id)
         except Exception as exc:
-            raise TransportError(f"Не удалось прочитать форму лота {template_id}: {exc}") from exc
+            raise TransportError(
+                f"Не удалось открыть форму лота для подкатегории {spec.node_id}: {exc}"
+            ) from exc
 
         self._apply_spec(fields, spec, as_new=True)
 
@@ -212,48 +211,32 @@ class FunPayTransport:
     def _apply_spec(self, fields: object, spec: ListingSpec, *, as_new: bool) -> None:
         """Переносит наши поля в форму FunPay.
 
-        Названия полей различаются между версиями FunPayAPI, поэтому каждое
-        ставится по возможности: чего нет — то пропускается, а не роняет всё.
+        Имена атрибутов и обязательный вызов ``renew_fields()`` взяты из
+        исходников FunPayAPI: свойства экземпляра сами по себе в POST не
+        попадают, их надо перенести в словарь полей явно. Без этого вызова
+        на FunPay уходит неизменённая форма — то есть пустой лот.
         """
         if as_new:
-            # Обнуляем идентификаторы, иначе сохранится правка шаблона,
-            # а не создание нового лота.
-            self._set(fields, "lot_id", 0)
-            raw = getattr(fields, "fields", None)
-            if isinstance(raw, dict):
-                raw["offer_id"] = "0"
-                raw.pop("deleted", None)
+            # renew_fields() кладёт lot_id в offer_id; ноль означает «создать».
+            fields.lot_id = 0
 
-        self._set(fields, "node_id", spec.node_id)
-        self._set(fields, "price", spec.price)
-        self._set(fields, "active", spec.active)
-        for attr in ("title_ru", "summary_ru"):
-            self._set(fields, attr, spec.title)
-        for attr in ("title_en", "summary_en"):
-            self._set(fields, attr, spec.title)
+        fields.title_ru = spec.title
+        fields.title_en = spec.title
         if spec.description:
-            for attr in ("description_ru", "desc_ru"):
-                self._set(fields, attr, spec.description)
+            fields.description_ru = spec.description
+            fields.description_en = spec.description
+        fields.price = spec.price
+        fields.active = spec.active
         if spec.amount is not None:
-            self._set(fields, "amount", spec.amount)
+            fields.amount = spec.amount
 
-    @staticmethod
-    def _set(target: object, attr: str, value: object) -> bool:
-        if not hasattr(target, attr):
-            return False
-        try:
-            setattr(target, attr, value)
-        except Exception as exc:  # pragma: no cover - зависит от версии библиотеки
-            log.debug("Поле %s не принято формой лота: %s", attr, exc)
-            return False
-        return True
-
-    def _template_lot_id(self, node_id: int) -> int | None:
-        """Любой существующий лот в этой подкатегории — как образец формы."""
-        for lot in self.list_my_lots():
-            if lot.node_id == node_id:
-                return int(lot.funpay_lot_id)
-        return None
+        renew = getattr(fields, "renew_fields", None)
+        if renew is None:
+            raise TransportError(
+                "В этой версии FunPayAPI нет LotFields.renew_fields() — без него "
+                "правки лота не сохранятся. Проверьте версию библиотеки."
+            )
+        renew()
 
     def _find_by_title(self, spec: ListingSpec) -> str | None:
         wanted = spec.title.casefold().strip()
@@ -274,10 +257,15 @@ class FunPayTransport:
     def _listen(self) -> None:
         try:
             from FunPayAPI import Runner
-            from FunPayAPI.updater.events import EventTypes
+            from FunPayAPI.common.enums import EventTypes
 
             runner = Runner(self._account)
-            for raw in runner.listen(requests_delay=self.config.request_delay):
+            # ignore_exceptions=False обязательно: по умолчанию listen()
+            # глотает ошибки и крутится дальше, и бот никогда не узнает,
+            # что сессия умерла.
+            for raw in runner.listen(
+                requests_delay=self.config.request_delay, ignore_exceptions=False
+            ):
                 if self._stop.is_set():
                     return
                 event = self._convert(raw, EventTypes)

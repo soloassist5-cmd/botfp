@@ -24,9 +24,15 @@ sudo -u botfp git clone <репозиторий> /opt/botfp
 cd /opt/botfp
 sudo -u botfp python3 -m venv .venv
 sudo -u botfp .venv/bin/pip install -r requirements.txt
+sudo -u botfp sh scripts/fetch_funpayapi.sh
 ```
 
 Нужен Python 3.11 или новее.
+
+Второй шаг достаёт FunPayAPI — библиотеку связи с FunPay. Через pip она не
+ставится: это не пакет PyPI, а папка внутри чужого проекта. Скрипт берёт её
+с закреплённого коммита, чтобы код, получающий ваш `golden_key`, не менялся
+сам по себе.
 
 ### Ключ доступа
 
@@ -279,6 +285,7 @@ cd /opt/botfp
 sudo -u botfp .venv/bin/python -m botfp backup --dir backups   # сначала копия
 sudo -u botfp git pull
 sudo -u botfp .venv/bin/pip install -r requirements.txt
+sudo -u botfp sh scripts/fetch_funpayapi.sh
 sudo -u botfp .venv/bin/python -m botfp doctor
 sudo systemctl restart botfp
 ```

@@ -16,7 +16,9 @@ services:
     plan: free
     branch: claude/zealous-fermi-jty3aa
 
-    buildCommand: pip install -r requirements.txt
+    # FunPayAPI не ставится через pip (не пакет PyPI, а папка в чужом
+    # проекте), поэтому её достаёт отдельный скрипт.
+    buildCommand: pip install -r requirements.txt && sh scripts/fetch_funpayapi.sh
 
     # --health-port $PORT поднимает HTTP-заглушку: без занятого порта Render
     # считает Web Service упавшим. Сам бот порт не использует.

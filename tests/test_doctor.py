@@ -119,12 +119,12 @@ def listing_config() -> Config:
     )
 
 
-def test_missing_template_lot_is_a_blocker(conn, cfg_path):
-    """Без лота-образца в подкатегории бот не сможет создать объявление."""
+def test_listing_not_created_yet_is_a_warning(conn, cfg_path):
+    """Объявления ещё нет — это повод запустить sync, а не блокер."""
     checks = doctor.run_checks(conn, listing_config(), cfg_path, lots_api=FakeLotsAPI())
 
-    assert doctor.worst_level(checks) == FAIL
-    assert any("образца" in c.title for c in checks)
+    assert doctor.worst_level(checks) != FAIL
+    assert any("ещё не создано" in c.title for c in checks)
 
 
 def test_template_present_but_listing_not_created_is_a_warning(conn, cfg_path):

@@ -203,23 +203,11 @@ def _check_funpay(conn: sqlite3.Connection, config: Config, lots_api) -> list[Ch
 
     checks.append(Check(OK, f"связь с FunPay есть, объявлений на витрине: {len(remote)}"))
 
-    nodes_with_lots = {lot.node_id for lot in remote}
     for lot in config.listable_lots:
-        node_id = lot.listing.node_id
         link = get_link(conn, lot.lot_id)
-
         if link is not None and link.funpay_lot_id:
             state = "на витрине" if link.active else "снято с витрины"
             checks.append(Check(OK, f"{lot.display}: объявление #{link.funpay_lot_id}, {state}"))
-        elif node_id not in nodes_with_lots:
-            checks.append(
-                Check(
-                    FAIL,
-                    f"{lot.display}: в подкатегории {node_id} нет вашего лота-образца",
-                    "Бот копирует форму лота с существующего объявления. "
-                    "Заведите здесь один лот руками — дальше он создаст остальные.",
-                )
-            )
         else:
             checks.append(
                 Check(WARN, f"{lot.display}: объявление ещё не создано", "botfp lots sync --apply")
