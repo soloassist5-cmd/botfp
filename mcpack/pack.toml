@@ -1,0 +1,329 @@
+# ============================================================================
+#  LS: City Life — единый источник истины для сборки.
+#  Всё остальное (манифесты лаунчеров, установщики, серверный пак)
+#  генерируется из этого файла скриптами в build/.
+# ============================================================================
+
+[pack]
+name        = "LS City Life"
+id          = "ls-city-life"
+version     = "1.0.0"
+summary     = "Современный город в духе Лос-Анджелеса: огнестрел, экономика, телефоны, камеры, умные замки и NPC."
+minecraft   = "1.20.1"
+loader      = "forge"
+# Версия Forge. Менять только вместе с проверкой всего списка модов.
+loader_version = "47.4.23"
+java        = 17
+
+[requirements]
+ram_min_mb     = 4096
+ram_rec_mb     = 6144
+disk_mb        = 4096
+# Прорисовка по умолчанию; Distant Horizons дорисовывает силуэт города дальше.
+render_distance = 12
+dh_distance     = 96
+
+# ----------------------------------------------------------------------------
+#  Локальные (самописные) моды: не скачиваются, лежат в репозитории.
+# ----------------------------------------------------------------------------
+[[local_mods]]
+id    = "citylife"
+file  = "citylife/build/libs/citylife-1.20.1-1.0.0.jar"
+side  = "both"
+group = "core"
+note  = "Самописный мод: смартфоны с 6 приложениями и умные замки"
+
+# ----------------------------------------------------------------------------
+#  Моды с Modrinth. side: both | client | server
+#  group: core | deco | qol | perf | lib
+#  Обязательные зависимости резолвер подтянет сам.
+# ----------------------------------------------------------------------------
+
+# --- Ядро геймплея ----------------------------------------------------------
+[[mods]]
+slug = "timeless-and-classics-zero"
+side  = "both"
+group = "core"
+note = "Огнестрел: кастомизация, прицелы, магазины, баллистика"
+
+[[mods]]
+slug = "elite-x-quality-guns"
+side  = "both"
+group = "core"
+note = "Пак современного оружия для TaCZ"
+
+[[mods]]
+slug = "lightmans-currency"
+side  = "both"
+group = "core"
+note = "Экономика: монеты, банкоматы, счета, карты, торговые автоматы, налоги"
+
+[[mods]]
+slug = "security-craft"
+side  = "both"
+group = "core"
+note = "Умные замки, карты-ключи, сканеры, камеры наблюдения, сигнализации"
+
+[[mods]]
+slug = "more-protectables"
+side  = "both"
+group = "core"
+note = "Расширение SecurityCraft на блоки других модов"
+
+[[mods]]
+slug = "cameracraft"
+side  = "both"
+group = "core"
+note = "Фотоаппараты, плёнка, проявка, фотоальбомы"
+
+[[mods]]
+slug = "immersive-vehicles"
+side  = "both"
+group = "core"
+note = "Автомобили с физикой, заправка, ремонт"
+
+[[mods]]
+slug = "immersive-vehicles-official-content-pack"
+side  = "both"
+group = "core"
+note = "Официальный пак машин для Immersive Vehicles"
+
+[[mods]]
+slug = "traffic-control-+-roads-mod-by-teerth"
+side  = "both"
+group = "core"
+note = "Дороги, разметка, светофоры, знаки, отбойники"
+
+[[mods]]
+# Bundle-версия Easy NPC — пустая обёртка, объявляющая зависимости,
+# поэтому ставим два реальных модуля напрямую.
+slug = "easy-npc-core"
+side  = "both"
+group = "core"
+note = "NPC: диалоги, скины, профессии, торговля"
+
+[[mods]]
+slug = "easy-npc-config-ui"
+side  = "both"
+group = "core"
+note = "Интерфейс настройки NPC в игре"
+
+[[mods]]
+slug = "guard-villagers"
+side  = "both"
+group = "core"
+note = "Полиция и охрана города"
+
+[[mods]]
+slug = "kubejs"
+side  = "both"
+group = "core"
+note = "Скрипты городской логики: цены, рецепты, правила"
+
+# --- Строительство и декор --------------------------------------------------
+[[mods]]
+slug = "chipped"
+side  = "both"
+group = "deco"
+note = "Варианты ванильных блоков для фасадов"
+
+[[mods]]
+slug = "macaws-doors"
+side  = "both"
+group = "deco"
+note = "Двери: стеклянные, гаражные, магазинные"
+
+[[mods]]
+slug = "macaws-windows"
+side  = "both"
+group = "deco"
+note = "Витрины и окна"
+
+[[mods]]
+slug = "macaws-roofs"
+side  = "both"
+group = "deco"
+note = "Крыши"
+
+[[mods]]
+slug = "macaws-bridges"
+side  = "both"
+group = "deco"
+note = "Мосты и эстакады"
+
+[[mods]]
+slug = "macaws-lights-and-lamps"
+side  = "both"
+group = "deco"
+note = "Уличные фонари, вывески, подсветка"
+
+[[mods]]
+slug = "macaws-fences-and-walls"
+side  = "both"
+group = "deco"
+note = "Ограды участков и отбойники"
+
+[[mods]]
+slug = "macaws-paths-and-pavings"
+side  = "both"
+group = "deco"
+note = "Тротуары и покрытия"
+
+[[mods]]
+slug = "framedblocks"
+side  = "both"
+group = "deco"
+note = "Произвольные формы блоков для архитектуры"
+
+[[mods]]
+slug = "rechiseled"
+side  = "both"
+group = "deco"
+note = "Дополнительные текстуры бетона и камня"
+
+[[mods]]
+slug = "supplementaries"
+side  = "both"
+group = "deco"
+note = "Городская мелочь: вывески, урны, ящики, флаги"
+
+[[mods]]
+slug = "decorative-blocks"
+side  = "both"
+group = "deco"
+note = "Навесы, балки, поручни"
+
+# --- Удобства и атмосфера ---------------------------------------------------
+[[mods]]
+slug = "jei"
+side  = "both"
+group = "qol"
+note = "Просмотр рецептов"
+
+[[mods]]
+slug = "jade"
+side  = "client"
+group = "qol"
+note = "Информация о блоке под прицелом"
+
+[[mods]]
+slug = "xaeros-minimap"
+side  = "client"
+group = "qol"
+note = "Миникарта с метками"
+
+[[mods]]
+slug = "xaeros-world-map"
+side  = "client"
+group = "qol"
+note = "Полная карта города"
+
+[[mods]]
+slug = "appleskin"
+side  = "both"
+group = "qol"
+note = "Показ насыщения еды"
+
+[[mods]]
+slug = "mouse-tweaks"
+side  = "client"
+group = "qol"
+note = "Удобное перетаскивание в инвентаре"
+
+[[mods]]
+slug = "polymorph"
+side  = "both"
+group = "qol"
+note = "Выбор рецепта при конфликте — обязательно при таком числе модов"
+
+[[mods]]
+slug = "simple-voice-chat"
+side  = "both"
+group = "qol"
+note = "Голосовой чат — ключевое для игры в городе с друзьями"
+
+[[mods]]
+slug = "sound-physics-remastered"
+side  = "client"
+group = "qol"
+note = "Эхо и реверберация в помещениях и переулках"
+
+[[mods]]
+slug = "not-enough-animations"
+side  = "client"
+group = "qol"
+note = "Анимации тела от третьего лица"
+
+[[mods]]
+slug = "first-person-model"
+side  = "client"
+group = "qol"
+note = "Видно своё тело от первого лица"
+
+[[mods]]
+slug = "waystones"
+side  = "both"
+group = "qol"
+note = "Станции метро как точки быстрого перемещения"
+
+[[mods]]
+slug = "corpse"
+side  = "both"
+group = "qol"
+note = "Труп с вещами вместо разбросанного лута — нужно для погонь и перестрелок"
+
+[[mods]]
+slug = "worldedit"
+side  = "both"
+group = "qol"
+note = "Правка города и своих построек"
+
+# --- Производительность -----------------------------------------------------
+[[mods]]
+slug = "embeddium"
+side  = "client"
+group = "perf"
+note = "Переписанный рендер (аналог Sodium для Forge)"
+
+[[mods]]
+slug = "oculus"
+side  = "client"
+group = "perf"
+optional = true
+note = "Шейдеры. Отключить, если слабая видеокарта или конфликт с Distant Horizons"
+
+[[mods]]
+slug = "modernfix"
+side  = "both"
+group = "perf"
+note = "Ускорение запуска и снижение потребления памяти"
+
+[[mods]]
+slug = "ferrite-core"
+side  = "both"
+group = "perf"
+note = "Экономия ОЗУ"
+
+[[mods]]
+slug = "entityculling"
+side  = "client"
+group = "perf"
+note = "Не рендерить скрытые сущности — важно для плотного города"
+
+[[mods]]
+slug = "clumps"
+side  = "both"
+group = "perf"
+note = "Слияние сфер опыта"
+
+[[mods]]
+slug = "memoryleakfix"
+side  = "both"
+group = "perf"
+note = "Починка утечек памяти"
+
+[[mods]]
+slug = "distanthorizons"
+side  = "client"
+group = "perf"
+note = "LOD-прорисовка: силуэт города издалека без потери FPS"
