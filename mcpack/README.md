@@ -30,6 +30,7 @@
 
 | Лаунчер | Инструкция |
 |---|---|
+| Просто прочитать, что это за сборка | [docs/overview.md](docs/overview.md) |
 | Legacy Launcher, TLauncher и прочие «пиратки» | [docs/legacy-launcher.md](docs/legacy-launcher.md) |
 | CurseForge App | [docs/curseforge.md](docs/curseforge.md) |
 | Modrinth App, Prism Launcher, MultiMC, ATLauncher | [docs/modrinth-prism.md](docs/modrinth-prism.md) |
