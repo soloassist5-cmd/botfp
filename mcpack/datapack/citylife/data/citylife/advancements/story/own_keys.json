@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "citylife:smart_lock"
+    },
+    "title": {
+      "text": "Свои ключи"
+    },
+    "description": {
+      "text": "Поставь умный замок — теперь у тебя есть своё жильё."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "placed_lock": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "block": "citylife:smart_lock"
+      }
+    }
+  },
+  "parent": "citylife:story/bank_account"
+}

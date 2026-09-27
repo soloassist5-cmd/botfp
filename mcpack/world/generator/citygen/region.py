@@ -106,6 +106,20 @@ class ChunkBuf:
             return
         self._section(sec_y)[((y & 15) << 8) | (lz << 4) | lx] = block_id
 
+    def column(self, lx: int, lz: int, y0: int, y1: int, block_id: int) -> None:
+        """Быстро залить вертикальный отрезок: срезами по массиву секции."""
+        if y1 < y0:
+            return
+        y0 = max(y0, SECTION_MIN * 16)
+        y1 = min(y1, SECTION_MAX * 16 + 15)
+        for sec_y in range(y0 >> 4, (y1 >> 4) + 1):
+            buf = self._section(sec_y)
+            low = max(y0, sec_y * 16)
+            high = min(y1, sec_y * 16 + 15)
+            count = high - low + 1
+            start = ((low & 15) << 8) | (lz << 4) | lx
+            buf[start:start + count * 256:256] = array("H", [block_id]) * count
+
     def get(self, lx: int, y: int, lz: int) -> int:
         buf = self.sections.get(y >> 4)
         if buf is None:

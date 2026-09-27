@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "item": "citylife:smartphone"
+    },
+    "title": {
+      "text": "На связи"
+    },
+    "description": {
+      "text": "Заведи смартфон: без него в городе никак."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_phone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "citylife:smartphone"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/arrival"
+}

@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "item": "securitycraft:codebreaker"
+    },
+    "title": {
+      "text": "Взломщик"
+    },
+    "description": {
+      "text": "Достань кодолом SecurityCraft."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_breaker": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "securitycraft:codebreaker"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/crime_first_job"
+}

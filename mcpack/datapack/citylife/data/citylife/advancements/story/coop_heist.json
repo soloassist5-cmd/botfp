@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:tnt"
+    },
+    "title": {
+      "text": "Работа в команде"
+    },
+    "description": {
+      "text": "Кооп: ограбление втроём — взлом, камеры, машина. Выдаётся командой /function citylife:story/coop_heist"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "citylife:story/crime_codebreaker"
+}

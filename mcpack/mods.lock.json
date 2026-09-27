@@ -1,11 +1,11 @@
 {
-  "generated": "2026-09-27T17:48:13Z",
+  "generated": "2026-09-27T18:45:53Z",
   "pack_version": "1.0.0",
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 57,
-  "total_size": 358260286,
+  "mod_count": 58,
+  "total_size": 359062303,
   "mods": [
     {
       "slug": "cameracraft",
@@ -675,6 +675,29 @@
       "page": "https://modrinth.com/mod/fusion-connected-textures"
     },
     {
+      "slug": "mezzconfig",
+      "title": "MezzConfig",
+      "project_id": "7tEfOcA7",
+      "version_id": "SHm8O27V",
+      "version_number": "0.6.5",
+      "version_type": "beta",
+      "filename": "mezz_config-1.20.1-forge-0.6.5.jar",
+      "url": "https://cdn.modrinth.com/data/7tEfOcA7/versions/SHm8O27V/mezz_config-1.20.1-forge-0.6.5.jar",
+      "size": 348337,
+      "sha1": "2618da62d653b3ebdb8130a889f6916658976587",
+      "sha512": "2806e44b7d500d4a079c1cb2b251907aefcfdf1c6991c4c34eeb1ab9c4ec049bbb2801b03f3a0b5eee7f48953e973c29a64868bd3d5b5eb251897c111b058a73",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Библиотека-зависимость",
+      "optional": false,
+      "required_by": "jei",
+      "page": "https://modrinth.com/mod/mezzconfig"
+    },
+    {
       "slug": "moonlight",
       "title": "Moonlight Lib",
       "project_id": "twkfQtEc",
@@ -870,10 +893,10 @@
       "size": 1320675,
       "sha1": "bb2fa8f3e493af16af9160d049f96c614a1faf2f",
       "sha512": "ffbf2da4685260a4d5c14c621708bd20722563f084f042d3dfb0a7b87f048e39299648c854a93939129da0d23a15a91ec628560d601e76074b08e275f6e132e9",
-      "side": "both",
+      "side": "client",
       "env": {
         "client": "required",
-        "server": "required"
+        "server": "unsupported"
       },
       "group": "perf",
       "note": "Переписанный рендер (аналог Sodium для Forge)",
@@ -1092,14 +1115,14 @@
       "slug": "jei",
       "title": "Just Enough Items (JEI)",
       "project_id": "u6dRKJwZ",
-      "version_id": "9jqubC9n",
-      "version_number": "15.56.0.205",
-      "version_type": "release",
-      "filename": "jei-1.20.1-forge-15.56.0.205.jar",
-      "url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/9jqubC9n/jei-1.20.1-forge-15.56.0.205.jar",
-      "size": 1778129,
-      "sha1": "7f64b7f8fde7f001ef054dabe3618a8780ba2650",
-      "sha512": "1306fe15c81d54aa9ff8f3d9f04812c0d61ffaaae433c29621f926db8f8e2c898669ccdd99e025849859d38b7a2eac170c466390b467f4dfa77542b5dbdd1678",
+      "version_id": "p5jzDqhi",
+      "version_number": "15.62.0.216",
+      "version_type": "beta",
+      "filename": "jei-1.20.1-forge-15.62.0.216.jar",
+      "url": "https://cdn.modrinth.com/data/u6dRKJwZ/versions/p5jzDqhi/jei-1.20.1-forge-15.62.0.216.jar",
+      "size": 2231809,
+      "sha1": "bb0cb397083a0be2601bd4c6f7060326a1c8505f",
+      "sha512": "3828cd57e283d2b77db749f18d776442c8e9c7efd43638f908161bdec4c92df9b1bf9f6ff9120adb2901a796d382f3b8ebbc687834f32d367deec3bde32c7aa9",
       "side": "both",
       "env": {
         "client": "required",
@@ -1146,10 +1169,10 @@
       "size": 1870649,
       "sha1": "993252c9946e22aa4ba0b28cb5b81183d5bcf50d",
       "sha512": "deb10b44e923a5ead4379651328f28c7e7aa862f825f0938ffc4d641119671fedeb5129161553618efb7e4b578d23393c225ade7ce486d1e6e36de256b2ec793",
-      "side": "both",
+      "side": "client",
       "env": {
         "client": "required",
-        "server": "required"
+        "server": "unsupported"
       },
       "group": "qol",
       "note": "Анимации тела от третьего лица",

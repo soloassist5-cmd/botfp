@@ -1,0 +1,23 @@
+# Город не зарастает мобами: чистим только надземную часть внутри границ.
+# Отключить: /schedule clear citylife:city/mob_clean
+kill @e[type=minecraft:zombie,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:husk,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:drowned,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:zombie_villager,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:skeleton,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:stray,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:wither_skeleton,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:creeper,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:spider,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:cave_spider,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:witch,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:enderman,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:slime,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:phantom,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:pillager,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:vindicator,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:evoker,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:silverfish,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:zombified_piglin,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+kill @e[type=minecraft:ravager,x=-544,y=60,z=-480,dx=1280,dy=220,dz=1280]
+schedule function citylife:city/mob_clean 15s replace

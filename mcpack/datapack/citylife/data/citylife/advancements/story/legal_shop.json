@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "lightmanscurrency:cash_register"
+    },
+    "title": {
+      "text": "Свой бизнес"
+    },
+    "description": {
+      "text": "Поставь кассу и открой собственную торговлю."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "placed_register": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "block": "lightmanscurrency:cash_register"
+      }
+    }
+  },
+  "parent": "citylife:story/own_keys"
+}

@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "item": "lightmanscurrency:coin_chest"
+    },
+    "title": {
+      "text": "Городской предприниматель"
+    },
+    "description": {
+      "text": "Собери сундук монет — дело пошло."
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_chest": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "lightmanscurrency:coin_chest"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/legal_security"
+}

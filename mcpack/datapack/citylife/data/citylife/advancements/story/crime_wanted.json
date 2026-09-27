@@ -1,0 +1,45 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:iron_bars"
+    },
+    "title": {
+      "text": "В розыске"
+    },
+    "description": {
+      "text": "Зайди в полицейский участок. Сам или под конвоем."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "at_police": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "position": {
+                  "x": {
+                    "min": 137,
+                    "max": 180
+                  },
+                  "z": {
+                    "min": 12,
+                    "max": 55
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/crime_pick"
+}

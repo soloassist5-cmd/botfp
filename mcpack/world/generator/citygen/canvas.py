@@ -50,6 +50,12 @@ class RegionCanvas:
             return 0
         return self._chunk(x, z).get(x & 15, y, z & 15)
 
+    def column(self, x: int, z: int, y0: int, y1: int, state: str) -> None:
+        """Вертикальная колонна одного блока — основной инструмент рельефа."""
+        if x < self.x0 or x > self.x1 or z < self.z0 or z > self.z1:
+            return
+        self._chunk(x, z).column(x & 15, z & 15, y0, y1, self.registry.id_of(state))
+
     def fill(self, x0: int, y0: int, z0: int, x1: int, y1: int, z1: int, state: str) -> None:
         block_id = self.registry.id_of(state)
         for x in range(max(x0, self.x0), min(x1, self.x1) + 1):

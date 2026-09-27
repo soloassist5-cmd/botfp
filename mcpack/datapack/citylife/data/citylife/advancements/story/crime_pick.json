@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "item": "citylife:lockpick"
+    },
+    "title": {
+      "text": "Отмычка в кармане"
+    },
+    "description": {
+      "text": "Обзаведись отмычкой. Дальше — на свой риск."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_pick": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "citylife:lockpick"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/own_keys"
+}

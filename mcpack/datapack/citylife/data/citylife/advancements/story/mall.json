@@ -1,0 +1,45 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:emerald"
+    },
+    "title": {
+      "text": "Шопинг"
+    },
+    "description": {
+      "text": "Дойди до торгового центра и поторгуйся с продавцами."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "at_mall": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "position": {
+                  "x": {
+                    "min": 73,
+                    "max": 119
+                  },
+                  "z": {
+                    "min": 73,
+                    "max": 119
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/first_money"
+}

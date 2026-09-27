@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:gold_ingot"
+    },
+    "title": {
+      "text": "Общее дело"
+    },
+    "description": {
+      "text": "Кооп: откройте бизнес вдвоём. Выдаётся командой /function citylife:story/coop_business"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "citylife:story/legal_shop"
+}

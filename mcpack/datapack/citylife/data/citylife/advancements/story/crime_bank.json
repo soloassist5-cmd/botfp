@@ -1,0 +1,45 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:gold_block"
+    },
+    "title": {
+      "text": "Дело в банке"
+    },
+    "description": {
+      "text": "Дойди до хранилища городского банка."
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "at_bank": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "position": {
+                  "x": {
+                    "min": -55,
+                    "max": -12
+                  },
+                  "z": {
+                    "min": 73,
+                    "max": 119
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/crime_codebreaker"
+}

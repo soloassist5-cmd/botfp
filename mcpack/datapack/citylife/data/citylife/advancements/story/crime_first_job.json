@@ -1,0 +1,30 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:tripwire_hook"
+    },
+    "title": {
+      "text": "Первое дело"
+    },
+    "description": {
+      "text": "Попробуй отмычку на умном замке."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "used_pick": {
+      "trigger": "minecraft:item_durability_changed",
+      "conditions": {
+        "item": {
+          "items": [
+            "citylife:lockpick"
+          ]
+        }
+      }
+    }
+  },
+  "parent": "citylife:story/crime_pick"
+}

@@ -1,0 +1,37 @@
+{
+  "display": {
+    "icon": {
+      "item": "lightmanscurrency:coin_copper"
+    },
+    "title": {
+      "text": "Первые деньги"
+    },
+    "description": {
+      "text": "Заработай первую монету."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_coin": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "lightmanscurrency:coin_copper",
+              "lightmanscurrency:coin_iron",
+              "lightmanscurrency:coin_gold",
+              "lightmanscurrency:coin_emerald",
+              "lightmanscurrency:coin_diamond",
+              "lightmanscurrency:coin_netherite"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/phone"
+}

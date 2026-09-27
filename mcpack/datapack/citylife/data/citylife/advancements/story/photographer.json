@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "item": "cameracraft:camera"
+    },
+    "title": {
+      "text": "Фотограф"
+    },
+    "description": {
+      "text": "Возьми фотоаппарат и сними город."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_camera": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "cameracraft:camera"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "parent": "citylife:story/phone"
+}

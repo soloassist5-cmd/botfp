@@ -1,0 +1,21 @@
+# Настройки клиента по умолчанию для LS City Life.
+# Minecraft допишет остальные ключи сам при первом запуске.
+version:3465
+lang:ru_ru
+renderDistance:12
+simulationDistance:8
+maxFps:120
+graphicsMode:1
+ao:true
+entityShadows:true
+entityDistanceScaling:0.75
+particles:1
+guiScale:0
+fov:0.2
+gamma:0.75
+chatOpacity:1.0
+mipmapLevels:4
+biomeBlendRadius:2
+prioritizeChunkUpdates:0
+narrator:0
+tutorialStep:none

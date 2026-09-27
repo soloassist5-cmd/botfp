@@ -1,0 +1,3 @@
+# Согласие с лицензией Minecraft: https://aka.ms/MinecraftEULA
+# Поставь true, иначе сервер не запустится.
+eula=false

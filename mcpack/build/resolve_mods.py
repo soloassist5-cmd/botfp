@@ -31,17 +31,21 @@ CHANNELS = {"release": 0, "beta": 1, "alpha": 2}
 
 
 def pick_version(entry_slug: str, vers: list[dict], allow_beta: bool) -> dict:
-    """Выбрать версию: сначала стабильные, внутри канала — самую свежую."""
+    """
+    Выбрать версию мода.
+
+    По умолчанию берётся самая свежая стабильная. allow_beta означает
+    «бери самую свежую вообще» — это нужно там, где стабильного канала
+    либо нет, либо он отстаёт от требований зависимых модов.
+    """
     if not vers:
         raise RuntimeError(f"{entry_slug}: нет версий под заданные MC/загрузчик")
-    candidates = [v for v in vers if allow_beta or v["version_type"] == "release"] or vers
-    candidates.sort(key=lambda v: (CHANNELS.get(v["version_type"], 9), v["date_published"]),
-                    reverse=False)
-    # Свежайшая внутри лучшего доступного канала.
-    best_channel = CHANNELS.get(candidates[0]["version_type"], 9)
-    same = [v for v in candidates if CHANNELS.get(v["version_type"], 9) == best_channel]
-    same.sort(key=lambda v: v["date_published"], reverse=True)
-    return same[0]
+    if allow_beta:
+        return max(vers, key=lambda v: v["date_published"])
+    pool = [v for v in vers if v["version_type"] == "release"] or vers
+    best_channel = min(CHANNELS.get(v["version_type"], 9) for v in pool)
+    pool = [v for v in pool if CHANNELS.get(v["version_type"], 9) == best_channel]
+    return max(pool, key=lambda v: v["date_published"])
 
 
 def primary_file(ver: dict) -> dict:
@@ -78,11 +82,11 @@ def main() -> int:
     problems: list[str] = []
     # Очередь: (идентификатор, side, group, note, кто затребовал)
     queue = [(m["slug"], m.get("side", "both"), m.get("group", "core"),
-              m.get("note", ""), None, m.get("optional", False))
+              m.get("note", ""), None, m.get("optional", False), m.get("beta", False))
              for m in pack["mods"]]
 
     while queue:
-        ident, side, group, note, required_by, optional = queue.pop(0)
+        ident, side, group, note, required_by, optional, beta = queue.pop(0)
         try:
             proj = modrinth.project(ident)
         except Exception as exc:
@@ -92,14 +96,15 @@ def main() -> int:
         if pid in resolved:
             # Зависимость уже в списке: расширяем side до both, если нужно.
             cur = resolved[pid]
-            if cur["side"] != side and side == "both":
+            if cur["side"] != side:
+                # Разные стороны у одного мода означают, что он нужен обеим.
                 cur["side"] = "both"
                 cur["env"] = env_for("both")
             continue
 
         try:
             vers = modrinth.versions(pid, mc, loader)
-            ver = pick_version(proj["slug"], vers, args.beta)
+            ver = pick_version(proj["slug"], vers, args.beta or beta)
             f = primary_file(ver)
         except Exception as exc:
             problems.append(f"{proj['slug']}: {exc}")
@@ -134,8 +139,10 @@ def main() -> int:
                 dep_id = modrinth.version(dep["version_id"])["project_id"]
             if not dep_id:
                 continue
-            queue.append((dep_id, "both", "lib", "Библиотека-зависимость",
-                          proj["slug"], False))
+            # Зависимость наследует сторону родителя: библиотека клиентского
+            # мода серверу не нужна, и в серверный пак она не попадёт.
+            queue.append((dep_id, side, "lib", "Библиотека-зависимость",
+                          proj["slug"], False, beta))
 
     if problems:
         print("ОШИБКИ РАЗРЕШЕНИЯ:", file=sys.stderr)

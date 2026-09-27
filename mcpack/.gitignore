@@ -2,3 +2,5 @@
 build/.cache/
 # Локальные тестовые установки.
 test-install/
+# Распакованный мир: в репозитории лежит только архив los-santos.zip.
+world/los-santos/

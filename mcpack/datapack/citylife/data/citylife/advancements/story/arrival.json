@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:oak_boat"
+    },
+    "title": {
+      "text": "Добро пожаловать в Лос-Сантос"
+    },
+    "description": {
+      "text": "Ты приехал в город. Осмотрись и начни с телефона."
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false,
+    "background": "minecraft:textures/block/black_concrete.png"
+  },
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "rewards": {
+    "function": "citylife:city/guide"
+  }
+}
