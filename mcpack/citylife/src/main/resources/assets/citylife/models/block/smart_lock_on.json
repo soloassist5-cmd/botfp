@@ -1,0 +1,78 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "panel": "citylife:block/smart_lock",
+    "particle": "citylife:block/smart_lock"
+  },
+  "elements": [
+    {
+      "from": [
+        4,
+        4,
+        14
+      ],
+      "to": [
+        12,
+        12,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#panel",
+          "uv": [
+            4,
+            4,
+            12,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#panel",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#panel",
+          "uv": [
+            6,
+            4,
+            8,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#panel",
+          "uv": [
+            6,
+            4,
+            8,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#panel",
+          "uv": [
+            4,
+            6,
+            12,
+            8
+          ]
+        },
+        "down": {
+          "texture": "#panel",
+          "uv": [
+            4,
+            6,
+            12,
+            8
+          ]
+        }
+      },
+      "light_emission": 7
+    }
+  ]
+}

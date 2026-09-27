@@ -28,7 +28,7 @@ dh_distance     = 96
 # ----------------------------------------------------------------------------
 [[local_mods]]
 id    = "citylife"
-file  = "citylife/build/libs/citylife-1.20.1-1.0.0.jar"
+file  = "mods-local/citylife-1.20.1-1.0.0.jar"
 side  = "both"
 group = "core"
 note  = "Самописный мод: смартфоны с 6 приложениями и умные замки"

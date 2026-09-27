@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=south,powered=false": { "model": "citylife:block/smart_lock" },
+    "facing=west,powered=false":  { "model": "citylife:block/smart_lock", "y": 90 },
+    "facing=north,powered=false": { "model": "citylife:block/smart_lock", "y": 180 },
+    "facing=east,powered=false":  { "model": "citylife:block/smart_lock", "y": 270 },
+    "facing=south,powered=true":  { "model": "citylife:block/smart_lock_on" },
+    "facing=west,powered=true":   { "model": "citylife:block/smart_lock_on", "y": 90 },
+    "facing=north,powered=true":  { "model": "citylife:block/smart_lock_on", "y": 180 },
+    "facing=east,powered=true":   { "model": "citylife:block/smart_lock_on", "y": 270 }
+  }
+}
