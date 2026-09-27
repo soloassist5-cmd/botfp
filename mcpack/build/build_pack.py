@@ -17,6 +17,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -86,33 +87,69 @@ BOM = b"\xef\xbb\xbf"
 
 def check_scripts() -> None:
     """
-    Проверка кодировок скриптов, которые уходят пользователю.
+    Проверка скриптов, которые уходят пользователю.
 
-    Windows PowerShell 5.1 читает .ps1 без BOM как ANSI (cp1251 на русской
-    системе) — русские строки превращаются в мусор и файл не разбирается.
-    cmd.exe наоборот BOM не понимает и печатает его как символы, а .bat
-    читает в OEM-кодировке, поэтому в .bat допустим только ASCII.
-    Перевод строк везде CRLF: с одиночным LF ломается многострочный `(`.
+    Windows PowerShell 5.1 читает .ps1 без BOM в системной кодировке (cp1251
+    на русской системе). Одной русской буквы в исходнике хватает, чтобы все
+    строки превратились в мусор, а кавычки-«ёлочки» из cp1251 сломали разбор
+    файла ещё до первой строки кода. Поэтому в .ps1 разрешён только ASCII,
+    а русский текст живёт в install/messages.ru.txt и читается как UTF-8.
+
+    cmd.exe наоборот BOM не понимает и печатает его как символы, а .bat читает
+    в OEM-кодировке — там тоже только ASCII. Переводы строк везде CRLF:
+    с одиночным LF ломается многострочный `(` в .bat.
     """
     tracked = subprocess.run(["git", "ls-files", "-z", "*.ps1", "*.bat"], cwd=ROOT,
                              capture_output=True, text=True, check=True)
     bad: list[str] = []
     for name in sorted(n for n in tracked.stdout.split("\0") if n):
         raw = open(os.path.join(ROOT, name), "rb").read()
+        body = raw[3:] if raw.startswith(BOM) else raw
         if name.endswith(".ps1"):
             if not raw.startswith(BOM):
                 bad.append(f"{name}: нет UTF-8 BOM (PowerShell 5.1 прочтёт как cp1251)")
+        elif raw.startswith(BOM):
+            bad.append(f"{name}: BOM в .bat (cmd.exe напечатает его как символы)")
+        try:
+            text = body.decode("ascii")
+        except UnicodeDecodeError as exc:
+            bad.append(f"{name}: не-ASCII в исходнике ({exc.reason}, байт {exc.start}) — "
+                       f"текст должен лежать в install/messages.ru.txt")
         else:
-            if raw.startswith(BOM):
-                bad.append(f"{name}: BOM в .bat (cmd.exe напечатает его как символы)")
-            if not raw.decode("utf-8").isascii():
-                bad.append(f"{name}: не-ASCII в .bat (испортится в OEM-кодировке)")
-        body = raw[3:] if raw.startswith(BOM) else raw
-        if body.count(b"\n") != body.count(b"\r\n"):
-            bad.append(f"{name}: не все переводы строк CRLF")
+            if text.count("\n") != text.count("\r\n"):
+                bad.append(f"{name}: не все переводы строк CRLF")
+    bad += check_messages()
     if bad:
-        raise SystemExit("Кодировки скриптов:\n  " + "\n  ".join(bad))
-    print("  кодировки .ps1/.bat: ок")
+        raise SystemExit("Скрипты установщика:\n  " + "\n  ".join(bad))
+    print("  скрипты .ps1/.bat: ASCII, CRLF, тексты на месте")
+
+
+def check_messages() -> list[str]:
+    """
+    Каждый ключ из T '...' должен быть и в каталоге, и в английском запасном
+    наборе внутри скрипта: каталог может не доехать, и тогда установщик обязан
+    остаться читаемым, а не печатать имена ключей.
+    """
+    catalog = os.path.join(ROOT, "install", "messages.ru.txt")
+    if not os.path.isfile(catalog):
+        return ["install/messages.ru.txt: нет файла с текстами"]
+    keys: set[str] = set()
+    with open(catalog, encoding="utf-8-sig") as fh:
+        for line in fh:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                keys.add(line.split("=", 1)[0].strip())
+    problems: list[str] = []
+    used: set[str] = set()
+    for name in ("install/setup.ps1", "install/install.ps1"):
+        text = open(os.path.join(ROOT, name), encoding="utf-8-sig").read()
+        mine = set(re.findall(r"T '([a-z0-9_.]+)'", text))
+        fallback = set(re.findall(r"'((?:setup|install)\.[a-z0-9_]+)'\s*=", text))
+        used |= mine
+        problems += [f"{name}: ключа {k} нет в messages.ru.txt" for k in sorted(mine - keys)]
+        problems += [f"{name}: у ключа {k} нет запасного текста" for k in sorted(mine - fallback)]
+    problems += [f"messages.ru.txt: ключ {k} никем не используется" for k in sorted(keys - used)]
+    return problems
 
 
 def build_full(pack: dict, lock: dict) -> str:

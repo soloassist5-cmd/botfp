@@ -1,0 +1,61 @@
+﻿# Тексты установщика LS City Life.
+#
+# Скрипты .ps1 намеренно содержат только ASCII: Windows PowerShell 5.1 читает
+# .ps1 без BOM в системной кодировке (cp1251), и любая русская буква в исходнике
+# ломает разбор файла ещё до запуска. Поэтому все русские строки лежат здесь,
+# а скрипт читает этот файл явно как UTF-8.
+#
+# Формат: ключ = текст. {0}, {1} — подстановки.
+
+setup.title = LS CITY LIFE — установка
+setup.no_installer = Рядом нет install.ps1. Похоже, архив распакован не полностью.
+setup.no_installer2 = Распакуй ls-city-life-1.0.0.zip целиком и запусти УСТАНОВИТЬ.bat из него.
+setup.found = Найденные профили:
+setup.manual = [0] ввести путь к папке игры вручную
+setup.which_enter = Куда ставим? Enter = [{0}]
+setup.which = Куда ставим? Введи номер
+setup.path = Путь к папке игры
+setup.none1 = Профили лаунчеров не найдены.
+setup.none2 = Сначала создай профиль: CurseForge -> Create Custom Profile ->
+setup.none3 = Minecraft 1.20.1 -> Forge 47.4.23. Потом запусти этот файл снова.
+setup.path_or_exit = Либо введи путь к папке игры вручную (Enter — выйти)
+setup.nothing = Ничего не выбрано, выхожу.
+setup.missing = Папки нет: {0}
+setup.installing = Ставлю в: {0}
+setup.size_note = Скачивание примерно 342 МБ, это может занять несколько минут.
+
+install.error = ОШИБКА
+install.no_modslist = не найден {0}
+install.head_install = LS City Life — установка ({0})
+install.dir = Каталог: {0}
+install.bundle = Моды берутся из комплекта: {0} (сеть не нужна)
+install.head_mods = Моды
+install.local_hash_mismatch = хэш локальной копии не совпал, качаю: {0}
+install.progress = Загрузка модов
+install.not_downloaded = не скачался: {0}
+install.hash_mismatch = хэш не совпал: {0}
+install.failed_list = Не удалось поставить: {0}
+install.retry_hint = Запусти установщик снова — докачает только их.
+install.from_bundle = (из комплекта)
+install.custom_mod = (самописный)
+install.extra = (лишний)
+install.mods_count = Модов в папке mods: {0}
+install.head_configs = Конфиги
+install.head_world = Мир Los Santos
+install.no_world = архив мира не найден — пропускаю
+install.world_exists = мир уже есть — не перезаписываю
+install.world_ok = мир распакован в saves\los-santos
+install.server_world_exists = мир сервера уже есть — не перезаписываю
+install.server_world_ok = мир распакован в world\
+install.head_forge = Forge
+install.forge_have = серверный Forge уже установлен
+install.need_java = нужна Java 17
+install.forge_get = скачиваю установщик Forge...
+install.forge_run = устанавливаю серверный Forge (1-3 минуты)...
+install.forge_ok = серверный Forge установлен
+install.next_server = Дальше: открой eula.txt, поставь eula=true и запусти start.bat
+install.forge_client1 = Forge для клиента ставит сам лаунчер.
+install.forge_client2 = Legacy Launcher / TLauncher: выбери Forge {0}
+install.forge_client3 = и укажи этот каталог как папку игры:
+install.head_done = Готово
+install.done_note = Не забудь выделить игре 6 ГБ ОЗУ (-Xmx6G) и поставить Java 17.
