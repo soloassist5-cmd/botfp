@@ -101,11 +101,14 @@ def build_full(pack: dict, lock: dict) -> str:
         raise SystemExit("git ls-files ничего не вернул: запусти из рабочей копии")
 
     skip_suffix = ("-full.zip",)
+    # Собранная страница сайта в пак не нужна, а лежащий там же архив сборки
+    # иначе попал бы внутрь самого себя и удвоил вес.
+    skip_prefix = ("site/dist/",)
     root_name = f"{p['id']}-{p['version']}"
     written = 0
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for name in sorted(names):
-            if name.endswith(skip_suffix):
+            if name.endswith(skip_suffix) or name.startswith(skip_prefix):
                 continue
             source = os.path.join(ROOT, name)
             if not os.path.isfile(source):
@@ -130,7 +133,7 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 1. Прочитай README.md — там общее описание и таблица модов.
 2. Выбери инструкцию под свой лаунчер в папке docs:
      docs/legacy-launcher.md   Legacy Launcher, TLauncher и прочие
-     docs/curseforge.md        CurseForge App
+     docs/curseforge.md        CurseForge App (импорт профиля + установщик)
      docs/modrinth-prism.md    Modrinth App, Prism, MultiMC, ATLauncher
      docs/server-radmin.md     сервер для игры с друзьями через Radmin VPN
 
