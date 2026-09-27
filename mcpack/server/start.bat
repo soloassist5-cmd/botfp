@@ -1,12 +1,12 @@
 @echo off
 rem ===========================================================================
-rem  Запуск сервера LS City Life (Windows)
+rem  LS City Life dedicated server launcher (Windows)
 rem
-rem  Перед первым запуском:
-rem    1. открой eula.txt и поставь eula=true
-rem    2. поставь Java 17 (например, Adoptium Temurin 17)
+rem  Before the first run:
+rem    1. open eula.txt and set eula=true
+rem    2. install Java 17 (Adoptium Temurin 17 is a good pick)
 rem
-rem  Память меняется в переменной RAM ниже.
+rem  RAM below can be raised if the machine has more memory.
 rem ===========================================================================
 setlocal
 cd /d "%~dp0"
@@ -18,19 +18,19 @@ set ARGS=libraries\net\minecraftforge\forge\%MC%-%FORGE%\win_args.txt
 
 where java >nul 2>nul
 if errorlevel 1 (
-  echo Не найдена Java. Поставь Java 17 и запусти снова.
+  echo Java not found. Install Java 17, then run this file again.
   pause
   exit /b 1
 )
 if not exist "%ARGS%" (
-  echo Не установлен серверный Forge. Запусти установщик:
+  echo Forge server is not installed yet. Run the installer first:
   echo    powershell -ExecutionPolicy Bypass -File install.ps1 -Target server -Path "%cd%"
   pause
   exit /b 1
 )
 findstr /i "eula=false" eula.txt >nul 2>nul
 if not errorlevel 1 (
-  echo Открой eula.txt и поставь eula=true.
+  echo Open eula.txt and set eula=true, then run this file again.
   pause
   exit /b 1
 )
@@ -44,5 +44,5 @@ java -Xmx%RAM% -Xms1G ^
   @%ARGS% nogui
 
 echo.
-echo Сервер остановлен.
+echo Server stopped.
 pause

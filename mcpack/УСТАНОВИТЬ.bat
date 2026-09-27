@@ -1,8 +1,7 @@
 @echo off
-chcp 65001 >nul
-title LS City Life - установка
-rem Запускает установку сборки. Политика выполнения PowerShell тут не мешает:
-rem скрипт вызывается с ключом Bypass явно.
+title LS City Life - setup
+rem Runs the installer. PowerShell execution policy is bypassed explicitly,
+rem so nothing needs to be changed in the system settings.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0install\setup.ps1"
 echo.
 pause

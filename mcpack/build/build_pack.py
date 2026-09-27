@@ -81,6 +81,40 @@ def write_mods_list(pack: dict, lock: dict) -> str:
     return out
 
 
+BOM = b"\xef\xbb\xbf"
+
+
+def check_scripts() -> None:
+    """
+    Проверка кодировок скриптов, которые уходят пользователю.
+
+    Windows PowerShell 5.1 читает .ps1 без BOM как ANSI (cp1251 на русской
+    системе) — русские строки превращаются в мусор и файл не разбирается.
+    cmd.exe наоборот BOM не понимает и печатает его как символы, а .bat
+    читает в OEM-кодировке, поэтому в .bat допустим только ASCII.
+    Перевод строк везде CRLF: с одиночным LF ломается многострочный `(`.
+    """
+    tracked = subprocess.run(["git", "ls-files", "-z", "*.ps1", "*.bat"], cwd=ROOT,
+                             capture_output=True, text=True, check=True)
+    bad: list[str] = []
+    for name in sorted(n for n in tracked.stdout.split("\0") if n):
+        raw = open(os.path.join(ROOT, name), "rb").read()
+        if name.endswith(".ps1"):
+            if not raw.startswith(BOM):
+                bad.append(f"{name}: нет UTF-8 BOM (PowerShell 5.1 прочтёт как cp1251)")
+        else:
+            if raw.startswith(BOM):
+                bad.append(f"{name}: BOM в .bat (cmd.exe напечатает его как символы)")
+            if not raw.decode("utf-8").isascii():
+                bad.append(f"{name}: не-ASCII в .bat (испортится в OEM-кодировке)")
+        body = raw[3:] if raw.startswith(BOM) else raw
+        if body.count(b"\n") != body.count(b"\r\n"):
+            bad.append(f"{name}: не все переводы строк CRLF")
+    if bad:
+        raise SystemExit("Кодировки скриптов:\n  " + "\n  ".join(bad))
+    print("  кодировки .ps1/.bat: ок")
+
+
 def build_full(pack: dict, lock: dict) -> str:
     """
     Один архив со всей сборкой: установщики, конфиги, датапак, самописный мод,
@@ -479,6 +513,7 @@ def main() -> int:
     ap.add_argument("--mods-dir", help="где взять уже скачанные jar-ы для --target bundle")
     args = ap.parse_args()
     pack, lock = load()
+    check_scripts()
 
     built = [write_mods_list(pack, lock)]
     if args.target in ("all", "mrpack"):
