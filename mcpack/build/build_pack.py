@@ -14,15 +14,18 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
 import subprocess
 import sys
 import tomllib
+import urllib.request
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UA = "ls-city-life-packbuilder/1.0"
 DIST = os.path.join(ROOT, "dist")
 OVERRIDES = os.path.join(ROOT, "overrides")
 
@@ -162,6 +165,179 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 """
 
 
+def collect_jars(lock: dict, mods_dir: str | None) -> list[tuple[str, dict]]:
+    """
+    Найти или скачать jar каждого мода и сверить sha512.
+
+    Возвращает пары (путь, запись из lock). Необязательные моды пропускаются.
+    """
+    cache = os.path.join(ROOT, "build", ".cache", "jars")
+    os.makedirs(cache, exist_ok=True)
+    result = []
+    for mod in lock["mods"]:
+        if mod.get("optional"):
+            continue
+        candidates = []
+        if mods_dir:
+            candidates.append(os.path.join(mods_dir, mod["filename"]))
+        candidates.append(os.path.join(cache, mod["filename"]))
+        path = next((c for c in candidates if os.path.exists(c)), None)
+        if path is None:
+            path = os.path.join(cache, mod["filename"])
+            print(f"  скачиваю {mod['filename']}")
+            request = urllib.request.Request(mod["url"], headers={"User-Agent": UA})
+            with urllib.request.urlopen(request, timeout=180) as response, \
+                    open(path, "wb") as out:
+                shutil.copyfileobj(response, out)
+        digest = hashlib.sha512()
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != mod["sha512"]:
+            raise SystemExit(f"{mod['filename']}: sha512 не совпал, файл битый")
+        result.append((path, mod))
+    return result
+
+
+def build_bundle(pack: dict, lock: dict, mods_dir: str | None) -> str:
+    """
+    Полностью готовая к игре сборка: моды, конфиги, распакованный мир.
+
+    Такую папку достаточно скопировать и указать лаунчеру как папку игры —
+    ничего скачивать уже не нужно.
+    """
+    p = pack["pack"]
+    out = os.path.join(DIST, f"{p['id']}-{p['version']}-ready.zip")
+    os.makedirs(DIST, exist_ok=True)
+    root_name = f"{p['id']}-{p['version']}-ready"
+
+    jars = collect_jars(lock, mods_dir)
+    client_jars = [(path, mod) for path, mod in jars if mod["side"] != "server"]
+
+    world_zip = os.path.join(ROOT, "world", "los-santos.zip")
+    if not os.path.exists(world_zip):
+        raise SystemExit("нет world/los-santos.zip — сгенерируй мир")
+
+    total = 0
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        # jar-ы уже сжаты внутри: пережимать их бессмысленно, только время терять.
+        for path, mod in client_jars:
+            z.write(path, f"{root_name}/mods/{mod['filename']}",
+                    compress_type=zipfile.ZIP_STORED)
+            total += 1
+        for jar in sorted(_local_jars()):
+            z.write(jar, f"{root_name}/mods/{os.path.basename(jar)}",
+                    compress_type=zipfile.ZIP_STORED)
+            total += 1
+
+        for src, rel in iter_overrides():
+            z.write(src, f"{root_name}/{rel.replace(os.sep, '/')}")
+            total += 1
+
+        # Мир кладём распакованным, чтобы папку можно было просто скопировать.
+        with zipfile.ZipFile(world_zip) as world:
+            for entry in world.infolist():
+                if entry.is_dir():
+                    continue
+                z.writestr(f"{root_name}/saves/{entry.filename}", world.read(entry))
+                total += 1
+
+        for name in ("README.md",):
+            z.write(os.path.join(ROOT, name), f"{root_name}/{name}")
+            total += 1
+        docs = os.path.join(ROOT, "docs")
+        for name in sorted(os.listdir(docs)):
+            z.write(os.path.join(docs, name), f"{root_name}/docs/{name}")
+            total += 1
+        server_src = os.path.join(ROOT, "server")
+        for dirpath, _dirs, files in os.walk(server_src):
+            for name in files:
+                full = os.path.join(dirpath, name)
+                rel = os.path.relpath(full, server_src).replace(os.sep, "/")
+                z.write(full, f"{root_name}/server/{rel}")
+                total += 1
+        z.write(os.path.join(ROOT, "install", "install.sh"),
+                f"{root_name}/install/install.sh")
+        z.write(os.path.join(ROOT, "install", "install.ps1"),
+                f"{root_name}/install/install.ps1")
+        z.write(os.path.join(ROOT, "install", "mods.list"),
+                f"{root_name}/install/mods.list")
+        z.write(os.path.join(ROOT, "mods.lock.json"), f"{root_name}/mods.lock.json")
+        total += 4
+
+        z.writestr(f"{root_name}/CHITAY-MENYA.txt", ready_readme(pack, lock, len(client_jars)))
+
+    print(f"  модов в сборке: {len(client_jars)} + самописный, файлов всего: {total}")
+    return out
+
+
+def _local_jars() -> list[str]:
+    local = os.path.join(ROOT, "mods-local")
+    if not os.path.isdir(local):
+        return []
+    return [os.path.join(local, name) for name in os.listdir(local)
+            if name.endswith(".jar")]
+
+
+def ready_readme(pack: dict, lock: dict, mod_count: int) -> str:
+    p = pack["pack"]
+    return f"""{p['name']} {p['version']} — ГОТОВАЯ СБОРКА
+{'=' * 60}
+
+Скачивать больше ничего не нужно: моды, конфиги и мир уже внутри.
+Модов: {mod_count} + самописный citylife. Мир: saves/los-santos.
+
+ЧТО НУЖНО ПОСТАВИТЬ ОТДЕЛЬНО
+----------------------------
+1. Java 17 — https://adoptium.net/temurin/releases/?version=17
+   (именно 17: на 21 Forge 1.20.1 работает нестабильно)
+2. Forge {p['minecraft']}-{p['loader_version']} — ставится из твоего лаунчера
+   (Legacy Launcher, TLauncher, CurseForge, Prism — любой)
+
+КАК ЗАПУСТИТЬ
+-------------
+1. Скопируй эту папку куда-нибудь, например в C:\\Games\\ls-city-life
+2. В лаунчере создай профиль с версией Forge {p['minecraft']}-{p['loader_version']}
+3. В настройках профиля укажи папку игры (game directory) — путь из пункта 1
+4. Выдели 6 ГБ памяти: аргумент -Xmx6G
+5. Запускай. Мир «Los Santos» уже в списке одиночных миров
+
+ПОСЛЕ ПЕРВОГО ВХОДА
+-------------------
+Один раз выполни в чате, чтобы заселить город жителями:
+  /function citylife:npc/spawn_all
+
+Полезное:
+  /work                  подработка (раз в 5 минут)
+  /citylife balance      баланс банковского счёта
+  /phonehelp             рецепты телефона и замков
+
+СЕРВЕР ДЛЯ ДРУЗЕЙ
+-----------------
+Папка server/ содержит скрипты запуска и конфиги, но без серверного Forge и
+серверных модов — их ставит установщик:
+  install/install.sh --target server --path ~/ls-city-server        (Linux/macOS)
+  install/install.ps1 -Target server -Path C:\\ls-city-server        (Windows)
+Инструкция по Radmin VPN: docs/server-radmin.md
+
+ЧТО ГДЕ
+-------
+  mods/            {mod_count} мода + citylife
+  config/, kubejs/ настройки и скрипты
+  options.txt      настройки клиента (прорисовка 12, русский язык)
+  saves/los-santos готовый город
+  docs/            все инструкции
+  server/          серверная часть
+  install/         установщики (нужны только для сервера или обновления)
+  mods.lock.json   что именно за версии стоят, со ссылками и хэшами
+
+ШЕЙДЕРЫ
+-------
+Oculus в сборку не включён: он конфликтует с Distant Horizons на части
+шейдерпаков. Захочешь — поставь вручную и уменьши дистанцию Distant Horizons.
+"""
+
+
 def build_mrpack(pack: dict, lock: dict) -> str:
     p = pack["pack"]
     index = {
@@ -295,7 +471,8 @@ def build_server(pack: dict, lock: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", default="all",
-                    choices=["all", "mrpack", "curseforge", "server", "full"])
+                    choices=["all", "mrpack", "curseforge", "server", "full", "bundle"])
+    ap.add_argument("--mods-dir", help="где взять уже скачанные jar-ы для --target bundle")
     args = ap.parse_args()
     pack, lock = load()
 
@@ -308,6 +485,8 @@ def main() -> int:
         built.append(build_server(pack, lock))
     if args.target in ("all", "full"):
         built.append(build_full(pack, lock))
+    if args.target == "bundle":
+        built.append(build_bundle(pack, lock, args.mods_dir))
 
     for path in built:
         print(f"  {os.path.relpath(path, ROOT)}  ({os.path.getsize(path) / 1024:.0f} КБ)")

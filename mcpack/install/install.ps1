@@ -18,6 +18,7 @@ param(
     [string]$Target = 'client',
     [Parameter(Mandatory = $true)]
     [string]$Path,
+    [string]$ModsDir,
     [switch]$NoWorld,
     [switch]$WithOptional,
     [switch]$Clean
@@ -37,6 +38,12 @@ function Die      ($text) { Write-Host "ОШИБКА: $text" -ForegroundColor Re
 
 if (-not (Test-Path $ModsList)) { Die "не найден $ModsList" }
 
+# Папка с уже скачанными jar-ами: если она есть, сеть не понадобится.
+if (-not $ModsDir) {
+    $bundled = Join-Path $PackDir 'mods-bundle'
+    if (Test-Path $bundled) { $ModsDir = $bundled }
+}
+
 $lines = Get-Content -LiteralPath $ModsList -Encoding UTF8
 $header = ($lines | Where-Object { $_ -match '^# MC ' } | Select-Object -First 1)
 $McVersion    = if ($header -match '^# MC ([0-9.]+)') { $Matches[1] } else { '1.20.1' }
@@ -44,12 +51,13 @@ $ForgeVersion = if ($header -match 'forge ([0-9.]+)') { $Matches[1] } else { '47
 
 New-Item -ItemType Directory -Force -Path $Path | Out-Null
 $Dest    = (Resolve-Path -LiteralPath $Path).Path
-$ModsDir = Join-Path $Dest 'mods'
-New-Item -ItemType Directory -Force -Path $ModsDir | Out-Null
+$TargetMods = Join-Path $Dest 'mods'
+New-Item -ItemType Directory -Force -Path $TargetMods | Out-Null
 
 Write-Head "LS City Life — установка ($Target)"
 Write-Host "Minecraft $McVersion + Forge $ForgeVersion"
 Write-Host "Каталог: $Dest"
+if ($ModsDir) { Write-Host "Моды берутся из комплекта: $ModsDir (сеть не нужна)" }
 
 # --- 1. Загрузка модов -------------------------------------------------------
 Write-Head 'Моды'
@@ -73,11 +81,24 @@ foreach ($m in $entries) {
     $i++
     $expected.Add($m.FileName)
     # Имя переменной не должно совпадать с $Dest: в PowerShell регистр не важен.
-    $jarPath = Join-Path $ModsDir $m.FileName
+    $jarPath = Join-Path $TargetMods $m.FileName
     if (Test-Path -LiteralPath $jarPath) {
         $have = (Get-FileHash -LiteralPath $jarPath -Algorithm SHA512).Hash
         if ($have -ieq $m.Sha512) { Write-Host ("  = " + $m.FileName); continue }
         Remove-Item -LiteralPath $jarPath -Force
+    }
+    # Локальная копия рядом с паком: проверяем хэш и копируем без сети.
+    if ($ModsDir) {
+        $local = Join-Path $ModsDir $m.FileName
+        if (Test-Path -LiteralPath $local) {
+            $localHash = (Get-FileHash -LiteralPath $local -Algorithm SHA512).Hash
+            if ($localHash -ieq $m.Sha512) {
+                Copy-Item -LiteralPath $local -Destination $jarPath -Force
+                Write-Host ("  * " + $m.FileName + " (из комплекта)")
+                continue
+            }
+            Write-Warn ("хэш локальной копии не совпал, качаю: " + $m.FileName)
+        }
     }
     $tmp = "$jarPath.part"
     Write-Progress -Activity 'Загрузка модов' -Status $m.FileName `
@@ -113,21 +134,21 @@ if ($failed.Count -gt 0) {
 $localDir = Join-Path $PackDir 'mods-local'
 if (Test-Path $localDir) {
     foreach ($jar in Get-ChildItem -LiteralPath $localDir -Filter *.jar) {
-        Copy-Item -LiteralPath $jar.FullName -Destination $ModsDir -Force
+        Copy-Item -LiteralPath $jar.FullName -Destination $TargetMods -Force
         $expected.Add($jar.Name)
         Write-Host ("  + " + $jar.Name + " (самописный)")
     }
 }
 
 if ($Clean) {
-    foreach ($jar in Get-ChildItem -LiteralPath $ModsDir -Filter *.jar) {
+    foreach ($jar in Get-ChildItem -LiteralPath $TargetMods -Filter *.jar) {
         if ($expected -notcontains $jar.Name) {
             Remove-Item -LiteralPath $jar.FullName -Force
             Write-Host ("  - " + $jar.Name + " (лишний)")
         }
     }
 }
-Write-Ok ("Модов в mods\: " + (Get-ChildItem -LiteralPath $ModsDir -Filter *.jar).Count)
+Write-Ok ("Модов в mods\: " + (Get-ChildItem -LiteralPath $TargetMods -Filter *.jar).Count)
 
 # --- 2. Конфиги --------------------------------------------------------------
 Write-Head 'Конфиги'
@@ -138,12 +159,13 @@ function Copy-Tree($src, $dst) {
     New-Item -ItemType Directory -Force -Path $dst | Out-Null
     foreach ($file in Get-ChildItem -LiteralPath $srcFull -Recurse -File) {
         $rel = $file.FullName.Substring($srcFull.Length).TrimStart('\', '/')
-        $target = Join-Path $dst $rel
-        $targetDir = Split-Path -Parent $target
-        if ($targetDir -and -not (Test-Path -LiteralPath $targetDir)) {
-            New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+        # Имя не должно совпадать с параметром -Target: в PowerShell регистр не важен.
+        $destFile = Join-Path $dst $rel
+        $destDir = Split-Path -Parent $destFile
+        if ($destDir -and -not (Test-Path -LiteralPath $destDir)) {
+            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
         }
-        Copy-Item -LiteralPath $file.FullName -Destination $target -Force
+        Copy-Item -LiteralPath $file.FullName -Destination $destFile -Force
     }
     Write-Host ("  + " + (Split-Path -Leaf $srcFull) + "\")
 }
@@ -176,7 +198,8 @@ if (-not $NoWorld) {
         if (Test-Path (Join-Path $Dest 'world')) {
             Write-Warn 'мир сервера уже есть — не перезаписываю'
         } else {
-            $tmp = Join-Path $env:TEMP ('ls-city-' + [guid]::NewGuid())
+            # GetTempPath надёжнее $env:TEMP: переменная есть не в каждой системе.
+            $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('ls-city-' + [guid]::NewGuid())
             Expand-Archive -LiteralPath $zip.FullName -DestinationPath $tmp -Force
             Move-Item -LiteralPath (Join-Path $tmp 'los-santos') -Destination (Join-Path $Dest 'world')
             Remove-Item -LiteralPath $tmp -Recurse -Force

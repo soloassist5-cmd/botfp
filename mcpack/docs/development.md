@@ -33,7 +33,15 @@ python3 world/generator/verify_world.py world/los-santos
 # 7. Упаковать мир и собрать дистрибутивы.
 (cd world && zip -qr9 los-santos.zip los-santos)
 python3 build/build_pack.py              # -> dist/ и install/mods.list
+
+# 8. Необязательно: собрать архивы-дистрибутивы.
+python3 build/build_pack.py --target full    # всё, кроме jar-ов модов (~9 МБ)
+python3 build/build_pack.py --target bundle --mods-dir mods-bundle   # с модами (~350 МБ)
 ```
+
+Цель `bundle` кладёт jar-ы внутрь архива и сверяет sha512 каждого. В репозиторий
+такой архив не коммитится: 21 мод из 58 распространяется под All Rights
+Reserved, публиковать их файлы нельзя. Для себя и друзей — пожалуйста.
 
 ## Из чего что берётся
 
@@ -45,6 +53,8 @@ python3 build/build_pack.py              # -> dist/ и install/mods.list
 | `dist/*.mrpack` | пак для Modrinth App, Prism, MultiMC, ATLauncher |
 | `dist/*-curseforge.zip` | профиль для CurseForge App |
 | `dist/*-server.zip` | каркас серверной сборки |
+| `dist/*-full.zip` | вся сборка одним архивом (без jar-ов модов) |
+| `dist/*-ready.zip` | то же, но с модами внутри — только для личного использования |
 
 ## Добавить мод
 

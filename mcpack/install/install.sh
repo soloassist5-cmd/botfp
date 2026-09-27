@@ -16,6 +16,8 @@ MODS_LIST="$SCRIPT_DIR/mods.list"
 
 TARGET="client"
 DEST=""
+# Папка с уже скачанными jar-ами: если она есть, сеть не понадобится.
+MODS_SOURCE=""
 WITH_WORLD=1
 INCLUDE_OPTIONAL=0
 CLEAN=0
@@ -37,6 +39,8 @@ usage() {
   --no-world               не распаковывать готовый мир Los Santos
   --with-optional          поставить и необязательные моды (шейдеры Oculus)
   --clean                  удалить из mods/ посторонние jar-файлы
+  --mods-dir DIR           брать моды из этой папки вместо загрузки
+                           (по умолчанию mods-bundle рядом с паком, если есть)
   --jobs N                 параллельных загрузок (по умолчанию 4)
   -h, --help               эта справка
 TXT
@@ -49,6 +53,7 @@ while [[ $# -gt 0 ]]; do
     --no-world) WITH_WORLD=0;  shift ;;
     --with-optional) INCLUDE_OPTIONAL=1; shift ;;
     --clean)  CLEAN=1; shift ;;
+    --mods-dir) MODS_SOURCE="${2:?}"; shift 2 ;;
     --jobs)   JOBS="${2:?}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) die "неизвестный параметр: $1 (--help для справки)" ;;
@@ -58,6 +63,10 @@ done
 [[ "$TARGET" == "client" || "$TARGET" == "server" ]] || die "--target: client или server"
 [[ -n "$DEST" ]] || { usage; die "--path не задан"; }
 [[ -f "$MODS_LIST" ]] || die "не найден $MODS_LIST"
+
+if [[ -z "$MODS_SOURCE" && -d "$PACK_DIR/mods-bundle" ]]; then
+  MODS_SOURCE="$PACK_DIR/mods-bundle"
+fi
 
 command -v curl >/dev/null || die "нужен curl"
 if command -v sha512sum >/dev/null; then SHA512() { sha512sum "$1" | cut -d' ' -f1; }
@@ -76,6 +85,9 @@ mkdir -p "$MODS_DIR"
 head1 "LS City Life — установка ($TARGET)"
 say "Minecraft $MC_VERSION + Forge $FORGE_VERSION"
 say "Каталог: $DEST"
+if [[ -n "$MODS_SOURCE" ]]; then
+  say "Моды берутся из комплекта: $MODS_SOURCE (сеть не нужна)"
+fi
 
 # --- 1. Загрузка модов -------------------------------------------------------
 head1 "Моды"
@@ -86,6 +98,14 @@ download_one() {
     printf '  = %s\n' "$filename"; return 0
   fi
   rm -f "$dest"
+  # Локальная копия рядом с паком: проверяем хэш и копируем без сети.
+  if [[ -n "$MODS_SOURCE" && -f "$MODS_SOURCE/$filename" ]]; then
+    if [[ "$(SHA512 "$MODS_SOURCE/$filename")" == "$sha" ]]; then
+      cp -f "$MODS_SOURCE/$filename" "$dest"
+      printf '  * %s (из комплекта)\n' "$filename"; return 0
+    fi
+    printf '  %s! хэш локальной копии не совпал, качаю: %s%s\n' "$YEL" "$filename" "$RST"
+  fi
   if ! curl -fL --retry 4 --retry-delay 2 --retry-connrefused -s -o "$dest.part" "$url"; then
     printf '  %s✘ не скачался: %s%s\n' "$RED" "$filename" "$RST"; rm -f "$dest.part"; return 1
   fi

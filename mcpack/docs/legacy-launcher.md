@@ -68,6 +68,24 @@ Linux и macOS:
 ./install.sh --target client --path ~/.minecraft-ls-city
 ```
 
+### Поставить второй раз без повторной загрузки
+
+Моды скачиваются один раз. Чтобы поставить сборку на второй компьютер, другу
+или после переустановки системы — скопируй папку `mods` из уже готовой игры и
+укажи её установщику:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Target client -Path "C:\Games\ls-city-2" -ModsDir "C:\Games\ls-city-life\mods"
+```
+
+```bash
+./install.sh --target client --path ~/ls-city-2 --mods-dir ~/.minecraft-ls-city/mods
+```
+
+Установщик сверит sha512 каждого файла и скопирует их без интернета; чего не
+хватит — докачает. Можно и просто положить jar-ы в папку `mods-bundle` рядом с
+паком: тогда флаг не нужен, она подхватывается сама.
+
 ## 5. Выдели память
 
 6 ГБ рекомендованно, 4 ГБ минимум. В настройках конфигурации лаунчера найди
