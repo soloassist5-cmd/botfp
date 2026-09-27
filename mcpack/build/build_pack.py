@@ -139,8 +139,8 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 
 БЫСТРО (Windows)
 ----------------
-  cd install
-  powershell -ExecutionPolicy Bypass -File install.ps1 -Target client -Path "C:\\Games\\ls-city-life"
+  Запусти УСТАНОВИТЬ.bat двойным кликом — он сам найдёт профиль
+  лаунчера и поставит сборку. Больше ничего делать не нужно.
 
 БЫСТРО (Linux / macOS)
 ----------------------
@@ -157,6 +157,7 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 
 ЧТО ГДЕ ЛЕЖИТ
 -------------
+  УСТАНОВИТЬ.bat      установка в один клик (Windows)
   install/            установщики клиента и сервера
   world/los-santos.zip готовый мир (установщик распакует сам)
   mods-local/         самописный мод: телефоны и умные замки

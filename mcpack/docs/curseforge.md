@@ -36,35 +36,39 @@ C:\Users\<имя>\curseforge\minecraft\Instances\LS City Life
 
 ## 4. Долей моды установщиком
 
-Самый простой способ — команда, которая сама найдёт и установщик в Загрузках, и
-папку профиля. Открой PowerShell (Win+R → `powershell` → Enter) и вставь её
-**одной строкой** целиком:
+В корне распакованной папки лежит **`УСТАНОВИТЬ.bat`** — запусти его двойным
+кликом. Он сам найдёт профили CurseForge, Prism и Modrinth, покажет список и
+предложит тот, в названии которого есть «City»:
 
-```powershell
-$i=(Get-ChildItem "$env:USERPROFILE\Downloads" -Recurse -Filter install.ps1 -ErrorAction SilentlyContinue | Select-Object -First 1).FullName; $p=(Get-ChildItem "$env:USERPROFILE\curseforge\minecraft\Instances" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "City" } | Select-Object -First 1).FullName; if (-not $i) { "НЕ НАЙДЕН УСТАНОВЩИК - распакуй архив" } elseif (-not $p) { "НЕ НАЙДЕН ПРОФИЛЬ - импортируй его в CurseForge" } else { "Ставлю в: $p"; powershell -ExecutionPolicy Bypass -File $i -Target client -Path $p }
+```
+  [1] CurseForge — LS City Life
+  [2] CurseForge — Другая сборка
+  [0] ввести путь к папке игры вручную
+
+Куда ставим? Enter = [1]:
 ```
 
-Важно вставлять именно одной строкой: если разбить её на несколько строк,
-консоль выполнит их по очереди и `elseif` отвалится с ошибкой.
+Нажми Enter — и установщик скачает 342 МБ модов, сверит SHA-512, положит
+самописный мод `citylife`, конфиги и распакует город в `saves\los-santos`.
 
-Перед установкой команда напечатает, куда ставит, — можно проверить путь.
+Если оборвётся — запусти `УСТАНОВИТЬ.bat` ещё раз: докачает только
+недостающее, скачанное не тронет.
 
-Если предпочитаешь вручную: открой папку `ls-city-life-1.0.0\install`, набери в
-адресной строке проводника `powershell`, Enter, и выполни со своим путём:
+Ничего вставлять в консоль не нужно, политику выполнения PowerShell менять
+тоже не нужно — `.bat` вызывает скрипт с ключом Bypass сам.
+
+### Если хочется вручную
+
+Открой папку `ls-city-life-1.0.0\install`, набери в адресной строке проводника
+`powershell`, Enter, и выполни одной строкой со своим путём:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1 -Target client -Path "C:\Users\<имя>\curseforge\minecraft\Instances\LS City Life"
 ```
 
-Установщик:
-
-- скачает 342 МБ модов с Modrinth и сверит SHA-512 каждого файла;
-- положит самописный мод `citylife` (телефоны и умные замки);
-- разложит конфиги и скрипты;
-- распакует город в `saves\los-santos`.
-
-Если что-то не докачалось — просто запусти команду ещё раз, докачает только
-недостающее. Уже установленные файлы он не трогает.
+Важно: это одна команда в одну строку. Многострочные блоки с `if`/`else` в
+консоль вставлять нельзя — она выполняет строки по одной, и `else` отваливается
+с ошибкой «Имя "else" не распознано».
 
 ## 5. Java и память
 
