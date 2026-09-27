@@ -30,7 +30,6 @@ from skyline import skyline_svg, stars_svg  # noqa: E402
 import gen_datapack as G                 # noqa: E402
 
 SEED = 20260927
-REPO = "https://github.com/soloassist5-cmd/botfp/tree/claude/zealous-hawking-gsl0y8/mcpack"
 ARCHIVE_NAME = "ls-city-life-1.0.0.zip"
 ARCHIVE_URL = f"/download/{ARCHIVE_NAME}"
 
@@ -299,8 +298,7 @@ def main() -> int:
     )
 
     # --- моды --------------------------------------------------------------
-    own = ('<a class="chip own" href="' + REPO + '/citylife">citylife '
-           '<em>свой мод</em></a>')
+    own = '<span class="chip own">citylife <em>свой мод</em></span>'
     groups_html = []
     for key, (title, note) in GROUP_RU.items():
         mods = sorted((m for m in lock["mods"] if m["group"] == key),
@@ -371,7 +369,6 @@ def main() -> int:
     <div class="hero-actions">
       <a class="btn btn-primary" href="{ARCHIVE_URL}" download>Скачать сборку · {archive_mb} МБ</a>
       <a class="btn btn-ghost" href="#start">Как поставить</a>
-      <a class="btn btn-ghost" href="{REPO}" target="_blank" rel="noopener">Исходники</a>
     </div>
     <div class="hero-stats">{stats_html}</div>
   </div>
@@ -511,8 +508,8 @@ def main() -> int:
   <div class="wrap footer-inner">
     <div class="footer-logo">LS City Life {pack["version"]}</div>
     <div>Minecraft {mc} · Forge {forge} · Java 17</div>
-    <div><a href="{REPO}" target="_blank" rel="noopener">Исходники сборки</a></div>
     <div>Карта и страница собраны из данных сборки скриптами</div>
+    <div><a href="{ARCHIVE_URL}" download>Скачать архив · {archive_mb} МБ</a></div>
   </div>
 </footer>
 
