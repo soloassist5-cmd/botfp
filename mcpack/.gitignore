@@ -4,3 +4,6 @@ build/.cache/
 test-install/
 # Распакованный мир: в репозитории лежит только архив los-santos.zip.
 world/los-santos/
+# Полный архив сборки: собирается из того же содержимого репозитория
+# командой `python3 build/build_pack.py --target full`.
+dist/*-full.zip

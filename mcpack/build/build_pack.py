@@ -17,6 +17,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tomllib
 import zipfile
@@ -75,6 +76,90 @@ def write_mods_list(pack: dict, lock: dict) -> str:
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines) + "\n")
     return out
+
+
+def build_full(pack: dict, lock: dict) -> str:
+    """
+    Один архив со всей сборкой: установщики, конфиги, датапак, самописный мод,
+    готовый мир и документация.
+
+    Файлы модов внутрь не кладутся (342 МБ и чужие лицензии) — их скачивает
+    установщик по mods.lock.json. Состав берётся из того, что лежит в git,
+    поэтому в архив не попадает мусор сборки.
+    """
+    p = pack["pack"]
+    out = os.path.join(DIST, f"{p['id']}-{p['version']}-full.zip")
+    os.makedirs(DIST, exist_ok=True)
+
+    tracked = subprocess.run(["git", "ls-files", "-z", "."], cwd=ROOT,
+                             capture_output=True, text=True, check=True)
+    names = [name for name in tracked.stdout.split("\0") if name]
+    if not names:
+        raise SystemExit("git ls-files ничего не вернул: запусти из рабочей копии")
+
+    skip_suffix = ("-full.zip",)
+    root_name = f"{p['id']}-{p['version']}"
+    written = 0
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        for name in sorted(names):
+            if name.endswith(skip_suffix):
+                continue
+            source = os.path.join(ROOT, name)
+            if not os.path.isfile(source):
+                continue
+            z.write(source, f"{root_name}/{name}")
+            written += 1
+        z.writestr(f"{root_name}/НАЧНИ_ОТСЮДА.txt", start_here(pack, lock))
+    print(f"  файлов в полном архиве: {written}")
+    return out
+
+
+def start_here(pack: dict, lock: dict) -> str:
+    p = pack["pack"]
+    return f"""{p['name']} {p['version']}
+{'=' * 60}
+
+Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ.
+Модов: {lock['mod_count']} (скачиваются установщиком, {lock['total_size'] / 1048576:.0f} МБ).
+
+С ЧЕГО НАЧАТЬ
+-------------
+1. Прочитай README.md — там общее описание и таблица модов.
+2. Выбери инструкцию под свой лаунчер в папке docs:
+     docs/legacy-launcher.md   Legacy Launcher, TLauncher и прочие
+     docs/curseforge.md        CurseForge App
+     docs/modrinth-prism.md    Modrinth App, Prism, MultiMC, ATLauncher
+     docs/server-radmin.md     сервер для игры с друзьями через Radmin VPN
+
+БЫСТРО (Windows)
+----------------
+  cd install
+  powershell -ExecutionPolicy Bypass -File install.ps1 -Target client -Path "C:\\Games\\ls-city-life"
+
+БЫСТРО (Linux / macOS)
+----------------------
+  cd install
+  ./install.sh --target client --path ~/.minecraft-ls-city
+
+Дальше в лаунчере выбери Forge {p['minecraft']}-{p['loader_version']} и укажи эту
+папку как папку игры. Мир появится в списке одиночных миров как «Los Santos».
+
+ПОСЛЕ ПЕРВОГО ВХОДА
+-------------------
+Один раз выполни в чате, чтобы заселить город:
+  /function citylife:npc/spawn_all
+
+ЧТО ГДЕ ЛЕЖИТ
+-------------
+  install/            установщики клиента и сервера
+  world/los-santos.zip готовый мир (установщик распакует сам)
+  mods-local/         самописный мод: телефоны и умные замки
+  datapack/citylife/  NPC, сценарий, правила города
+  overrides/          конфиги и KubeJS-скрипты
+  server/             скрипты запуска сервера
+  dist/               .mrpack и профиль CurseForge
+  docs/               все инструкции
+"""
 
 
 def build_mrpack(pack: dict, lock: dict) -> str:
@@ -210,7 +295,7 @@ def build_server(pack: dict, lock: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", default="all",
-                    choices=["all", "mrpack", "curseforge", "server"])
+                    choices=["all", "mrpack", "curseforge", "server", "full"])
     args = ap.parse_args()
     pack, lock = load()
 
@@ -221,6 +306,8 @@ def main() -> int:
         built.append(build_curseforge(pack, lock))
     if args.target in ("all", "server"):
         built.append(build_server(pack, lock))
+    if args.target in ("all", "full"):
+        built.append(build_full(pack, lock))
 
     for path in built:
         print(f"  {os.path.relpath(path, ROOT)}  ({os.path.getsize(path) / 1024:.0f} КБ)")
