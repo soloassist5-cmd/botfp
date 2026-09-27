@@ -71,3 +71,14 @@
 Сообщи, что именно и на каком шаге: почти всё в сборке собирается скриптами,
 поэтому правка обычно означает поменять одну строку в `pack.toml`,
 `plan.py` или `gen_datapack.py` и перегенерировать.
+
+## Что в логах выглядит страшно, но нормально
+
+| Строка в логе | Что это |
+|---|---|
+| `MTSERROR: Welcome to MTS VERSION: 24.0.0` и десятки `MTSERROR: Attempted to parse the OBJ model ...` | Immersive Vehicles пишет в лог всё, включая приветствие, уровнем ERROR. Сообщения про модели пуль и красок относятся к содержимому официального пака и на машины не влияют |
+| `Found loot table element validation problem ... lightmanscurrency:chest/village/...` | Lightman's Currency ссылается на структуры деревень из мода, которого в паке нет. Ни на что не влияет |
+| `Failed to read script file: elitex:sp_m1903_reload_logic_backup` | Резервный скрипт внутри пака оружия, оружие работает |
+| `Plugin ... does not have required mod gamestages loaded, skipping` | KubeJS сообщает, что необязательная интеграция не нужна |
+| `Initial datapack load took 11 s` | Первая загрузка датапаков с 58 модами и правда долгая; дальше быстрее |
+| `Mod file ... is missing mods.toml file` про `fmlcore`, `javafmllanguage` и т.п. | Внутренние библиотеки Forge, так и должно быть |

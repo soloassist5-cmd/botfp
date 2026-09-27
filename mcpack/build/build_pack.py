@@ -110,7 +110,9 @@ def build_mrpack(pack: dict, lock: dict) -> str:
         # но пользователь знал, что можно добавить.
         opt = [m for m in lock["mods"] if m.get("optional")]
         if opt:
-            z.writestr("overrides/ДОПОЛНИТЕЛЬНО.txt", "\n".join(
+            # Имя латиницей: некоторые лаунчеры спотыкаются на кириллице в именах
+            # файлов внутри архива.
+            z.writestr("overrides/OPTIONAL-MODS.txt", "\n".join(
                 ["Необязательные моды (поставить вручную при желании):", ""] +
                 [f"  {m['title']} {m['version_number']} — {m['note']}\n    {m['page']}" for m in opt]
             ) + "\n")
@@ -138,7 +140,7 @@ def build_curseforge(pack: dict, lock: dict) -> str:
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
         z.writestr("modlist.html", modlist_html(pack, lock))
-        z.writestr("overrides/ПРОЧТИ_МЕНЯ.txt",
+        z.writestr("overrides/READ-ME-FIRST.txt",
                    "Этот профиль импортируется в CurseForge App без модов.\n"
                    "После импорта открой папку профиля (Profile -> Open Folder)\n"
                    "и запусти установщик из mcpack/install:\n\n"
