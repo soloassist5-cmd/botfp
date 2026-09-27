@@ -36,8 +36,21 @@ C:\Users\<имя>\curseforge\minecraft\Instances\LS City Life
 
 ## 4. Долей моды установщиком
 
-Открой папку `ls-city-life-1.0.0\install`, нажми в проводнике в адресной строке,
-впиши `powershell` и Enter. В открывшемся окне выполни (подставь свой путь):
+Самый простой способ — команда, которая сама найдёт и установщик в Загрузках, и
+папку профиля. Открой PowerShell (Win+R → `powershell` → Enter) и вставь её
+**одной строкой** целиком:
+
+```powershell
+$i=(Get-ChildItem "$env:USERPROFILE\Downloads" -Recurse -Filter install.ps1 -ErrorAction SilentlyContinue | Select-Object -First 1).FullName; $p=(Get-ChildItem "$env:USERPROFILE\curseforge\minecraft\Instances" -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "City" } | Select-Object -First 1).FullName; if (-not $i) { "НЕ НАЙДЕН УСТАНОВЩИК - распакуй архив" } elseif (-not $p) { "НЕ НАЙДЕН ПРОФИЛЬ - импортируй его в CurseForge" } else { "Ставлю в: $p"; powershell -ExecutionPolicy Bypass -File $i -Target client -Path $p }
+```
+
+Важно вставлять именно одной строкой: если разбить её на несколько строк,
+консоль выполнит их по очереди и `elseif` отвалится с ошибкой.
+
+Перед установкой команда напечатает, куда ставит, — можно проверить путь.
+
+Если предпочитаешь вручную: открой папку `ls-city-life-1.0.0\install`, набери в
+адресной строке проводника `powershell`, Enter, и выполни со своим путём:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1 -Target client -Path "C:\Users\<имя>\curseforge\minecraft\Instances\LS City Life"
