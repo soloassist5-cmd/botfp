@@ -247,6 +247,13 @@ a:hover { text-decoration: underline; }
 }
 .btn-ghost:hover { border-color: var(--cyan); color: #fff; }
 
+.hero-build {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--text-mute);
+  margin-bottom: 16px;
+}
+
 .hero-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
@@ -680,7 +687,14 @@ footer {
   .hero-lead { font-size: 16px; margin-bottom: 24px; }
   .hero-actions { gap: 10px; margin-bottom: 30px; }
   .hero-actions .btn { flex: 1 1 100%; justify-content: center; }
-  .hero-stats { grid-template-columns: repeat(3, 1fr); gap: 12px 10px; }
+  .hero-build {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--text-mute);
+  margin-bottom: 16px;
+}
+
+.hero-stats { grid-template-columns: repeat(3, 1fr); gap: 12px 10px; }
   .stat-cap { font-size: 11px; letter-spacing: 0.1em; }
 }
 

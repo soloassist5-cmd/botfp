@@ -10,11 +10,13 @@
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import os
 import shutil
 import sys
+import datetime
 import tomllib
 from collections import Counter
 
@@ -115,8 +117,20 @@ def main() -> int:
     city = P.build_plan(SEED)
     counts = Counter(lot.kind for lot in city.lots)
     archive_path = os.path.join(PACK, "dist", "ls-city-life-1.0.0-full.zip")
-    archive_mb = (f"{os.path.getsize(archive_path) / 1048576:.1f}".replace(".", ",")
-                  if os.path.exists(archive_path) else "9,4")
+    if os.path.exists(archive_path):
+        archive_mb = f"{os.path.getsize(archive_path) / 1048576:.1f}".replace(".", ",")
+        digest = hashlib.sha256()
+        with open(archive_path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                digest.update(chunk)
+        archive_tag = digest.hexdigest()[:8]
+        months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля",
+                  "августа", "сентября", "октября", "ноября", "декабря"]
+        built = datetime.datetime.fromtimestamp(os.path.getmtime(archive_path))
+        archive_date = f"{built.day} {months[built.month - 1]}, {built:%H:%M}"
+    else:
+        archive_mb, archive_tag, archive_date = "9,4", "dev", "—"
+    archive_href = f"{ARCHIVE_URL}?v={archive_tag}"
     map_svg, pins = build_svg()
 
     mc = pack["minecraft"]
@@ -290,7 +304,7 @@ def main() -> int:
     start_html = "".join(
         f'<article class="start-step reveal"><div class="start-n">{esc(number)}</div>'
         f'<h3>{esc(title)}</h3><p>{esc(text)}</p>'
-        + (f'<a class="btn btn-ghost step-dl" href="{ARCHIVE_URL}" download>'
+        + (f'<a class="btn btn-ghost step-dl" href="{archive_href}" download>'
            f'Скачать · {archive_mb} МБ</a>' if number == "Шаг 2" else "")
         + (code_block(*command) if command else "")
         + '</article>'
@@ -367,9 +381,10 @@ def main() -> int:
       у каждого свой товар. Город уже построен — {empty_share}% участков оставлены
       под твои постройки.</p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="{ARCHIVE_URL}" download>Скачать сборку · {archive_mb} МБ</a>
+      <a class="btn btn-primary" href="{archive_href}" download>Скачать сборку · {archive_mb} МБ</a>
       <a class="btn btn-ghost" href="#start">Как поставить</a>
     </div>
+    <div class="hero-build">Сборка от {archive_date} · метка {archive_tag}</div>
     <div class="hero-stats">{stats_html}</div>
   </div>
 </header>
@@ -509,7 +524,7 @@ def main() -> int:
     <div class="footer-logo">LS City Life {pack["version"]}</div>
     <div>Minecraft {mc} · Forge {forge} · Java 17</div>
     <div>Карта и страница собраны из данных сборки скриптами</div>
-    <div><a href="{ARCHIVE_URL}" download>Скачать архив · {archive_mb} МБ</a></div>
+    <div><a href="{archive_href}" download>Скачать архив · {archive_mb} МБ</a></div>
   </div>
 </footer>
 
