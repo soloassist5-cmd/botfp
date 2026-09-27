@@ -83,9 +83,11 @@ class RegionCanvas:
         for index in range(4):
             text = lines[index] if index < len(lines) else ""
             messages.append('{"text":"' + text.replace('"', "'") + '"}')
-        block_id = "minecraft:oak_wall_sign" if "wall_sign" in state else "minecraft:oak_sign"
+        # Тип block entity у всех вариантов таблички один — minecraft:sign.
+        # С именем блока (oak_wall_sign) игра молча выбрасывает запись при
+        # загрузке чанка: "Skipping BlockEntity with id ...", и текст пропадает.
         chunk.block_entities.append({
-            "id": block_id,
+            "id": "minecraft:sign",
             "keepPacked": nbt.Byte(0),
             "x": x, "y": y, "z": z,
             "is_waxed": nbt.Byte(0),

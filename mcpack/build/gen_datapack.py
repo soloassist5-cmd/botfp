@@ -519,6 +519,7 @@ def main() -> int:
         "gamerule spawnRadius 2",
         f"setworldspawn {P.SPAWN[0]} {P.SPAWN[1]} {P.SPAWN[2]}",
         "scoreboard objectives add citylife_jobs dummy \"Выполненные работы\"",
+        "scoreboard objectives add citylife_state dummy \"Состояние города\"",
         "# Запускаем периодическую уборку мобов в черте города.",
         "schedule function citylife:city/mob_clean 15s replace",
     ]
@@ -535,13 +536,30 @@ def main() -> int:
         write(os.path.join(functions, "npc", f"spawn_{index:02d}.mcfunction"),
               "\n".join(lines))
 
-    spawn_all = ["# Расставить всех городских NPC (можно вызывать повторно",
-                 "# после citylife:npc/clear).",
-                 "function citylife:npc/clear"]
-    spawn_all += [f"function citylife:npc/spawn_{i:02d}" for i in range(1, len(batches) + 1)]
-    spawn_all.append(f'tellraw @a {{"text":"Город заселён: NPC {len(spots)}",'
-                     f'"color":"green"}}')
-    write(os.path.join(functions, "npc", "spawn_all.mcfunction"), "\n".join(spawn_all))
+    # Одной командой: summon работает и в незагруженных чанках — игра загружает
+    # чанк, чтобы записать сущность. Проверено на сервере: после вызова в мире
+    # сохраняются все 125 жителей, хотя рядом со спавном загружено только ~20.
+    write(os.path.join(functions, "npc", "spawn_all.mcfunction"), "\n".join(
+        ["# Расставить всех городских NPC заново (сначала убирает прежних)."] +
+        ["function citylife:npc/clear"] +
+        [f"function citylife:npc/spawn_{i:02d}" for i in range(1, len(batches) + 1)] +
+        [f'tellraw @a {{"text":"Город заселён: NPC {len(spots)}","color":"green"}}']))
+
+    # Заселение без команд: скрытое достижение срабатывает на первом тике,
+    # когда игрок уже в мире, и один раз запускает расстановку. Признак лежит
+    # в scoreboard, поэтому при следующих входах ничего не повторяется.
+    write(os.path.join(functions, "npc", "populate_once.mcfunction"), "\n".join([
+        "# Однократное заселение города. Вызывается достижением citylife:hidden/populate.",
+        "# Расставить заново вручную: /function citylife:npc/spawn_all",
+        "execute unless score #populated citylife_state matches 1 run "
+        "function citylife:npc/spawn_all",
+        "scoreboard players set #populated citylife_state 1",
+    ]))
+    write(os.path.join(data, "citylife", "advancements", "hidden", "populate.json"),
+          json.dumps({
+              "criteria": {"tick": {"trigger": "minecraft:tick"}},
+              "rewards": {"function": "citylife:npc/populate_once"},
+          }, ensure_ascii=False, indent=2))
 
     write(os.path.join(functions, "npc", "clear.mcfunction"),
           "# Убрать всех NPC, расставленных датапаком.\n"

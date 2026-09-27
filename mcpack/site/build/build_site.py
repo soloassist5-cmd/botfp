@@ -34,6 +34,9 @@ import gen_datapack as G                 # noqa: E402
 SEED = 20260927
 ARCHIVE_NAME = "ls-city-life-1.0.0.zip"
 ARCHIVE_URL = f"/download/{ARCHIVE_NAME}"
+# Пак в формате Modrinth: лаунчер разворачивает его сам, установщик не нужен.
+MRPACK_NAME = "ls-city-life-1.0.0.mrpack"
+MRPACK_URL = f"/download/{MRPACK_NAME}"
 
 KIND_RU = {
     "empty": "Свободные участки", "house": "Частные дома", "shop": "Магазины",
@@ -108,6 +111,22 @@ def code_block(text: str, lang: str = "команда") -> str:
             f'<code>{esc(text)}</code></div>')
 
 
+def file_facts(path: str) -> tuple[str, str, str]:
+    """Размер, короткая метка содержимого и дата сборки файла для страницы."""
+    if not os.path.exists(path):
+        return "—", "dev", "—"
+    digest = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля",
+              "августа", "сентября", "октября", "ноября", "декабря"]
+    built = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+    return (f"{os.path.getsize(path) / 1048576:.1f}".replace(".", ","),
+            digest.hexdigest()[:8],
+            f"{built.day} {months[built.month - 1]}, {built:%H:%M}")
+
+
 def main() -> int:
     with open(os.path.join(PACK, "pack.toml"), "rb") as fh:
         pack = tomllib.load(fh)["pack"]
@@ -117,26 +136,20 @@ def main() -> int:
     city = P.build_plan(SEED)
     counts = Counter(lot.kind for lot in city.lots)
     archive_path = os.path.join(PACK, "dist", "ls-city-life-1.0.0-full.zip")
-    if os.path.exists(archive_path):
-        archive_mb = f"{os.path.getsize(archive_path) / 1048576:.1f}".replace(".", ",")
-        digest = hashlib.sha256()
-        with open(archive_path, "rb") as fh:
-            for chunk in iter(lambda: fh.read(1 << 20), b""):
-                digest.update(chunk)
-        archive_tag = digest.hexdigest()[:8]
-        months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля",
-                  "августа", "сентября", "октября", "ноября", "декабря"]
-        built = datetime.datetime.fromtimestamp(os.path.getmtime(archive_path))
-        archive_date = f"{built.day} {months[built.month - 1]}, {built:%H:%M}"
-    else:
-        archive_mb, archive_tag, archive_date = "9,4", "dev", "—"
+    archive_mb, archive_tag, archive_date = file_facts(archive_path)
     archive_href = f"{ARCHIVE_URL}?v={archive_tag}"
+    mrpack_path = os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}.mrpack")
+    mrpack_mb, mrpack_tag, mrpack_date = file_facts(mrpack_path)
+    mrpack_href = f"{MRPACK_URL}?v={mrpack_tag}"
     map_svg, pins = build_svg()
 
     mc = pack["minecraft"]
     forge = pack["loader_version"]
     mods_total = lock["mod_count"] + 1          # плюс самописный
     download_mb = round(lock["total_size"] / 1048576)
+    npc_total = len(city.npc_spots)
+    # Сколько модов тянет лаунчер: всё из lock, кроме необязательных.
+    auto_mods = len([m for m in lock["mods"] if not m.get("optional")])
     empty_share = round(counts["empty"] * 100 / len(city.lots))
 
     # --- герой -------------------------------------------------------------
@@ -284,28 +297,26 @@ def main() -> int:
         ("Шаг 1", "Поставить Java 17",
          f"Именно 17: на 21 Forge {mc} работает нестабильно. Adoptium Temurin 17, x64.",
          None),
-        ("Шаг 2", "Скачать сборку",
-         f"Архив на {archive_mb} МБ: установщик, готовый мир, конфиги и инструкции. "
-         f"Файлы модов не входят — их скачивает установщик.", None),
-        ("Шаг 3", "Запустить установщик",
-         f"Скачает {download_mb} МБ модов, сверит SHA-512, разложит конфиги и "
-         f"распакует город. Запуск повторно докачивает только недостающее.",
-         ('powershell -ExecutionPolicy Bypass -File install.ps1 '
-          '-Target client -Path "C:\\Games\\ls-city-life"', "PowerShell")),
-        ("Шаг 4", "Настроить профиль в лаунчере",
-         f"Версия Forge {mc}-{forge}, папка игры — та, что указал установщику, "
-         f"память 6 ГБ.", ("-Xmx6G", "аргументы JVM")),
+        ("Шаг 2", "Поставить лаунчер с поддержкой паков",
+         "Prism Launcher, Modrinth App или ATLauncher — любой из них понимает "
+         "формат .mrpack и ставит всё сам. Все три бесплатные.", None),
+        ("Шаг 3", f"Скачать пак · {mrpack_mb} МБ",
+         f"Один файл. Внутри готовый город, конфиги и самописный мод; "
+         f"остальные {auto_mods} модов лаунчер скачает сам "
+         f"с авторских страниц — {download_mb} МБ.", None),
+        ("Шаг 4", "Импортировать и нажать Play",
+         "Prism: Add Instance → Import → выбрать файл. Modrinth App: "
+         "Create → From file. ATLauncher: Add Pack → Import. Больше ничего "
+         "делать не нужно — ни установщиков, ни команд.", None),
         ("Шаг 5", "Зайти в мир Los Santos",
-         "Мир уже в списке одиночных. Появишься на тротуаре у автовокзала.", None),
-        ("Шаг 6", "Заселить город",
-         "Один раз выполнить в чате — расставит всех жителей. Команду можно "
-         "повторять, если кого-то потеряли.", ("/function citylife:npc/spawn_all", "чат в игре")),
+         f"Мир уже в списке одиночных. Появишься на тротуаре у автовокзала, "
+         f"а {npc_total} жителей расставятся сами при первом входе.", None),
     ]
     start_html = "".join(
         f'<article class="start-step reveal"><div class="start-n">{esc(number)}</div>'
         f'<h3>{esc(title)}</h3><p>{esc(text)}</p>'
-        + (f'<a class="btn btn-ghost step-dl" href="{archive_href}" download>'
-           f'Скачать · {archive_mb} МБ</a>' if number == "Шаг 2" else "")
+        + (f'<a class="btn btn-ghost step-dl" href="{mrpack_href}" download>'
+           f'Скачать · {mrpack_mb} МБ</a>' if number == "Шаг 3" else "")
         + (code_block(*command) if command else "")
         + '</article>'
         for number, title, text, command in steps
@@ -381,10 +392,13 @@ def main() -> int:
       у каждого свой товар. Город уже построен — {empty_share}% участков оставлены
       под твои постройки.</p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="{archive_href}" download>Скачать сборку · {archive_mb} МБ</a>
+      <a class="btn btn-primary" href="{mrpack_href}" download>Скачать пак · {mrpack_mb} МБ</a>
       <a class="btn btn-ghost" href="#start">Как поставить</a>
     </div>
-    <div class="hero-build">Сборка от {archive_date} · метка {archive_tag}</div>
+    <div class="hero-note">Один файл для Prism Launcher, Modrinth App и ATLauncher:
+      импорт — и можно играть. Для CurseForge и Legacy Launcher есть
+      <a href="{archive_href}" download>архив с установщиком · {archive_mb} МБ</a>.</div>
+    <div class="hero-build">Пак от {mrpack_date} · метка {mrpack_tag}</div>
     <div class="hero-stats">{stats_html}</div>
   </div>
 </header>
@@ -495,10 +509,13 @@ def main() -> int:
 <section id="start">
   <div class="wrap">
     <div class="eyebrow">Установка</div>
-    <h2 class="section-title">Шесть шагов</h2>
-    <p class="section-lead">Нужны Java 17 и любой лаунчер с Forge. Остальное делает
-      установщик: качает моды, сверяет хэши, раскладывает конфиги и распаковывает мир.</p>
+    <h2 class="section-title">Пять шагов, без установщиков</h2>
+    <p class="section-lead">Пак — один файл формата .mrpack. Лаунчер сам ставит Forge,
+      качает моды, раскладывает конфиги и мир: ни команд, ни распаковки вручную.</p>
     <div class="start">{start_html}</div>
+    <p class="note">CurseForge App, Legacy Launcher и TLauncher формат .mrpack не читают.
+      Для них есть <a href="{archive_href}" download>архив с установщиком</a>: распаковать,
+      запустить УСТАНОВИТЬ.bat, выбрать профиль — дальше он всё сделает сам.</p>
     <p class="note">Для игры с друзьями в комплекте серверная часть: скрипты запуска,
       настроенные конфиги и голосовой чат. Работает через Radmin VPN без проброса
       портов — инструкция с правилами брандмауэра лежит в архиве.</p>
@@ -513,9 +530,10 @@ def main() -> int:
       зависимостей сверяются скриптом по mods.toml каждого мода. Ссылка ведёт на
       первоисточник.</p>
     {mods_html}
-    <p class="note">Файлы модов в архив не входят: {download_mb} МБ качает установщик по
-      ссылкам с проверкой SHA-512. Так честнее по лицензиям — 21 мод из
-      {lock["mod_count"]} распространяется под All Rights Reserved.</p>
+    <p class="note">Файлы модов в пак не входят: {download_mb} МБ лаунчер качает сам
+      с авторских страниц и сверяет SHA-512. Иначе и нельзя — 26 модов из
+      {lock["mod_count"]} запрещают перевыкладывание своих файлов. Внутри пака лежит
+      только наше: город, конфиги и самописный мод citylife.</p>
   </div>
 </section>
 
@@ -524,7 +542,8 @@ def main() -> int:
     <div class="footer-logo">LS City Life {pack["version"]}</div>
     <div>Minecraft {mc} · Forge {forge} · Java 17</div>
     <div>Карта и страница собраны из данных сборки скриптами</div>
-    <div><a href="{archive_href}" download>Скачать архив · {archive_mb} МБ</a></div>
+    <div><a href="{mrpack_href}" download>Скачать пак · {mrpack_mb} МБ</a> ·
+      <a href="{archive_href}" download>архив с установщиком · {archive_mb} МБ</a></div>
   </div>
 </footer>
 
@@ -541,15 +560,17 @@ def main() -> int:
         shutil.copy2(os.path.join(HERE, name), os.path.join(dist, name))
 
     # Архив сборки: кладём рядом со страницей, чтобы кнопка скачивания работала.
-    archive_src = os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-full.zip")
-    if os.path.exists(archive_src):
-        download_dir = os.path.join(dist, "download")
-        os.makedirs(download_dir, exist_ok=True)
-        shutil.copy2(archive_src, os.path.join(download_dir, ARCHIVE_NAME))
-        print(f"  архив: download/{ARCHIVE_NAME} "
-              f"({os.path.getsize(archive_src) / 1048576:.1f} МБ)")
-    else:
-        print("  ! архив не найден, кнопка скачивания будет вести в репозиторий")
+    download_dir = os.path.join(dist, "download")
+    os.makedirs(download_dir, exist_ok=True)
+    for src, name in ((os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}.mrpack"),
+                       MRPACK_NAME),
+                      (os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-full.zip"),
+                       ARCHIVE_NAME)):
+        if os.path.exists(src):
+            shutil.copy2(src, os.path.join(download_dir, name))
+            print(f"  download/{name} ({os.path.getsize(src) / 1048576:.1f} МБ)")
+        else:
+            print(f"  ! нет {os.path.basename(src)} — кнопка будет вести в пустоту")
 
     size = sum(os.path.getsize(os.path.join(root, n))
                for root, _dirs, names in os.walk(dist) for n in names)

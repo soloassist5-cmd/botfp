@@ -11,5 +11,6 @@ gamerule announceAdvancements true
 gamerule spawnRadius 2
 setworldspawn 11 69 20
 scoreboard objectives add citylife_jobs dummy "Выполненные работы"
+scoreboard objectives add citylife_state dummy "Состояние города"
 # Запускаем периодическую уборку мобов в черте города.
 schedule function citylife:city/mob_clean 15s replace

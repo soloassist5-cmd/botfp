@@ -172,9 +172,9 @@ def build_full(pack: dict, lock: dict) -> str:
         raise SystemExit("git ls-files ничего не вернул: запусти из рабочей копии")
 
     skip_suffix = ("-full.zip",)
-    # Собранная страница сайта в пак не нужна, а лежащий там же архив сборки
-    # иначе попал бы внутрь самого себя и удвоил вес.
-    skip_prefix = ("site/dist/",)
+    # Собранная страница сайта и готовые дистрибутивы в пак не нужны: архив
+    # иначе попал бы внутрь самого себя (или утащил .mrpack) и удвоил вес.
+    skip_prefix = ("site/dist/", "dist/")
     root_name = f"{p['id']}-{p['version']}"
     written = 0
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
@@ -413,6 +413,37 @@ Oculus в сборку не включён: он конфликтует с Dista
 """
 
 
+def add_client_extras(z: zipfile.ZipFile, prefix: str = "overrides/") -> tuple[int, int]:
+    """
+    Кладёт в пак то, что лаунчер сам не скачает: самописный мод и готовый мир.
+
+    Это наши собственные файлы, поэтому их можно распространять свободно —
+    в отличие от 26 модов из 58, которые запрещают перевыкладывание jar-ов
+    и приходят с авторских страниц силами лаунчера.
+
+    Мир разворачивается из world/los-santos.zip прямо в saves/, чтобы после
+    импорта пак сразу запускался в нужный город, без ручного копирования.
+    """
+    jars = 0
+    local = os.path.join(ROOT, "mods-local")
+    if os.path.isdir(local):
+        for name in sorted(os.listdir(local)):
+            if name.endswith(".jar"):
+                z.write(os.path.join(local, name), f"{prefix}mods/{name}")
+                jars += 1
+
+    saves = 0
+    world_zip = os.path.join(ROOT, "world", "los-santos.zip")
+    if os.path.isfile(world_zip):
+        with zipfile.ZipFile(world_zip) as src:
+            for info in src.infolist():
+                if info.is_dir() or os.path.basename(info.filename) == "session.lock":
+                    continue
+                z.writestr(f"{prefix}saves/{info.filename}", src.read(info.filename))
+                saves += 1
+    return jars, saves
+
+
 def build_mrpack(pack: dict, lock: dict) -> str:
     p = pack["pack"]
     index = {
@@ -442,6 +473,8 @@ def build_mrpack(pack: dict, lock: dict) -> str:
         z.writestr("modrinth.index.json", json.dumps(index, indent=2, ensure_ascii=False))
         for src, rel in iter_overrides():
             z.write(src, f"overrides/{rel.replace(os.sep, '/')}")
+        jars, saves = add_client_extras(z)
+        print(f"  .mrpack: самописных модов {jars}, файлов мира {saves}")
         # Необязательные моды — отдельным списком, чтобы лаунчер их не тянул,
         # но пользователь знал, что можно добавить.
         opt = [m for m in lock["mods"] if m.get("optional")]
@@ -455,8 +488,38 @@ def build_mrpack(pack: dict, lock: dict) -> str:
     return out
 
 
+def load_curseforge() -> dict | None:
+    """curseforge.lock.json: пары projectID/fileID, собранные resolve_curseforge.py."""
+    path = os.path.join(ROOT, "curseforge.lock.json")
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
 def build_curseforge(pack: dict, lock: dict) -> str:
+    """
+    Профиль для CurseForge App.
+
+    Если известны CF-идентификаторы всех модов, пишем настоящий manifest.json —
+    тогда CurseForge App скачивает моды сам с авторских страниц, и установщик
+    не нужен. jar-ы в архив не кладутся и не могут: 26 модов из 58 запрещают
+    перевыкладывание своих файлов.
+
+    Если хотя бы один мод не сопоставлен, манифест остаётся пустым. Неполный
+    манифест хуже пустого: CurseForge App молча соберёт профиль без части
+    библиотек, и игра упадёт при запуске. В этом случае профиль ставится
+    установщиком, как и раньше.
+    """
     p = pack["pack"]
+    cf = load_curseforge()
+    by_file = {m["filename"]: m for m in cf["mods"]} if cf else {}
+
+    wanted = [m for m in lock["mods"] if not m.get("optional") and m["side"] != "server"]
+    matched = [by_file[m["filename"]] for m in wanted if m["filename"] in by_file]
+    absent = [m for m in wanted if m["filename"] not in by_file]
+    complete = bool(matched) and not absent
+
     manifest = {
         "minecraft": {
             "version": p["minecraft"],
@@ -467,8 +530,8 @@ def build_curseforge(pack: dict, lock: dict) -> str:
         "name": p["name"],
         "version": p["version"],
         "author": "soloassist5-cmd",
-        # Пусто намеренно: моды берутся с Modrinth установщиком, а не по CF-ID.
-        "files": [],
+        "files": ([{"projectID": m["projectID"], "fileID": m["fileID"], "required": True}
+                   for m in matched] if complete else []),
         "overrides": "overrides",
     }
     out = os.path.join(DIST, f"{p['id']}-{p['version']}-curseforge.zip")
@@ -476,14 +539,25 @@ def build_curseforge(pack: dict, lock: dict) -> str:
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
         z.writestr("modlist.html", modlist_html(pack, lock))
-        z.writestr("overrides/READ-ME-FIRST.txt",
-                   "Этот профиль импортируется в CurseForge App без модов.\n"
-                   "После импорта открой папку профиля (Profile -> Open Folder)\n"
-                   "и запусти установщик из mcpack/install:\n\n"
-                   "  Windows:  .\\install.ps1 -Target client -Path \"<папка профиля>\"\n"
-                   "  Linux:    ./install.sh --target client --path \"<папка профиля>\"\n")
         for src, rel in iter_overrides():
             z.write(src, f"overrides/{rel.replace(os.sep, '/')}")
+        jars, saves = add_client_extras(z)
+        if not complete:
+            z.writestr("overrides/READ-ME-FIRST.txt",
+                       "Этот профиль импортируется в CurseForge App без модов:\n"
+                       "для части модов нет идентификаторов файлов CurseForge.\n\n"
+                       "Моды доливает установщик из архива сборки — распакуй его\n"
+                       "и запусти УСТАНОВИТЬ.bat, указав папку этого профиля\n"
+                       "(в CurseForge App: Profile -> Open Folder).\n\n"
+                       "Либо поставь Prism Launcher или Modrinth App и импортируй\n"
+                       "ls-city-life-1.0.0.mrpack — там всё ставится одним файлом.\n")
+    if complete:
+        print(f"  curseforge: манифест на {len(matched)} модов — CurseForge App "
+              f"скачает их сам")
+    else:
+        print(f"  curseforge: манифест пуст, нет CF-идентификаторов у "
+              f"{len(absent)} модов из {len(wanted)} — профиль ставится установщиком")
+    print(f"  curseforge: самописных модов {jars}, файлов мира {saves}")
     return out
 
 

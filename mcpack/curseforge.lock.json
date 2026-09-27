@@ -1,0 +1,426 @@
+{
+ "mc": "1.20.1",
+ "found": 40,
+ "missing": [
+  "CameraCraft",
+  "Immersive Vehicles",
+  "Immersive Vehicles - Official Content Pack [OCP] - Planes & Cars",
+  "Lightman's Currency",
+  "Chipped",
+  "FramedBlocks",
+  "Macaw's Fences and Walls",
+  "Macaw's Lights and Lamps",
+  "Architectury API",
+  "Balm",
+  "Moonlight Lib",
+  "SuperMartijn642's Config Lib",
+  "SuperMartijn642's Core Lib",
+  "Entity Culling",
+  "FerriteCore",
+  "Memory Leak Fix",
+  "Not Enough Animations",
+  "Simple Voice Chat"
+ ],
+ "mods": [
+  {
+   "slug": "easy-npc-config-ui",
+   "title": "Easy NPC: Config UI",
+   "filename": "easy_npc_config_ui-forge-1.20.1-7.12.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1214728,
+   "fileID": 8840904,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/easy-npc-config-ui"
+  },
+  {
+   "slug": "easy-npc-core",
+   "title": "Easy NPC: Core",
+   "filename": "easy_npc-forge-1.20.1-7.12.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1308987,
+   "fileID": 8840901,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/easy-npc-core"
+  },
+  {
+   "slug": "elite-x-quality-guns",
+   "title": "Elite X Quality Guns (TACZ)",
+   "filename": "Elite X Quality Guns Forge v5.1 - 1.20.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1084662,
+   "fileID": 7952352,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/elite-x-quality-guns"
+  },
+  {
+   "slug": "guard-villagers",
+   "title": "Guard Villagers",
+   "filename": "guardvillagers-1.20.1-1.6.19.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 360203,
+   "fileID": 8719057,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/guard-villagers"
+  },
+  {
+   "slug": "kubejs",
+   "title": "KubeJS",
+   "filename": "kubejs-forge-2001.6.5-build.26.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 238086,
+   "fileID": 8020595,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/kubejs"
+  },
+  {
+   "slug": "more-protectables",
+   "title": "SecurityCraft: More Protectables",
+   "filename": "moreprotectables-1.20.1-1.2.3.10.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1122568,
+   "fileID": 5842423,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/more-protectables"
+  },
+  {
+   "slug": "security-craft",
+   "title": "SecurityCraft",
+   "filename": "[1.20.1] SecurityCraft v1.10.2.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 64760,
+   "fileID": 8336490,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/security-craft"
+  },
+  {
+   "slug": "timeless-and-classics-zero",
+   "title": "[TaCZ] Timeless and Classics Zero",
+   "filename": "tacz-1.20.1-1.1.8-hotfix.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1028108,
+   "fileID": 8141310,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/timeless-and-classics-zero"
+  },
+  {
+   "slug": "traffic-control-+-roads-mod-by-teerth",
+   "title": "Traffic Control + Roads (City) mod by Teerth",
+   "filename": "traffic_control_roadsmodbyteerth-5.5.0-forge-1.20.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 486840,
+   "fileID": 6922011,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/traffic-control-roads-mod-by-teerth"
+  },
+  {
+   "slug": "decorative-blocks",
+   "title": "Decorative Blocks",
+   "filename": "decorative_blocks-forge-1.20.1-4.1.3.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 362528,
+   "fileID": 5089406,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/decorative-blocks"
+  },
+  {
+   "slug": "macaws-bridges",
+   "title": "Macaw's Bridges",
+   "filename": "mcw-bridges-3.1.2-mc1.20.1forge.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 351725,
+   "fileID": 7627954,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/macaws-bridges"
+  },
+  {
+   "slug": "macaws-doors",
+   "title": "Macaw's Doors",
+   "filename": "mcw-doors-1.1.5-mc1.20.1forge.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 378646,
+   "fileID": 7618714,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/macaws-doors"
+  },
+  {
+   "slug": "macaws-paths-and-pavings",
+   "title": "Macaw's Paths and Pavings",
+   "filename": "mcw-mcwpaths-1.1.1-mc1.20.1forge.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 629153,
+   "fileID": 7029554,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/macaws-paths-and-pavings"
+  },
+  {
+   "slug": "macaws-roofs",
+   "title": "Macaw's Roofs",
+   "filename": "mcw-roofs-2.3.2-mc1.20.1forge.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 352039,
+   "fileID": 6494466,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/macaws-roofs"
+  },
+  {
+   "slug": "macaws-windows",
+   "title": "Macaw's Windows",
+   "filename": "mcw-mcwwindows-2.4.2-mc1.20.1forge.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 363569,
+   "fileID": 7317714,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/macaws-windows"
+  },
+  {
+   "slug": "rechiseled",
+   "title": "Rechiseled",
+   "filename": "rechiseled-1.2.6-forge-mc1.20.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 558998,
+   "fileID": 8875661,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/rechiseled"
+  },
+  {
+   "slug": "supplementaries",
+   "title": "Supplementaries",
+   "filename": "supplementaries-1.20-3.1.43-forge.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 412082,
+   "fileID": 7884611,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/supplementaries"
+  },
+  {
+   "slug": "athena-ctm",
+   "title": "Athena",
+   "filename": "athena-forge-1.20.1-3.1.2.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 841890,
+   "fileID": 5176879,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/athena"
+  },
+  {
+   "slug": "fusion-connected-textures",
+   "title": "Fusion (Connected Textures)",
+   "filename": "fusion-1.3.15b-forge-mc1.20.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 854949,
+   "fileID": 8942772,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/fusion-connected-textures"
+  },
+  {
+   "slug": "mezzconfig",
+   "title": "MezzConfig",
+   "filename": "mezz_config-1.20.1-forge-0.6.5.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1689768,
+   "fileID": 8987763,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/mezzconfig"
+  },
+  {
+   "slug": "resourceful-lib",
+   "title": "Resourceful Lib",
+   "filename": "resourcefullib-forge-1.20.1-2.1.29.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 570073,
+   "fileID": 5659871,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/resourceful-lib"
+  },
+  {
+   "slug": "rhino",
+   "title": "Rhino",
+   "filename": "rhino-forge-2001.2.3-build.10.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 416294,
+   "fileID": 6186971,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/rhino"
+  },
+  {
+   "slug": "tct-core",
+   "title": "TCT Core",
+   "filename": "tctcore-2.3-forge-1.20.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1060479,
+   "fileID": 8623149,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/tct-core"
+  },
+  {
+   "slug": "clumps",
+   "title": "Clumps",
+   "filename": "Clumps-forge-1.20.1-12.0.0.4.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 256717,
+   "fileID": 5278538,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/clumps"
+  },
+  {
+   "slug": "distanthorizons",
+   "title": "Distant Horizons",
+   "filename": "DistantHorizons-3.3.2-1.20.1-fabric-forge.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 508933,
+   "fileID": 8943819,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/distant-horizons"
+  },
+  {
+   "slug": "embeddium",
+   "title": "Embeddium",
+   "filename": "embeddium-0.3.31+mc1.20.1.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 908741,
+   "fileID": 5681725,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/embeddium"
+  },
+  {
+   "slug": "modernfix",
+   "title": "ModernFix",
+   "filename": "modernfix-forge-5.27.83+mc1.20.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 790626,
+   "fileID": 8774721,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/modernfix"
+  },
+  {
+   "slug": "oculus",
+   "title": "Oculus",
+   "filename": "oculus-mc1.20.1-1.8.0.jar",
+   "side": "client",
+   "optional": true,
+   "projectID": 581495,
+   "fileID": 6020952,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/oculus"
+  },
+  {
+   "slug": "appleskin",
+   "title": "AppleSkin",
+   "filename": "appleskin-forge-mc1.20.1-2.5.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 248787,
+   "fileID": 4770828,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/appleskin"
+  },
+  {
+   "slug": "corpse",
+   "title": "Corpse",
+   "filename": "corpse-forge-1.20.1-1.0.23.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 316582,
+   "fileID": 7018272,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/corpse"
+  },
+  {
+   "slug": "first-person-model",
+   "title": "First-person Model",
+   "filename": "firstperson-forge-2.7.3-mc1.20.1.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 333287,
+   "fileID": 8990468,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/first-person-model"
+  },
+  {
+   "slug": "jade",
+   "title": "Jade 🔍",
+   "filename": "Jade-1.20.1-Forge-11.13.3.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 324717,
+   "fileID": 8479276,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/jade"
+  },
+  {
+   "slug": "jei",
+   "title": "Just Enough Items (JEI)",
+   "filename": "jei-1.20.1-forge-15.62.0.216.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 238222,
+   "fileID": 8964933,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/jei"
+  },
+  {
+   "slug": "mouse-tweaks",
+   "title": "Mouse Tweaks",
+   "filename": "MouseTweaks-forge-mc1.20.1-2.25.1.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 60089,
+   "fileID": 5338457,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/mouse-tweaks"
+  },
+  {
+   "slug": "polymorph",
+   "title": "Polymorph",
+   "filename": "polymorph-forge-0.49.11+1.20.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 388800,
+   "fileID": 8854504,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/polymorph"
+  },
+  {
+   "slug": "sound-physics-remastered",
+   "title": "Sound Physics Remastered",
+   "filename": "sound-physics-remastered-forge-1.20.1-1.4.10.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 535489,
+   "fileID": 6352920,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/sound-physics-remastered"
+  },
+  {
+   "slug": "waystones",
+   "title": "Waystones",
+   "filename": "waystones-forge-1.20.1-14.1.21.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 245755,
+   "fileID": 8849482,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/waystones"
+  },
+  {
+   "slug": "worldedit",
+   "title": "WorldEdit",
+   "filename": "worldedit-mod-7.2.15.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 225608,
+   "fileID": 4586218,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/worldedit"
+  },
+  {
+   "slug": "xaeros-minimap",
+   "title": "Xaero's Minimap",
+   "filename": "xaerominimap-forge-1.20.1-26.5.0.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 263420,
+   "fileID": 8849836,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/xaeros-minimap"
+  },
+  {
+   "slug": "xaeros-world-map",
+   "title": "Xaero's World Map",
+   "filename": "xaeroworldmap-forge-1.20.1-1.46.0.jar",
+   "side": "client",
+   "optional": false,
+   "projectID": 317780,
+   "fileID": 8849965,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/xaeros-world-map"
+  }
+ ]
+}

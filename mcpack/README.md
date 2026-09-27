@@ -36,28 +36,23 @@
 | Modrinth App, Prism Launcher, MultiMC, ATLauncher | [docs/modrinth-prism.md](docs/modrinth-prism.md) |
 | Сервер для игры с друзьями (Radmin VPN) | [docs/server-radmin.md](docs/server-radmin.md) |
 
-Коротко для Windows:
+Короче всего — один файл `dist/ls-city-life-1.0.0.mrpack` (он же кнопкой на
+[сайте сборки](https://ls-city-life.vercel.app)). Внутри готовый город, конфиги
+и самописный мод; Forge и остальные моды лаунчер скачивает сам. Prism Launcher —
+**Add Instance → Import**, Modrinth App — **Create → From file**,
+ATLauncher — **Add Pack → Import**. Дальше Play, и всё.
 
-```powershell
-cd mcpack\install
-powershell -ExecutionPolicy Bypass -File install.ps1 -Target client -Path "$env:APPDATA\.minecraft-ls-city"
-```
-
-Коротко для Linux и macOS:
-
-```bash
-cd mcpack/install
-./install.sh --target client --path ~/.minecraft-ls-city
-```
-
-Установщик скачает моды с Modrinth, сверит SHA-512, разложит конфиги и
-распакует готовый мир. Потом в лаунчере выбираешь Forge 1.20.1-47.4.23 и
-указываешь этот каталог как папку игры.
+CurseForge App, Legacy Launcher и TLauncher `.mrpack` не понимают. Для них есть
+архив сборки: распаковать и запустить `УСТАНОВИТЬ.bat` (Linux и macOS —
+`install/install.sh --target client --path ~/.minecraft-ls-city`). Установщик
+скачает моды с Modrinth, сверит SHA-512, разложит конфиги и распакует город.
 
 Файлы модов в репозитории не лежат: в нём только ссылки и хэши
-(`mods.lock.json`), а скачивание делает установщик. Причина не только в весе:
-21 мод из 58 распространяется под All Rights Reserved, и раздавать их файлы
-лицензия запрещает. Самописный мод `citylife` лежит в `mods-local/` — он наш.
+(`mods.lock.json`). Причина не в весе: **26 модов из 58** запрещают
+перевыкладывание своих файлов — 21 под All Rights Reserved, остальные под
+защитными лицензиями авторов. Поэтому моды всегда качаются с авторских
+страниц, а в паках лежит только наше: город, конфиги и мод `citylife`
+из `mods-local/`.
 
 Если моды уже скачаны, повторная установка идёт без интернета: положи jar-ы в
 `mods-bundle/` или укажи `--mods-dir`, и установщик скопирует их, сверив хэши.

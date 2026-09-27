@@ -137,17 +137,26 @@ def main() -> int:
 
     # Таблички: у свободных участков должны быть блок-сущности с текстом.
     signs = 0
+    bad_sign_ids: set[str] = set()
     sale_signs = 0
     for cx in range(0, 8):
         for cz in range(0, 8):
             for entity in reader.block_entities(cx * 16, cz * 16):
                 if "sign" in entity.get("id", ""):
                     signs += 1
+                    # Тип block entity обязан быть minecraft:sign: с именем блока
+                    # игра выбрасывает запись при загрузке и текст пропадает.
+                    if entity.get("id") != "minecraft:sign":
+                        bad_sign_ids.add(entity.get("id"))
                     text = " ".join(entity.get("front_text", {}).get("messages", []))
                     if "ПРОДА" in text:
                         sale_signs += 1
     print(f"  {'OK ' if signs else 'НЕТ'} табличек в 64 чанках центра: {signs} "
           f"(из них «продаётся»: {sale_signs})")
+    if bad_sign_ids:
+        print(f"  НЕТ у табличек неверный тип block entity: {sorted(bad_sign_ids)} — "
+              f"игра выбросит их текст")
+        failures += 1
     if not signs:
         failures += 1
 
