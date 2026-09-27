@@ -31,6 +31,8 @@ import gen_datapack as G                 # noqa: E402
 
 SEED = 20260927
 REPO = "https://github.com/soloassist5-cmd/botfp/tree/claude/zealous-hawking-gsl0y8/mcpack"
+ARCHIVE_NAME = "ls-city-life-1.0.0.zip"
+ARCHIVE_URL = f"/download/{ARCHIVE_NAME}"
 
 KIND_RU = {
     "empty": "Свободные участки", "house": "Частные дома", "shop": "Магазины",
@@ -98,8 +100,10 @@ def esc(text: str) -> str:
     return html.escape(str(text), quote=True)
 
 
-def code_block(text: str) -> str:
-    return (f'<div class="code"><button class="copy" type="button">копировать</button>'
+def code_block(text: str, lang: str = "команда") -> str:
+    return (f'<div class="code"><div class="code-bar">'
+            f'<span class="code-lang">{esc(lang)}</span>'
+            f'<button class="copy" type="button">копировать</button></div>'
             f'<code>{esc(text)}</code></div>')
 
 
@@ -111,6 +115,9 @@ def main() -> int:
 
     city = P.build_plan(SEED)
     counts = Counter(lot.kind for lot in city.lots)
+    archive_path = os.path.join(PACK, "dist", "ls-city-life-1.0.0-full.zip")
+    archive_mb = (f"{os.path.getsize(archive_path) / 1048576:.1f}".replace(".", ",")
+                  if os.path.exists(archive_path) else "9,4")
     map_svg, pins = build_svg()
 
     mc = pack["minecraft"]
@@ -265,26 +272,29 @@ def main() -> int:
          f"Именно 17: на 21 Forge {mc} работает нестабильно. Adoptium Temurin 17, x64.",
          None),
         ("Шаг 2", "Скачать сборку",
-         "Архив на 9 МБ: установщик, готовый мир, конфиги и инструкции. "
-         "Файлы модов не входят — их скачивает установщик.", None),
+         f"Архив на {archive_mb} МБ: установщик, готовый мир, конфиги и инструкции. "
+         f"Файлы модов не входят — их скачивает установщик.", None),
         ("Шаг 3", "Запустить установщик",
          f"Скачает {download_mb} МБ модов, сверит SHA-512, разложит конфиги и "
          f"распакует город. Запуск повторно докачивает только недостающее.",
-         'powershell -ExecutionPolicy Bypass -File install.ps1 '
-         '-Target client -Path "C:\\Games\\ls-city-life"'),
+         ('powershell -ExecutionPolicy Bypass -File install.ps1 '
+          '-Target client -Path "C:\\Games\\ls-city-life"', "PowerShell")),
         ("Шаг 4", "Настроить профиль в лаунчере",
          f"Версия Forge {mc}-{forge}, папка игры — та, что указал установщику, "
-         f"память 6 ГБ.", "-Xmx6G"),
+         f"память 6 ГБ.", ("-Xmx6G", "аргументы JVM")),
         ("Шаг 5", "Зайти в мир Los Santos",
          "Мир уже в списке одиночных. Появишься на тротуаре у автовокзала.", None),
         ("Шаг 6", "Заселить город",
          "Один раз выполнить в чате — расставит всех жителей. Команду можно "
-         "повторять, если кого-то потеряли.", "/function citylife:npc/spawn_all"),
+         "повторять, если кого-то потеряли.", ("/function citylife:npc/spawn_all", "чат в игре")),
     ]
     start_html = "".join(
         f'<article class="start-step reveal"><div class="start-n">{esc(number)}</div>'
         f'<h3>{esc(title)}</h3><p>{esc(text)}</p>'
-        f'{code_block(command) if command else ""}</article>'
+        + (f'<a class="btn btn-ghost step-dl" href="{ARCHIVE_URL}" download>'
+           f'Скачать · {archive_mb} МБ</a>' if number == "Шаг 2" else "")
+        + (code_block(*command) if command else "")
+        + '</article>'
         for number, title, text, command in steps
     )
 
@@ -359,8 +369,9 @@ def main() -> int:
       у каждого свой товар. Город уже построен — {empty_share}% участков оставлены
       под твои постройки.</p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="#start">Как поставить</a>
-      <a class="btn btn-ghost" href="{REPO}" target="_blank" rel="noopener">Исходники и архив</a>
+      <a class="btn btn-primary" href="{ARCHIVE_URL}" download>Скачать сборку · {archive_mb} МБ</a>
+      <a class="btn btn-ghost" href="#start">Как поставить</a>
+      <a class="btn btn-ghost" href="{REPO}" target="_blank" rel="noopener">Исходники</a>
     </div>
     <div class="hero-stats">{stats_html}</div>
   </div>
@@ -517,7 +528,19 @@ def main() -> int:
     for name in ("styles.css", "app.js"):
         shutil.copy2(os.path.join(HERE, name), os.path.join(dist, name))
 
-    size = sum(os.path.getsize(os.path.join(dist, n)) for n in os.listdir(dist))
+    # Архив сборки: кладём рядом со страницей, чтобы кнопка скачивания работала.
+    archive_src = os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-full.zip")
+    if os.path.exists(archive_src):
+        download_dir = os.path.join(dist, "download")
+        os.makedirs(download_dir, exist_ok=True)
+        shutil.copy2(archive_src, os.path.join(download_dir, ARCHIVE_NAME))
+        print(f"  архив: download/{ARCHIVE_NAME} "
+              f"({os.path.getsize(archive_src) / 1048576:.1f} МБ)")
+    else:
+        print("  ! архив не найден, кнопка скачивания будет вести в репозиторий")
+
+    size = sum(os.path.getsize(os.path.join(root, n))
+               for root, _dirs, names in os.walk(dist) for n in names)
     print(f"Страница собрана: {dist}")
     print(f"  index.html {os.path.getsize(os.path.join(dist, 'index.html')) / 1024:.0f} КБ, "
           f"всего {size / 1024:.0f} КБ")
