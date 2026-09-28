@@ -564,11 +564,11 @@ def main() -> int:
           <li>Prism Launcher</li><li>Modrinth App</li><li>ATLauncher</li>
           <li>CurseForge App</li><li>Minecraft Launcher</li>
         </ul>
+        <p class="dl-hint">Prism, Modrinth App и ATLauncher ставят пак одним импортом.
+          CurseForge App и официальный лаунчер формат .mrpack не читают — им подойдёт
+          архив из соседней карточки, он ставится так же.</p>
         <a class="btn btn-primary dl-go" href="{mrpack_href}" download>
           Пак .mrpack · {mrpack_mb} МБ<span class="dl-arrow">↓</span></a>
-        <p class="dl-hint">Импорт одним файлом в Prism, Modrinth App и ATLauncher.
-          Для CurseForge App и официального лаунчера —
-          <a href="{archive_href}" download>архив с установщиком · {archive_mb} МБ</a>.</p>
       </article>
       <article class="dl-card" style="--accent:#ff7a45">
         <div class="dl-badge">Pirate</div>
@@ -578,11 +578,10 @@ def main() -> int:
           <li>TLauncher</li><li>Legacy Launcher</li><li>SKlauncher</li>
           <li>PollyMC</li><li>Prism в офлайн-режиме</li>
         </ul>
+        <p class="dl-hint">Распаковать и запустить УСТАНОВИТЬ.bat — он скачает моды,
+          разложит конфиги и город сам. Ни команд, ни настроек.</p>
         <a class="btn btn-primary dl-go" href="{archive_href}" download>
           Архив · {archive_mb} МБ<span class="dl-arrow">↓</span></a>
-        <p class="dl-hint">Распаковать и запустить УСТАНОВИТЬ.bat — он всё разложит сам.
-          PollyMC и Prism в офлайн-режиме читают
-          <a href="{mrpack_href}" download>пак .mrpack · {mrpack_mb} МБ</a>.</p>
       </article>
     </div>
     <p class="dl-note">Ни в один файл моды не входят: 26 модов из {lock["mod_count"]} запрещают

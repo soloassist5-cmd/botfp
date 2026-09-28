@@ -890,7 +890,7 @@ footer {
 .dl-go:hover .dl-arrow { transform: translateY(3px); }
 
 .dl-hint {
-  margin: 12px 0 0;
+  margin: 0 0 18px;
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-mute);
