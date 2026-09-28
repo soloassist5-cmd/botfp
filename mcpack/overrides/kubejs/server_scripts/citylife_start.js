@@ -17,7 +17,8 @@ PlayerEvents.loggedIn(event => {
 
   player.give('citylife:smartphone')
   player.give('citylife:sim_card')
-  player.give('lightmanscurrency:coin_copper 24')
+  player.give('citylife:banknote_100 5')
+  player.give('citylife:coin_10 8')
   player.give('minecraft:cooked_beef 8')
 
   // Книга-гид лежит в датапаке города, чтобы текст был в одном месте.
@@ -26,6 +27,6 @@ PlayerEvents.loggedIn(event => {
   )
 
   player.tell(Text.gold('Добро пожаловать в Лос-Сантос.'))
-  player.tell(Text.gray('В инвентаре: телефон, немного монет и книга-гид.'))
+  player.tell(Text.gray('В инвентаре: телефон, 580 ₽ наличными и книга-гид.'))
   player.tell(Text.gray('Цели города — в меню достижений. Подработка — команда /work.'))
 })

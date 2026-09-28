@@ -1,11 +1,11 @@
 {
-  "generated": "2026-09-27T18:45:53Z",
+  "generated": "2026-09-28T18:53:15Z",
   "pack_version": "1.0.0",
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 58,
-  "total_size": 359062303,
+  "mod_count": 54,
+  "total_size": 270434071,
   "mods": [
     {
       "slug": "cameracraft",
@@ -123,52 +123,6 @@
       "page": "https://modrinth.com/mod/guard-villagers"
     },
     {
-      "slug": "immersive-vehicles",
-      "title": "Immersive Vehicles",
-      "project_id": "BCzBuhJ5",
-      "version_id": "xBHmZvmC",
-      "version_number": "24.0.0-1.20.1",
-      "version_type": "release",
-      "filename": "Immersive Vehicles-1.20.1-24.0.0.jar",
-      "url": "https://cdn.modrinth.com/data/BCzBuhJ5/versions/xBHmZvmC/Immersive%20Vehicles-1.20.1-24.0.0.jar",
-      "size": 6254897,
-      "sha1": "efe6962bf0304eb7ac234daa75551bf8e30ef3b7",
-      "sha512": "9f5acbef86883347a9a14f28efdbff29e8817e131bf2ef99897a90842f169dbd4a9428d35480fded1d8a5f0e4931d5711877244782d5cab59b5cbd903a960199",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "core",
-      "note": "Автомобили с физикой, заправка, ремонт",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/immersive-vehicles"
-    },
-    {
-      "slug": "immersive-vehicles-official-content-pack",
-      "title": "Immersive Vehicles - Official Content Pack [OCP] - Planes & Cars",
-      "project_id": "C7TiPPJz",
-      "version_id": "PNN5h914",
-      "version_number": "29",
-      "version_type": "release",
-      "filename": "MTS Official Pack-1.20.1-V29.jar",
-      "url": "https://cdn.modrinth.com/data/C7TiPPJz/versions/PNN5h914/MTS%20Official%20Pack-1.20.1-V29.jar",
-      "size": 70997298,
-      "sha1": "9307186fe7f109f0fcc8397bb4457cb956822b88",
-      "sha512": "b7af0f74b3ad2eed9ec8100ec84e27781e43717f470dee5ecdee9cc8c572468179e2f05425315e04cce839f6f324122e83dd092c6d7e7967c03922d56086a700",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "core",
-      "note": "Официальный пак машин для Immersive Vehicles",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/immersive-vehicles-official-content-pack"
-    },
-    {
       "slug": "kubejs",
       "title": "KubeJS",
       "project_id": "umyGl7zF",
@@ -190,29 +144,6 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/kubejs"
-    },
-    {
-      "slug": "lightmans-currency",
-      "title": "Lightman's Currency",
-      "project_id": "wvMc8AJt",
-      "version_id": "eAALa47O",
-      "version_number": "1.20.1-2.3.0.5",
-      "version_type": "release",
-      "filename": "lightmanscurrency-1.20.1-2.3.0.5.jar",
-      "url": "https://cdn.modrinth.com/data/wvMc8AJt/versions/eAALa47O/lightmanscurrency-1.20.1-2.3.0.5.jar",
-      "size": 10445393,
-      "sha1": "e70e43c28fd21f1ff4a484176625afd57ecec1cb",
-      "sha512": "acbfde00934ada4d66409fadd83f9b3ef8363eafd074593cd40499602b97fc223e70392c30104c4c2a5201be16770de79426ccfed01494c9819c0197559ca1da",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "core",
-      "note": "Экономика: монеты, банкоматы, счета, карты, торговые автоматы, налоги",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/lightmans-currency"
     },
     {
       "slug": "more-protectables",
@@ -305,6 +236,29 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/traffic-control-+-roads-mod-by-teerth"
+    },
+    {
+      "slug": "ultimate-car-mod",
+      "title": "Ultimate Car Mod",
+      "project_id": "DCPUF5Rv",
+      "version_id": "ImfnHW7F",
+      "version_number": "forge-1.20.1-1.0.42",
+      "version_type": "release",
+      "filename": "car-forge-1.20.1-1.0.42.jar",
+      "url": "https://cdn.modrinth.com/data/DCPUF5Rv/versions/ImfnHW7F/car-forge-1.20.1-1.0.42.jar",
+      "size": 2666112,
+      "sha1": "f9aecfb74bc6bc9ce8a7ff4d9b6118091bfb1ecc",
+      "sha512": "4bb1939fcabc23c3139b0dc34997d587920aceab3640eaf368f7fd00721d69dcfb286578969078fffba498cf38b7d592196eb705d2bcc3953ddadb103993e169",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "core",
+      "note": "Машины целиком, канистры с топливом, без сборки по частям",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/ultimate-car-mod"
     },
     {
       "slug": "chipped",
@@ -1066,29 +1020,6 @@
       "page": "https://modrinth.com/mod/corpse"
     },
     {
-      "slug": "first-person-model",
-      "title": "First-person Model",
-      "project_id": "H5XMjpHi",
-      "version_id": "kxFDUOmS",
-      "version_number": "2.7.3",
-      "version_type": "release",
-      "filename": "firstperson-forge-2.7.3-mc1.20.1.jar",
-      "url": "https://cdn.modrinth.com/data/H5XMjpHi/versions/kxFDUOmS/firstperson-forge-2.7.3-mc1.20.1.jar",
-      "size": 1726107,
-      "sha1": "229a85332b026a027e960919a263742f1eafbbc2",
-      "sha512": "ffa51fac726c907ff70f77ce3abdeee3cd5b5e6110a89013ec0d4c4749fa73183c06f5828f159ae4dfa6252bb0d52ab2d6c6ad0941e996823b2795de4229e4ad",
-      "side": "client",
-      "env": {
-        "client": "required",
-        "server": "unsupported"
-      },
-      "group": "qol",
-      "note": "Видно своё тело от первого лица",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/first-person-model"
-    },
-    {
       "slug": "jade",
       "title": "Jade 🔍",
       "project_id": "nvQzSEkH",
@@ -1156,29 +1087,6 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/mouse-tweaks"
-    },
-    {
-      "slug": "not-enough-animations",
-      "title": "Not Enough Animations",
-      "project_id": "MPCX6s5C",
-      "version_id": "kGjMleOz",
-      "version_number": "1.12.6",
-      "version_type": "release",
-      "filename": "notenoughanimations-forge-1.12.6-mc1.20.1.jar",
-      "url": "https://cdn.modrinth.com/data/MPCX6s5C/versions/kGjMleOz/notenoughanimations-forge-1.12.6-mc1.20.1.jar",
-      "size": 1870649,
-      "sha1": "993252c9946e22aa4ba0b28cb5b81183d5bcf50d",
-      "sha512": "deb10b44e923a5ead4379651328f28c7e7aa862f825f0938ffc4d641119671fedeb5129161553618efb7e4b578d23393c225ade7ce486d1e6e36de256b2ec793",
-      "side": "client",
-      "env": {
-        "client": "required",
-        "server": "unsupported"
-      },
-      "group": "qol",
-      "note": "Анимации тела от третьего лица",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/not-enough-animations"
     },
     {
       "slug": "polymorph",

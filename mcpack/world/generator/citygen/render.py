@@ -10,7 +10,7 @@ from . import blocks as B
 from .canvas import RegionCanvas
 from .plan import (CELL, CITY_Y, FREEWAY_HALF, FREEWAY_X, FREEWAY_Y, IX_MAX, IX_MIN,
                    IZ_MAX, IZ_MIN, METRO_Y, PIER_X_FROM, PIER_X_TO, PIER_Z, Plan,
-                   SIDEWALK, is_avenue, road_half)
+                   SIDEWALK, is_avenue, road_half, street_name)
 from .terrain import SEA_LEVEL, Terrain
 
 ROAD_X_MIN = IX_MIN * CELL
@@ -142,6 +142,40 @@ def _intersections(canvas: RegionCanvas) -> None:
                     lz = cz + sz * (hz + 2)
                     canvas.fill(lx, CITY_Y + 1, lz, lx, CITY_Y + 4, lz, B.CONCRETE_BLACK)
                     canvas.set(lx, CITY_Y + 5, lz, B.LAMP)
+            _street_signs(canvas, ix, iz, cx, cz, hx, hz)
+
+
+def _street_signs(canvas: RegionCanvas, ix: int, iz: int,
+                  cx: int, cz: int, hx: int, hz: int) -> None:
+    """Указатели с названиями улиц на северо-западном фонаре перекрёстка.
+
+    Табличка называет ту улицу, которую пересекаешь: едешь вдоль X —
+    читаешь имя поперечной линии, и наоборот. Как на настоящем перекрёстке.
+    """
+    lx = cx - (hx + 2)
+    lz = cz - (hz + 2)
+    y = CITY_Y + 4
+    glow = is_avenue(ix) or is_avenue(iz)
+    canvas.sign(lx - 1, y, lz, B.SIGN_WALL.format(f="west"),
+                _sign_lines(street_name(ix, vertical=True)),
+                color="white", glowing=glow)
+    canvas.sign(lx, y, lz - 1, B.SIGN_WALL.format(f="north"),
+                _sign_lines(street_name(iz, vertical=False)),
+                color="white", glowing=glow)
+
+
+def _sign_lines(name: str) -> list[str]:
+    """Название на табличке: не больше 15 символов в строке."""
+    words = name.split()
+    lines: list[str] = [""]
+    for word in words:
+        if not lines[-1]:
+            lines[-1] = word
+        elif len(lines[-1]) + 1 + len(word) <= 15:
+            lines[-1] += " " + word
+        else:
+            lines.append(word)
+    return lines[:4]
 
 
 # ---------------------------------------------------------------------------
@@ -219,7 +253,7 @@ def draw_pier(canvas: RegionCanvas, terrain: Terrain) -> None:
     canvas.fill(cafe_x1, deck + 1, PIER_Z, cafe_x1, deck + 2, PIER_Z, B.AIR)
     canvas.set(cafe_x0 + 2, deck + 1, PIER_Z, B.BARREL)
     canvas.set(cafe_x0 + 3, deck + 1, PIER_Z, B.slab("spruce", top=False))
-    canvas.set(cafe_x0 + 5, deck + 4, PIER_Z, B.GLOWSTONE)
+    canvas.set(cafe_x0 + 5, deck + 4, PIER_Z, B.LIGHT)
     canvas.sign(cafe_x1, deck + 4, PIER_Z, B.SIGN_WALL.format(f="east"),
                 ["КАФЕ", "НА ПИРСЕ"], color="blue", glowing=True)
 
@@ -294,7 +328,7 @@ def draw_bus_stop(canvas: RegionCanvas) -> None:
             canvas.fill(px, CITY_Y + 1, pz, px, CITY_Y + 3, pz, B.IRON_BARS)
     canvas.fill(sx - 2, CITY_Y + 4, sz - 5, sx + 2, CITY_Y + 4, sz + 5, B.CONCRETE_BLUE)
     canvas.fill(sx - 2, CITY_Y + 3, sz - 5, sx - 2, CITY_Y + 3, sz + 5, B.GLASS)
-    canvas.set(sx, CITY_Y + 3, sz, B.GLOWSTONE)
+    canvas.set(sx, CITY_Y + 3, sz, B.LIGHT)
     # Лавка.
     for z in range(sz - 3, sz + 4):
         canvas.set(sx - 1, CITY_Y + 1, z, B.stairs("spruce", facing="east"))

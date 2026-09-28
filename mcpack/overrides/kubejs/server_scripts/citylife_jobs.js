@@ -11,13 +11,13 @@ const COOLDOWN_MS = 5 * 60 * 1000
 const LAST_WORK = 'citylife_last_work'
 
 const JOBS = [
-  { text: 'Разнёс заказы по центру', min: 40, max: 70 },
-  { text: 'Подменил курьера на смене', min: 45, max: 80 },
-  { text: 'Помог на стройке', min: 60, max: 110 },
-  { text: 'Развёз пассажиров на такси', min: 55, max: 95 },
-  { text: 'Разгрузил фуру на складе', min: 65, max: 120 },
-  { text: 'Отработал смену в закусочной', min: 35, max: 65 },
-  { text: 'Помыл витрины в торговом центре', min: 30, max: 60 },
+  { text: 'Разнёс заказы по центру', min: 400, max: 700 },
+  { text: 'Подменил курьера на смене', min: 450, max: 800 },
+  { text: 'Помог на стройке', min: 600, max: 1100 },
+  { text: 'Развёз пассажиров на такси', min: 550, max: 950 },
+  { text: 'Разгрузил фуру на складе', min: 650, max: 1200 },
+  { text: 'Отработал смену в закусочной', min: 350, max: 650 },
+  { text: 'Помыл витрины в торговом центре', min: 300, max: 600 },
 ]
 
 ServerEvents.commandRegistry(event => {
@@ -44,7 +44,7 @@ ServerEvents.commandRegistry(event => {
 
       player.persistentData.putLong(LAST_WORK, now)
       player.server.runCommandSilent(`citylife money give ${player.username} ${pay}`)
-      player.tell(Text.green(`${job.text}. На счёт зачислено ${pay}.`))
+      player.tell(Text.green(`${job.text}. На счёт зачислено ${pay} ₽.`))
       player.tell(Text.gray('Баланс — в приложении «Банк» или командой /citylife balance.'))
       return 1
     })

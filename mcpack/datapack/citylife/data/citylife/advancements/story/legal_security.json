@@ -18,13 +18,35 @@
     "camera": {
       "trigger": "minecraft:placed_block",
       "conditions": {
-        "block": "securitycraft:security_camera"
+        "location": [
+          {
+            "condition": "minecraft:location_check",
+            "predicate": {
+              "block": {
+                "blocks": [
+                  "securitycraft:security_camera"
+                ]
+              }
+            }
+          }
+        ]
       }
     },
     "keypad": {
       "trigger": "minecraft:placed_block",
       "conditions": {
-        "block": "securitycraft:keypad"
+        "location": [
+          {
+            "condition": "minecraft:location_check",
+            "predicate": {
+              "block": {
+                "blocks": [
+                  "securitycraft:keypad"
+                ]
+              }
+            }
+          }
+        ]
       }
     }
   },

@@ -45,6 +45,32 @@ def is_avenue(index: int) -> bool:
     return index % 3 == 0
 
 
+# Названия улиц.
+#
+# По городу без названий ходить неприятно: все перекрёстки на одно лицо.
+# Проспекты (каждая третья линия) носят имена, остальные — номера, как
+# в настоящем Лос-Анджелесе: улицы с номерами, бульвары с именами.
+AVENUE_X = {
+    -6: "ОКЕАНСКИЙ ПР.", -3: "ПРОСПЕКТ ПАЛЬМ", 0: "ЦЕНТРАЛЬНЫЙ ПР.",
+    3: "ПРОСПЕКТ МЕЧТЫ", 6: "ВОСТОЧНЫЙ ПР.", 9: "ПРОМЗОНА",
+}
+AVENUE_Z = {
+    -6: "СЕВЕРНЫЙ Б-Р", -3: "БУЛЬВАР ЗАКАТА", 0: "БУЛЬВАР ЗВЁЗД",
+    3: "ПАЛЬМОВЫЙ Б-Р", 6: "ЮЖНЫЙ Б-Р", 9: "ПОРТОВЫЙ Б-Р",
+}
+
+
+def street_name(index: int, vertical: bool) -> str:
+    """Название линии сетки: проспект по имени, остальные — по номеру."""
+    if is_avenue(index):
+        names = AVENUE_X if vertical else AVENUE_Z
+        known = names.get(index)
+        if known:
+            return known
+    number = index - (IX_MIN if vertical else IZ_MIN) + 1
+    return f"{number}-Я УЛИЦА" if vertical else f"{number}-Й ПРОЕЗД"
+
+
 def cell_rect(ix: int, iz: int) -> tuple[int, int, int, int]:
     """Застраиваемый прямоугольник квартала (без улиц и тротуаров)."""
     x0 = ix * CELL + road_half(ix) + 1 + SIDEWALK
@@ -94,6 +120,9 @@ class Lot:
     facing: str
     seed: int
     label: str = ""
+    # Для лавок: кто стоит за прилавком. Вывеска над дверью берётся отсюда же.
+    shop_role: str = ""
+    shop_title: str = ""
 
     @property
     def width(self) -> int:
@@ -193,7 +222,7 @@ NPC_ROLES = {
     "dealership": [("car_dealer", "Автодилер")],
     "city_hall": [("clerk", "Чиновник"), ("realtor", "Риелтор")],
     "diner": [("cook", "Повар")],
-    "shop": [("shopkeeper", "Продавец")],
+    "shop": [("shopkeeper", "Продавец")],  # заменяется на профиль лавки, см. SHOP_KINDS
     "club": [("bartender", "Бармен"), ("security", "Охранник")],
     "gas": [("fuel_seller", "Заправщик")],
     "fire_station": [("firefighter", "Пожарный")],
@@ -201,6 +230,33 @@ NPC_ROLES = {
     "construction": [("builder", "Бригадир")],
     "apartment": [("realtor", "Управдом")],
 }
+
+
+# Профили уличных лавок.
+#
+# Магазинов в городе больше полусотни, и если у всех одинаковый продавец
+# с одинаковым прилавком, улица выглядит декорацией. Поэтому каждой лавке
+# достаётся свой профиль: вывеска над дверью и ассортимент внутри.
+SHOP_KINDS = [
+    ("trader_food", "Продавец продуктов", "ПРОДУКТЫ", 4),
+    ("shopkeeper", "Продавец", "МАГАЗИН", 3),
+    ("trader_clothes", "Продавец одежды", "ОДЕЖДА", 2),
+    ("trader_tech", "Продавец техники", "ЭЛЕКТРОНИКА", 2),
+    ("cook", "Повар", "КАФЕ", 1),
+    ("medic", "Аптекарь", "АПТЕКА", 1),
+]
+
+
+def shop_profile(rng: random.Random) -> tuple[str, str, str]:
+    """Профиль лавки: кто за прилавком и что написано на вывеске."""
+    total = sum(weight for _, _, _, weight in SHOP_KINDS)
+    roll = rng.randrange(total)
+    for role, title, label, weight in SHOP_KINDS:
+        roll -= weight
+        if roll < 0:
+            return role, title, label
+    role, title, label, _ = SHOP_KINDS[0]
+    return role, title, label
 
 
 def pick_weighted(rng: random.Random, options: list[tuple[str, int]]) -> str:
@@ -234,6 +290,15 @@ def build_plan(seed: int) -> Plan:
             lot = Lot(ix=ix, iz=iz, x0=x0, z0=z0, x1=x1, z1=z1, kind=kind,
                       district=zone, facing=front_facing(ix, iz),
                       seed=rng.randrange(1 << 30), label=label)
+            if kind == "shop":
+                # Полсотни одинаковых лавок — это декорация, а не улица:
+                # каждой даём свой профиль, вывеску и продавца.
+                # Отдельный поток случайности: у соседних клеток rng-состояния
+                # похожи, и на одном общем потоке половина улицы выходила аптеками.
+                lot.shop_role, lot.shop_title, shop_label = shop_profile(
+                    random.Random(lot.seed * 2654435761 % (1 << 61)))
+                if not lot.label:
+                    lot.label = shop_label
             plan.lots.append(lot)
             if kind == "metro":
                 cx, cz = lot.center()
@@ -255,6 +320,8 @@ def _add_npc_spots(plan: Plan) -> None:
             continue
         cx, cz = lot.center()
         rng = random.Random(lot.seed ^ 0x5F5F)
+        if lot.kind == "shop" and lot.shop_role:
+            roles = [(lot.shop_role, lot.shop_title)]
         for index, (role, title) in enumerate(roles):
             # Раскладываем NPC по фронтальной части здания, у прилавков.
             offset = (index - (len(roles) - 1) / 2) * 4

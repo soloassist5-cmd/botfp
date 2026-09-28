@@ -68,24 +68,30 @@ CurseForge App, Legacy Launcher и TLauncher `.mrpack` не понимают. Д
 Quality Guns**.
 
 ### Деньги
-**Lightman's Currency** — полноценная экономика: монеты шести номиналов,
-банкоматы, банковские счёта, кредитные карты, кассы, торговые автоматы,
-аукцион и налоги. Своя точка в торговом центре открывается за кассу.
+Экономика своя, в рублях, и вся внутри мода `citylife`: монета 10 ₽, купюры
+100, 1000 и 5000 ₽, карты «Мир» и Mastercard, банковский счёт и собственные
+банкоматы. Восемь банкоматов стоят у банка, мэрии, ТЦ, метро и на заправках —
+кладут наличные на счёт, снимают обратно, выпускают карту и переводят деньги.
 
-Параллельно работает банк самописного мода: баланс на «карте» и переводы
-между игроками прямо из телефона. Команды `/citylife balance`, `/citylife pay`,
-`/citylife money give` — они же точка интеграции для скриптов и админов.
+Покупки у жителей идут за наличные, зарплата с `/work` — на счёт, перевод
+между игроками — из приложения «Банк». Команды `/citylife balance`,
+`/citylife pay`, `/citylife money give` — точка интеграции для скриптов
+и админов.
 
 ### Мобильные телефоны
 Подходящего мода на 1.20.1 не существует, поэтому он **написан с нуля** —
-`citylife`. Смартфон с шестью приложениями:
+`citylife`. Не панель с кнопками, а телефон: корпус, экран со статусной
+строкой, рабочий стол со значками и анимацией переходов. Восемь приложений:
 
 1. **Сообщения** — личные СМС между игроками, история хранится на сервере
 2. **Контакты** — кто в сети и на каком расстоянии
-3. **Банк** — баланс и переводы
-4. **Карта** — координаты и до 12 именованных меток
+3. **Банк** — счёт, карта, переводы
+4. **Навигатор** — 52 городские метки и свои: маршрут ложится линией по земле,
+   над целью висит маркер, список отсортирован по расстоянию
 5. **Умный дом** — открыть/закрыть привязанные замки на расстоянии, журнал доступа
 6. **112** — вызов полиции, скорой или пожарных с координатами
+7. **Маркет** — установка приложений: тетрис и змейка играются прямо в телефоне
+8. **Настройки** — четыре обоев: закат, луна, Марс и Юпитер
 
 ### Камеры
 - **SecurityCraft** — камеры наблюдения с монитором, сигнализации, датчики
@@ -98,34 +104,41 @@ Quality Guns**.
   доступа, автозакрытие, журнал попыток входа и вскрытие отмычкой с тревогой
 
 ### NPC и торговля
-**Easy NPC** — человекоподобные NPC с диалогами и торговлей; по городу
-расставлено 125 жителей с готовым ассортиментом: продавцы в ТЦ, банкир,
-оружейник, автодилер, риелтор, чиновники, повара, охрана.
-**Guard Villagers** — полиция и охрана, реагирующие на агрессию.
+**Easy NPC** даёт жителям внешность игроков: по городу расставлено 125
+человек со скинами, а не ванильных деревенских. Торговлю ведёт `citylife`:
+Easy NPC выбрасывает готовые предложения из NBT при спавне, поэтому 16
+прилавков и 53 предложения живут в моде и открываются по тегу роли.
+Профиль лавки виден с улицы: вывеска «ПРОДУКТЫ», «ОДЕЖДА», «ЭЛЕКТРОНИКА»,
+«АПТЕКА» или «КАФЕ» совпадает с тем, что продаёт человек за прилавком.
+Те, кому торговать нечем — полицейский, охранник, пожарный, — отвечают
+репликой. **Guard Villagers** — полиция и охрана, реагирующие на агрессию.
 
 ### Транспорт
-**Immersive Vehicles** + официальный пак контента — машины с физикой, заправка
-и ремонт. **Traffic Control + Roads** — дороги, разметка, светофоры и знаки.
+**Ultimate Car Mod** — машины целиком, без сборки по частям и ремонта: вместо
+74 МБ тяжёлого рендера 2,5 МБ аркадной езды. Покупка идёт ключом: автодилер
+продаёт ключ, правый клик по земле ставит готовую машину с полным баком.
+Топливо — канистра с заправки, правый клик по машине заливает бак.
+**Traffic Control + Roads** — дороги, разметка, светофоры и знаки.
 
 ## Полный список модов
 
-### Ядро геймплея (13)
+<!-- mods:begin -->
+
+### Ядро геймплея (11)
 
 | Мод | Версия | Сторона | Зачем |
 |---|---|---|---|
+| [[TaCZ] Timeless and Classics Zero](https://modrinth.com/mod/timeless-and-classics-zero) | `1.1.8-hotfix` | клиент+сервер | Огнестрел: кастомизация, прицелы, магазины, баллистика |
 | [CameraCraft](https://modrinth.com/mod/cameracraft) | `2.1` | клиент+сервер | Фотоаппараты, плёнка, проявка, фотоальбомы |
 | [Easy NPC: Config UI](https://modrinth.com/mod/easy-npc-config-ui) | `7.12.1` | клиент+сервер | Интерфейс настройки NPC в игре |
 | [Easy NPC: Core](https://modrinth.com/mod/easy-npc-core) | `7.12.1` | клиент+сервер | NPC: диалоги, скины, профессии, торговля |
 | [Elite X Quality Guns (TACZ)](https://modrinth.com/mod/elite-x-quality-guns) | `5.1` | клиент+сервер | Пак современного оружия для TaCZ |
 | [Guard Villagers](https://modrinth.com/mod/guard-villagers) | `1.6.19` | клиент+сервер | Полиция и охрана города |
-| [Immersive Vehicles](https://modrinth.com/mod/immersive-vehicles) | `24.0.0-1.20.1` | клиент+сервер | Автомобили с физикой, заправка, ремонт |
-| [Immersive Vehicles - Official Content Pack [OCP] - Planes & Cars](https://modrinth.com/mod/immersive-vehicles-official-content-pack) | `29` | клиент+сервер | Официальный пак машин для Immersive Vehicles |
 | [KubeJS](https://modrinth.com/mod/kubejs) | `2001.6.5-build.26+forge` | клиент+сервер | Скрипты городской логики: цены, рецепты, правила |
-| [Lightman's Currency](https://modrinth.com/mod/lightmans-currency) | `1.20.1-2.3.0.5` | клиент+сервер | Экономика: монеты, банкоматы, счета, карты, торговые автоматы, налоги |
-| [SecurityCraft: More Protectables](https://modrinth.com/mod/more-protectables) | `1.2.3.10` | клиент+сервер | Расширение SecurityCraft на блоки других модов |
 | [SecurityCraft](https://modrinth.com/mod/security-craft) | `v1.10.2.1` | клиент+сервер | Умные замки, карты-ключи, сканеры, камеры наблюдения, сигнализации |
-| [[TaCZ] Timeless and Classics Zero](https://modrinth.com/mod/timeless-and-classics-zero) | `1.1.8-hotfix` | клиент+сервер | Огнестрел: кастомизация, прицелы, магазины, баллистика |
+| [SecurityCraft: More Protectables](https://modrinth.com/mod/more-protectables) | `1.2.3.10` | клиент+сервер | Расширение SecurityCraft на блоки других модов |
 | [Traffic Control + Roads (City) mod by Teerth](https://modrinth.com/mod/traffic-control-+-roads-mod-by-teerth) | `5.5.0` | клиент+сервер | Дороги, разметка, светофоры, знаки, отбойники |
+| [Ultimate Car Mod](https://modrinth.com/mod/ultimate-car-mod) | `forge-1.20.1-1.0.42` | клиент+сервер | Машины целиком, канистры с топливом, без сборки по частям |
 
 ### Строительство и декор (12)
 
@@ -144,17 +157,15 @@ Quality Guns**.
 | [Rechiseled](https://modrinth.com/mod/rechiseled) | `1.2.6-forge-mc1.20.1` | клиент+сервер | Дополнительные текстуры бетона и камня |
 | [Supplementaries](https://modrinth.com/mod/supplementaries) | `1.20-3.1.43-forge` | клиент+сервер | Городская мелочь: вывески, урны, ящики, флаги |
 
-### Удобства и атмосфера (14)
+### Удобства и атмосфера (12)
 
 | Мод | Версия | Сторона | Зачем |
 |---|---|---|---|
 | [AppleSkin](https://modrinth.com/mod/appleskin) | `2.5.1+mc1.20.1` | клиент+сервер | Показ насыщения еды |
 | [Corpse](https://modrinth.com/mod/corpse) | `forge-1.20.1-1.0.23` | клиент+сервер | Труп с вещами вместо разбросанного лута — нужно для погонь и перестрелок |
-| [First-person Model](https://modrinth.com/mod/first-person-model) | `2.7.3` | клиент | Видно своё тело от первого лица |
 | [Jade 🔍](https://modrinth.com/mod/jade) | `11.13.3+forge` | клиент | Информация о блоке под прицелом |
 | [Just Enough Items (JEI)](https://modrinth.com/mod/jei) | `15.62.0.216` | клиент+сервер | Просмотр рецептов |
 | [Mouse Tweaks](https://modrinth.com/mod/mouse-tweaks) | `1.20.1-2.25.1-forge` | клиент | Удобное перетаскивание в инвентаре |
-| [Not Enough Animations](https://modrinth.com/mod/not-enough-animations) | `1.12.6` | клиент | Анимации тела от третьего лица |
 | [Polymorph](https://modrinth.com/mod/polymorph) | `0.49.11+1.20.1` | клиент+сервер | Выбор рецепта при конфликте — обязательно при таком числе модов |
 | [Simple Voice Chat](https://modrinth.com/mod/simple-voice-chat) | `forge-1.20.1-2.6.22` | клиент+сервер | Голосовой чат — ключевое для игры в городе с друзьями |
 | [Sound Physics Remastered](https://modrinth.com/mod/sound-physics-remastered) | `forge-1.20.1-1.4.10` | клиент | Эхо и реверберация в помещениях и переулках |
@@ -180,19 +191,21 @@ Quality Guns**.
 
 | Мод | Версия | Сторона | Зачем |
 |---|---|---|---|
-| [Architectury API](https://modrinth.com/mod/architectury-api) | `9.2.14+forge` | клиент+сервер | зависимость `kubejs` |
-| [Athena](https://modrinth.com/mod/athena-ctm) | `3.1.2` | клиент+сервер | зависимость `chipped` |
-| [Balm](https://modrinth.com/mod/balm) | `7.3.44+forge-1.20.1` | клиент+сервер | зависимость `waystones` |
-| [Fusion (Connected Textures)](https://modrinth.com/mod/fusion-connected-textures) | `1.3.15b-forge-mc1.20.1` | клиент+сервер | зависимость `rechiseled` |
-| [MezzConfig](https://modrinth.com/mod/mezzconfig) | `0.6.5` | клиент+сервер | зависимость `jei` |
-| [Moonlight Lib](https://modrinth.com/mod/moonlight) | `1.20-2.16.35-forge` | клиент+сервер | зависимость `supplementaries` |
-| [Resourceful Lib](https://modrinth.com/mod/resourceful-lib) | `2.1.29` | клиент+сервер | зависимость `chipped` |
-| [Rhino](https://modrinth.com/mod/rhino) | `2001.2.3-build.10+forge` | клиент+сервер | зависимость `kubejs` |
-| [SuperMartijn642's Config Lib](https://modrinth.com/mod/supermartijn642s-config-lib) | `1.1.8-forge-mc1.20` | клиент+сервер | зависимость `rechiseled` |
-| [SuperMartijn642's Core Lib](https://modrinth.com/mod/supermartijn642s-core-lib) | `1.1.24b-forge-mc1.20.1` | клиент+сервер | зависимость `rechiseled` |
-| [TCT Core](https://modrinth.com/mod/tct-core) | `2.2` | клиент+сервер | зависимость `cameracraft` |
+| [Architectury API](https://modrinth.com/mod/architectury-api) | `9.2.14+forge` | клиент+сервер | Библиотека-зависимость |
+| [Athena](https://modrinth.com/mod/athena-ctm) | `3.1.2` | клиент+сервер | Библиотека-зависимость |
+| [Balm](https://modrinth.com/mod/balm) | `7.3.44+forge-1.20.1` | клиент+сервер | Библиотека-зависимость |
+| [Fusion (Connected Textures)](https://modrinth.com/mod/fusion-connected-textures) | `1.3.15b-forge-mc1.20.1` | клиент+сервер | Библиотека-зависимость |
+| [MezzConfig](https://modrinth.com/mod/mezzconfig) | `0.6.5` | клиент+сервер | Библиотека-зависимость |
+| [Moonlight Lib](https://modrinth.com/mod/moonlight) | `1.20-2.16.35-forge` | клиент+сервер | Библиотека-зависимость |
+| [Resourceful Lib](https://modrinth.com/mod/resourceful-lib) | `2.1.29` | клиент+сервер | Библиотека-зависимость |
+| [Rhino](https://modrinth.com/mod/rhino) | `2001.2.3-build.10+forge` | клиент+сервер | Библиотека-зависимость |
+| [SuperMartijn642's Config Lib](https://modrinth.com/mod/supermartijn642s-config-lib) | `1.1.8-forge-mc1.20` | клиент+сервер | Библиотека-зависимость |
+| [SuperMartijn642's Core Lib](https://modrinth.com/mod/supermartijn642s-core-lib) | `1.1.24b-forge-mc1.20.1` | клиент+сервер | Библиотека-зависимость |
+| [TCT Core](https://modrinth.com/mod/tct-core) | `2.2` | клиент+сервер | Библиотека-зависимость |
 
----
+Всего 54 модов с Modrinth плюс самописный `citylife`.
+
+<!-- mods:end -->
 
 ## Карта «Los Santos»
 
@@ -255,7 +268,7 @@ mcpack/
 - оба установщика реально запускались: скачивание, сверка SHA-512, повторный
   запуск докачивает только недостающее, имена файлов с пробелами и скобками
   обрабатываются;
-- `check_deps.py` сверяет диапазоны зависимостей из `mods.toml` всех 58 модов,
+- `check_deps.py` сверяет диапазоны зависимостей из `mods.toml` всех 54 модов,
   включая вложенные jar-in-jar — конфликтов версий нет;
 - сервер поднимается на этой сборке и загружает сгенерированный мир;
 - мир проверяется скриптом `world/generator/verify_world.py`, который читает

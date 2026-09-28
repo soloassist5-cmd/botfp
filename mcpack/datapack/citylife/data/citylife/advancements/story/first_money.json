@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "lightmanscurrency:coin_copper"
+      "item": "citylife:banknote_100"
     },
     "title": {
       "text": "Первые деньги"
@@ -21,12 +21,13 @@
         "items": [
           {
             "items": [
-              "lightmanscurrency:coin_copper",
-              "lightmanscurrency:coin_iron",
-              "lightmanscurrency:coin_gold",
-              "lightmanscurrency:coin_emerald",
-              "lightmanscurrency:coin_diamond",
-              "lightmanscurrency:coin_netherite"
+              "citylife:coin_1",
+              "citylife:coin_10",
+              "citylife:banknote_50",
+              "citylife:banknote_100",
+              "citylife:banknote_500",
+              "citylife:banknote_1000",
+              "citylife:banknote_5000"
             ]
           }
         ]

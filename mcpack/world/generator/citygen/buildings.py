@@ -11,6 +11,7 @@ from __future__ import annotations
 import random
 
 from . import blocks as B
+from . import detail as D
 from .canvas import RegionCanvas
 from .plan import CITY_Y, Lot
 
@@ -91,9 +92,8 @@ def _split_label(label: str) -> list[str]:
 
 def lamp_ceiling(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y: int,
                  step: int = 6) -> None:
-    for x in range(x0 + 2, x1 - 1, step):
-        for z in range(z0 + 2, z1 - 1, step):
-            canvas.set(x, y, z, B.GLOWSTONE)
+    """Свет под потолком невидимым блоком: светло, но без жёлтых пятен."""
+    D.indoor_light(canvas, x0, z0, x1, z1, y, step)
 
 
 def window_band(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y: int,
@@ -171,33 +171,43 @@ def shell(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y_base: int,
           rng: random.Random, floor_height: int = FLOOR_HEIGHT,
           interior: str = B.CONCRETE_LIGHT) -> int:
     """
-    Каркас здания: фундамент, стены, окна, межэтажные перекрытия, крыша.
-    Возвращает высоту крыши.
+    Каркас здания: цоколь, стены с оконными проёмами, тяги, карниз, крыша.
+
+    Фасад собирается по-человечески: внизу цоколь с отливом, дальше этажи
+    с окнами в простенках, между этажами тяга, наверху карниз с выносом и
+    парапет. Возвращает высоту крыши.
     """
     height = floors * floor_height
-    # Фундамент и первый пол.
+
     canvas.fill(x0, y_base - 2, z0, x1, y_base - 1, z1, B.CONCRETE_GRAY)
     interior_floor(canvas, x0, z0, x1, z1, y_base, interior)
-
-    # Стены на всю высоту.
     canvas.outline(x0, y_base + 1, z0, x1, y_base + height, z1, wall)
+
+    # Цоколь и угловые лопатки задают низ и вертикальный ритм.
+    D.plinth(canvas, x0, z0, x1, z1, y_base + 1, accent, wall)
+    D.pilasters(canvas, x0, z0, x1, z1, y_base + 1, y_base + height, accent)
 
     for level in range(floors):
         floor_y = y_base + level * floor_height
-        # Окна: две ленты на этаж.
-        window_band(canvas, x0, z0, x1, z1, floor_y + 2, glass)
-        window_band(canvas, x0, z0, x1, z1, floor_y + 3, glass)
+        # Первый этаж отдаём под витрину, выше — обычные окна.
+        if level == 0:
+            D.storefront(canvas, x0, z0, x1, z1, floor_y + 1, facing, glass, accent, rng)
+            D.window_strip(canvas, x0, z0, x1, z1, floor_y + 2, 2, glass, accent, step=5)
+        else:
+            D.window_strip(canvas, x0, z0, x1, z1, floor_y + 2, 2, glass, accent, step=4)
         if level > 0:
             interior_floor(canvas, x0, z0, x1, z1, floor_y, interior)
-            canvas.outline(x0, floor_y, z0, x1, floor_y, z1, accent)
+            D.band(canvas, x0, z0, x1, z1, floor_y, accent)
         lamp_ceiling(canvas, x0, z0, x1, z1, floor_y + floor_height - 1)
 
     roof_y = y_base + height + 1
+    D.cornice(canvas, x0, z0, x1, z1, roof_y - 1, wall)
     canvas.fill(x0, roof_y, z0, x1, roof_y, z1, B.CONCRETE_GRAY)
-    parapet(canvas, x0, z0, x1, z1, roof_y + 1, wall)
-    roof_units(canvas, x0, z0, x1, z1, roof_y + 1, rng)
+    D.parapet(canvas, x0, z0, x1, z1, roof_y + 1, wall, accent)
+    D.rooftop(canvas, x0, z0, x1, z1, roof_y + 1, rng)
+    D.ac_units(canvas, x0, z0, x1, z1, y_base + floor_height + 2, facing, rng)
 
-    # Вход.
+    # Вход: проём, козырёк, ступени и кадки по бокам.
     dx, dz = front_center(x0, z0, x1, z1, facing)
     canvas.fill(dx - 1, y_base + 1, dz, dx + 1, y_base + 3, dz, B.AIR)
     canvas.fill(dx - 1, y_base + 3, dz, dx + 1, y_base + 3, dz, accent)
@@ -206,8 +216,10 @@ def shell(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y_base: int,
     canvas.set(dx - 1, y_base + 2, dz, glass)
     canvas.set(dx + 1, y_base + 1, dz, glass)
     canvas.set(dx + 1, y_base + 2, dz, glass)
+    D.canopy(canvas, dx, y_base + 4, dz, facing, accent)
+    D.entrance_steps(canvas, dx, y_base, dz, facing, wall)
+    D.planters(canvas, x0, z0, x1, z1, y_base, facing, rng)
 
-    # Лестница между этажами.
     if floors > 1:
         stair_shaft(canvas, x0 + 2, z0 + 2, y_base + 1, y_base + height)
     return roof_y
@@ -217,14 +229,131 @@ def shell(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y_base: int,
 #  Конкретные типы застройки
 # ---------------------------------------------------------------------------
 
+
+# --- силуэт застройки -------------------------------------------------------
+
+def footprint(lot: Lot, rng: random.Random) -> tuple[int, int, int, int]:
+    """
+    Пятно застройки внутри участка.
+
+    Здание на весь участок делает квартал похожим на серый пиксель, поэтому
+    каждый дом отступает от границ по-своему: с улицы отступ маленький, со
+    двора больше. Так появляются переулки, дворы и разные силуэты.
+    """
+    x0, z0, x1, z1 = pad(lot, 1)
+    street = 1
+    yard = rng.randint(2, 5)
+    left = rng.randint(1, 3)
+    right = rng.randint(1, 3)
+    if lot.facing == "north":
+        return x0 + left, z0 + street, x1 - right, z1 - yard
+    if lot.facing == "south":
+        return x0 + left, z0 + yard, x1 - right, z1 - street
+    if lot.facing == "west":
+        return x0 + street, z0 + left, x1 - yard, z1 - right
+    return x0 + yard, z0 + left, x1 - street, z1 - right
+
+
+# Этажность по районам: центр высокий, окраины низкие, плюс разброс по дому.
+DISTRICT_FLOORS = {
+    "downtown": (5, 9),
+    "midtown": (3, 6),
+    "beach": (2, 4),
+    "suburbs": (2, 3),
+    "hills": (2, 3),
+    "industrial": (1, 2),
+    "eastside": (1, 3),
+}
+
+
+def floors_for(lot: Lot, rng: random.Random, base: int) -> int:
+    low, high = DISTRICT_FLOORS.get(lot.district, (2, 4))
+    return max(1, min(high, rng.randint(low, high) + (base - 2) // 2))
+
+
+# Крыши: разные материалы и оттенки, иначе сверху город — одно серое поле.
+ROOF_SETS = [
+    (B.CONCRETE_GRAY, "smooth_stone"),
+    (B.GRAVEL, "stone_brick"),
+    (B.TERRACOTTA_LIGHT, "smooth_stone"),
+    (B.CONCRETE_LIGHT, "smooth_stone"),
+    (B.DEEPSLATE_TILES, "deepslate_tiles"),
+    (B.MUD_BRICKS, "mud_brick"),
+    (B.EXPOSED_COPPER, "exposed_cut_copper"),
+]
+
+
+def green_roof(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y: int,
+               rng: random.Random) -> None:
+    """Эксплуатируемая кровля: газон, кусты, дорожки — сверху видно сразу."""
+    canvas.fill(x0 + 1, y, z0 + 1, x1 - 1, y, z1 - 1, B.GRASS)
+    for _ in range((x1 - x0) * (z1 - z0) // 40):
+        bx = rng.randint(x0 + 2, max(x0 + 2, x1 - 2))
+        bz = rng.randint(z0 + 2, max(z0 + 2, z1 - 2))
+        canvas.set(bx, y + 1, bz, B.OAK_LEAVES)
+    path = B.slab("smooth_stone", top=False)
+    for x in range(x0 + 2, x1 - 1):
+        canvas.set(x, y + 1, (z0 + z1) // 2, path)
+
+
+
+def yard(canvas: RegionCanvas, lot: Lot, bx0: int, bz0: int, bx1: int, bz1: int,
+         rng: random.Random) -> None:
+    """
+    Что происходит вокруг дома: двор, парковка, зелень.
+
+    Раньше свободная часть участка оставалась голой травой, и квартал сверху
+    выглядел как поле с коробкой. Теперь двор замощён, у торца стоят машиноместа,
+    а по краю идут деревья и лавки.
+    """
+    x0, z0, x1, z1 = pad(lot, 0)
+    paving = rng.choice((B.SIDEWALK, B.CONCRETE_LIGHT, B.CURB, B.SIDEWALK_EDGE))
+    for x in range(x0, x1 + 1):
+        for z in range(z0, z1 + 1):
+            if bx0 <= x <= bx1 and bz0 <= z <= bz1:
+                continue
+            canvas.set(x, CITY_Y, z, paving)
+
+    # Парковочные места во дворе: разметка и редкие деревья вдоль неё.
+    if bz1 + 3 <= z1:
+        for x in range(x0 + 2, x1 - 1, 3):
+            canvas.fill(x, CITY_Y, bz1 + 2, x, CITY_Y, z1 - 1, B.ROAD_LINE_WHITE)
+    elif bx1 + 3 <= x1:
+        for z in range(z0 + 2, z1 - 1, 3):
+            canvas.fill(bx1 + 2, CITY_Y, z, x1 - 1, CITY_Y, z, B.ROAD_LINE_WHITE)
+
+    for _ in range(rng.randint(2, 5)):
+        tx = rng.randint(x0 + 1, x1 - 1)
+        tz = rng.randint(z0 + 1, z1 - 1)
+        if bx0 - 1 <= tx <= bx1 + 1 and bz0 - 1 <= tz <= bz1 + 1:
+            continue
+        kind = rng.random()
+        if kind < 0.45:
+            canvas.column(tx, tz, CITY_Y + 1, CITY_Y + 3, B.OAK_LOG)
+            canvas.fill(tx - 1, CITY_Y + 4, tz - 1, tx + 1, CITY_Y + 4, tz + 1, B.OAK_LEAVES)
+            canvas.set(tx, CITY_Y + 5, tz, B.OAK_LEAVES)
+        elif kind < 0.7:
+            canvas.set(tx, CITY_Y + 1, tz, B.slab("spruce", top=False))
+            canvas.set(tx + 1, CITY_Y + 1, tz, B.stairs("spruce", facing="west"))
+        else:
+            canvas.set(tx, CITY_Y + 1, tz, B.CAULDRON)
+
+
 def build_generic(canvas: RegionCanvas, lot: Lot, floors: int, palette_index: int | None = None,
                   interior_kind: str = "counter") -> None:
     rng = _rng(lot)
-    x0, z0, x1, z1 = pad(lot, 1)
+    x0, z0, x1, z1 = footprint(lot, rng)
     wall, accent, glass, _ = B.FACADE_SETS[
         rng.randrange(len(B.FACADE_SETS)) if palette_index is None else palette_index]
+    floors = floors_for(lot, rng, floors)
     roof_y = shell(canvas, x0, z0, x1, z1, CITY_Y, floors, wall, glass, accent,
                    lot.facing, rng)
+    # Крыша своего материала: сверху квартал перестаёт быть однотонным.
+    roof_material, _roof_slab = ROOF_SETS[rng.randrange(len(ROOF_SETS))]
+    canvas.fill(x0, roof_y, z0, x1, roof_y, z1, roof_material)
+    if floors >= 3 and rng.random() < 0.35:
+        green_roof(canvas, x0, z0, x1, z1, roof_y, rng)
+    yard(canvas, lot, x0, z0, x1, z1, rng)
     signboard(canvas, x0, z0, x1, z1, CITY_Y + 4, lot.facing, lot.label, accent)
     if interior_kind == "counter":
         counter(canvas, x0, z0, x1, z1, CITY_Y + 1, lot.facing, B.QUARTZ_SMOOTH)
@@ -244,6 +373,116 @@ def _tables(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y: int,
             canvas.set(x - 1, y, z, B.stairs("spruce", facing="east"))
             if rng.random() < 0.4:
                 canvas.set(x, y + 2, z, B.FLOWER_POT)
+
+
+
+def build_office(canvas: RegionCanvas, lot: Lot) -> None:
+    """
+    Офис по-городскому: стилобат на весь двор и башня меньшего пятна сверху.
+
+    Такая связка даёт двухуровневую крышу и разную высоту в квартале —
+    именно этого не хватало, когда каждый участок был одинаковой коробкой.
+    """
+    rng = _rng(lot)
+    x0, z0, x1, z1 = footprint(lot, rng)
+    wall, accent, glass, _ = B.FACADE_SETS[rng.randrange(len(B.FACADE_SETS))]
+    podium_floors = 2
+    podium_roof = shell(canvas, x0, z0, x1, z1, CITY_Y, podium_floors, wall, glass,
+                        accent, lot.facing, rng)
+    roof_material, _ = ROOF_SETS[rng.randrange(len(ROOF_SETS))]
+    canvas.fill(x0, podium_roof, z0, x1, podium_roof, z1, roof_material)
+
+    # Башня: уже стилобата, сдвинута к дальней от улицы стороне.
+    inset = rng.randint(4, 7)
+    tx0, tz0, tx1, tz1 = x0 + inset, z0 + inset, x1 - inset, z1 - inset
+    if tx1 - tx0 >= 8 and tz1 - tz0 >= 8:
+        floors = floors_for(lot, rng, 6)
+        tower_roof = shell(canvas, tx0, tz0, tx1, tz1, podium_roof, floors, wall, glass,
+                           accent, lot.facing, rng)
+        canvas.fill(tx0, tower_roof, tz0, tx1, tower_roof, tz1, roof_material)
+        helipad(canvas, tx0, tz0, tx1, tz1, tower_roof, rng)
+    yard(canvas, lot, x0, z0, x1, z1, rng)
+    signboard(canvas, x0, z0, x1, z1, CITY_Y + 4, lot.facing, lot.label, accent)
+
+
+def helipad(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y: int,
+            rng: random.Random) -> None:
+    """Вертолётная площадка или солнечные панели — крыша читается сверху."""
+    cx = (x0 + x1) // 2
+    cz = (z0 + z1) // 2
+    if x1 - x0 < 10 or z1 - z0 < 10:
+        return
+    if rng.random() < 0.5:
+        canvas.fill(cx - 4, y, cz - 4, cx + 4, y, cz + 4, B.CONCRETE_BLACK)
+        canvas.fill(cx - 3, y, cz - 3, cx + 3, y, cz + 3, B.CONCRETE_GRAY)
+        # Буква H белым: видно с воздуха.
+        canvas.fill(cx - 2, y, cz - 2, cx - 2, y, cz + 2, B.CONCRETE_WHITE)
+        canvas.fill(cx + 2, y, cz - 2, cx + 2, y, cz + 2, B.CONCRETE_WHITE)
+        canvas.fill(cx - 2, y, cz, cx + 2, y, cz, B.CONCRETE_WHITE)
+    else:
+        for x in range(cx - 4, cx + 5, 2):
+            canvas.fill(x, y, cz - 4, x, y, cz + 4, B.GLASS_BLACK)
+
+
+def build_rowhouses(canvas: RegionCanvas, lot: Lot) -> None:
+    """
+    Рядная застройка: три-четыре дома на участке вместо одного большого.
+
+    Пригород из одинаковых кубов выглядел мёртвым; ряд узких домов с палисадниками
+    сразу читается как жилой квартал.
+    """
+    rng = _rng(lot)
+    x0, z0, x1, z1 = pad(lot, 1)
+    along_x = lot.facing in ("north", "south")
+    span = (x1 - x0) if along_x else (z1 - z0)
+    count = max(2, min(4, span // 12))
+    step = span // count
+
+    for index in range(count):
+        offset = index * step
+        if along_x:
+            hx0 = x0 + offset + 1
+            hx1 = hx0 + step - 3
+            hz0, hz1 = (z0 + 1, z1 - rng.randint(4, 8)) if lot.facing == "north" \
+                else (z0 + rng.randint(4, 8), z1 - 1)
+        else:
+            hz0 = z0 + offset + 1
+            hz1 = hz0 + step - 3
+            hx0, hx1 = (x0 + 1, x1 - rng.randint(4, 8)) if lot.facing == "west" \
+                else (x0 + rng.randint(4, 8), x1 - 1)
+        if hx1 - hx0 < 6 or hz1 - hz0 < 6:
+            continue
+        wall, plank, roof_mat, accent = B.HOUSE_SETS[rng.randrange(len(B.HOUSE_SETS))]
+        floors = rng.choice((1, 2, 2))
+        roof_y = shell(canvas, hx0, hz0, hx1, hz1, CITY_Y, floors, wall,
+                       B.GLASS, accent, lot.facing, rng, interior=plank)
+        gabled_roof(canvas, hx0, hz0, hx1, hz1, roof_y, roof_mat, lot.facing)
+    yard(canvas, lot, x0, z0, x1, z1, rng)
+
+
+def gabled_roof(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int, y: int,
+                material: str, facing: str) -> None:
+    """Двускатная кровля из ступеней: жилой дом перестаёт быть коробкой."""
+    stair = material if material.startswith("minecraft:") else material
+    along_x = facing in ("north", "south")
+    if along_x:
+        depth = (z1 - z0) // 2
+        for step in range(depth):
+            canvas.fill(x0 - 1, y + step, z0 + step, x1 + 1, y + step, z0 + step,
+                        B.stairs(stair, facing="south"))
+            canvas.fill(x0 - 1, y + step, z1 - step, x1 + 1, y + step, z1 - step,
+                        B.stairs(stair, facing="north"))
+            canvas.fill(x0, y + step, z0 + step + 1, x1, y + step, z1 - step - 1,
+                        B.slab(stair, top=True))
+    else:
+        depth = (x1 - x0) // 2
+        for step in range(depth):
+            canvas.fill(x0 + step, y + step, z0 - 1, x0 + step, y + step, z1 + 1,
+                        B.stairs(stair, facing="east"))
+            canvas.fill(x1 - step, y + step, z0 - 1, x1 - step, y + step, z1 + 1,
+                        B.stairs(stair, facing="west"))
+            canvas.fill(x0 + step + 1, y + step, z0, x1 - step - 1, y + step, z1,
+                        B.slab(stair, top=True))
 
 
 def build_tower(canvas: RegionCanvas, lot: Lot) -> None:
@@ -551,6 +790,8 @@ def build_apartment(canvas: RegionCanvas, lot: Lot) -> None:
         canvas.set(x0 + 3, base + 1, z0 + 2, B.BED_RED_HEAD)
         canvas.container(x1 - 3, base + 1, z0 + 3, B.CHEST_N, "minecraft:chest")
         canvas.set(x1 - 4, base + 1, z1 - 3, B.CRAFTING)
+        if level > 0:
+            D.balconies(canvas, x0, z0, x1, z1, base + 1, lot.facing, wall)
 
 
 def build_parking(canvas: RegionCanvas, lot: Lot) -> None:
@@ -695,31 +936,49 @@ def build_park(canvas: RegionCanvas, lot: Lot) -> None:
 
 
 def build_empty(canvas: RegionCanvas, lot: Lot) -> None:
-    """Свободный участок под постройки игроков: газон, забор, табличка."""
+    """
+    Свободный участок: не голый газон, а обустроенное место под стройку игрока.
+
+    Половина участков — карман-сквер с дорожками, лавками и деревьями, другая
+    половина — размеченная парковка. Табличка «продаётся» остаётся: участок
+    по-прежнему свободен, просто выглядит как часть города, а не как поле.
+    """
     rng = _rng(lot)
     x0, z0, x1, z1 = pad(lot, 0)
-    canvas.fill(x0, CITY_Y, z0, x1, CITY_Y, z1, B.GRASS)
-    fence = B.fence(rng.choice(("oak", "spruce", "birch")))
-    for x in range(x0, x1 + 1):
-        canvas.set(x, CITY_Y + 1, z0, fence)
-        canvas.set(x, CITY_Y + 1, z1, fence)
-    for z in range(z0, z1 + 1):
-        canvas.set(x0, CITY_Y + 1, z, fence)
-        canvas.set(x1, CITY_Y + 1, z, fence)
-    gx, gz = front_center(x0, z0, x1, z1, lot.facing)
-    canvas.set(gx, CITY_Y + 1, gz, B.AIR)
-    canvas.set(gx + 1, CITY_Y + 1, gz, B.AIR)
+    park_style = rng.random() < 0.55
+
+    if park_style:
+        canvas.fill(x0, CITY_Y, z0, x1, CITY_Y, z1, B.GRASS)
+        path = B.slab("stone", top=False)
+        cx = (x0 + x1) // 2
+        cz = (z0 + z1) // 2
+        canvas.fill(x0 + 1, CITY_Y, cz, x1 - 1, CITY_Y, cz, path)
+        canvas.fill(cx, CITY_Y, z0 + 1, cx, CITY_Y, z1 - 1, path)
+        for _ in range(rng.randint(3, 6)):
+            tx = rng.randint(x0 + 2, x1 - 2)
+            tz = rng.randint(z0 + 2, z1 - 2)
+            canvas.fill(tx, CITY_Y + 1, tz, tx, CITY_Y + 3, tz, B.OAK_LOG)
+            canvas.fill(tx - 1, CITY_Y + 4, tz - 1, tx + 1, CITY_Y + 4, tz + 1, B.OAK_LEAVES)
+            canvas.set(tx, CITY_Y + 5, tz, B.OAK_LEAVES)
+        for side in (-2, 2):
+            canvas.set(cx + side, CITY_Y + 1, cz + 1, B.slab("spruce", top=False))
+            canvas.set(cx + side, CITY_Y + 1, cz - 1, B.slab("spruce", top=False))
+    else:
+        canvas.fill(x0, CITY_Y, z0, x1, CITY_Y, z1, B.ASPHALT_WORN)
+        for x in range(x0 + 2, x1 - 1, 3):
+            canvas.fill(x, CITY_Y, z0 + 2, x, CITY_Y, z1 - 2, B.ROAD_LINE_WHITE)
+        for z in (z0 + 1, z1 - 1):
+            canvas.fill(x0 + 1, CITY_Y, z, x1 - 1, CITY_Y, z, B.CURB)
+
     # Табличка «продаётся» смотрит на улицу.
+    gx, gz = front_center(x0, z0, x1, z1, lot.facing)
     rotation = {"north": 8, "south": 0, "west": 4, "east": 12}[lot.facing]
     sx = gx - 2 if lot.facing in ("north", "south") else gx
     sz = gz if lot.facing in ("north", "south") else gz - 2
     canvas.set(sx, CITY_Y + 1, sz, B.fence("oak"))
     canvas.sign(sx, CITY_Y + 2, sz, B.SIGN_STANDING.format(r=rotation),
-                ["ПРОДАЁТСЯ", "УЧАСТОК", f"{lot.width}x{lot.depth}", "мэрия"],
-                color="red", glowing=False)
-    for _ in range(rng.randrange(0, 3)):
-        _tree(canvas, rng.randrange(x0 + 3, max(x0 + 4, x1 - 3)),
-              rng.randrange(z0 + 3, max(z0 + 4, z1 - 3)), rng)
+                ["ПРОДАЁТСЯ", "участок", f"{lot.x1 - lot.x0}x{lot.z1 - lot.z0}"],
+                color="black", glowing=False)
 
 
 def build_construction(canvas: RegionCanvas, lot: Lot) -> None:
@@ -790,8 +1049,8 @@ def build_club(canvas: RegionCanvas, lot: Lot) -> None:
     canvas.set(x0 + 2, CITY_Y + 1, z1 - 2, B.JUKEBOX)
     canvas.set(x0 + 3, CITY_Y + 1, z1 - 2, B.NOTE_BLOCK)
     for x in range(x0 + 2, x1 - 1, 4):
-        canvas.set(x, CITY_Y + 7, z0 + 2, B.REDSTONE_LAMP_ON)
-        canvas.set(x, CITY_Y + 7, z1 - 2, B.REDSTONE_LAMP_ON)
+        canvas.set(x, CITY_Y + 7, z0 + 2, B.LIGHT)
+        canvas.set(x, CITY_Y + 7, z1 - 2, B.LIGHT)
     signboard(canvas, x0, z0, x1, z1, CITY_Y + 5, lot.facing, lot.label, accent)
 
 
@@ -836,7 +1095,10 @@ def build_metro(canvas: RegionCanvas, lot: Lot) -> None:
 KIND_BUILDERS = {
     "tower": build_tower,
     "mall": build_mall,
-    "house": build_house,
+    # В пригороде и на востоке участок большой: ставим ряд домов, а не один куб.
+    "house": lambda canvas, lot: (build_rowhouses(canvas, lot)
+                                  if lot.district in ("suburbs", "eastside", "beach")
+                                  else build_house(canvas, lot)),
     "villa": lambda canvas, lot: build_house(canvas, lot, villa=True),
     "apartment": build_apartment,
     "parking": build_parking,
@@ -849,7 +1111,7 @@ KIND_BUILDERS = {
     "club": build_club,
     "metro": build_metro,
     # Общие здания различаются числом этажей, палитрой и начинкой.
-    "office": lambda canvas, lot: build_generic(canvas, lot, floors=4),
+    "office": build_office,
     "shop": lambda canvas, lot: build_generic(canvas, lot, floors=1),
     "diner": lambda canvas, lot: build_generic(canvas, lot, floors=1,
                                                interior_kind="tables"),
@@ -863,9 +1125,41 @@ KIND_BUILDERS = {
 }
 
 
+# Банкоматы стоят там, где их ищут: у банка, мэрии, торгового центра, метро
+# и на заправках. Ставим снаружи у входа, лицом на улицу.
+# Банкоматы стоят там, где их ищут: у банка, мэрии, торгового центра, метро
+# и на заправках. Ставим снаружи у входа, лицом на улицу.
+ATM_KINDS = {"bank", "city_hall", "mall", "metro", "gas"}
+
+
+def atm_pos(lot: Lot) -> tuple[int, int, int]:
+    """Где у здания стоит банкомат: сбоку от двери, лицом на улицу.
+
+    Считается отдельно от установки, потому что те же координаты нужны
+    навигатору в телефоне — метки «Банкомат» строятся из этой функции.
+    """
+    x0, z0, x1, z1 = pad(lot, 1)
+    fx, fz = front_center(x0, z0, x1, z1, lot.facing)
+    # Сдвигаемся на пару блоков вбок от двери и на блок наружу.
+    if lot.facing in ("north", "south"):
+        x = fx + 3
+        z = fz - 1 if lot.facing == "north" else fz + 1
+    else:
+        x = fx - 1 if lot.facing == "west" else fx + 1
+        z = fz + 3
+    return x, CITY_Y + 1, z
+
+
+def place_atm(canvas: RegionCanvas, lot: Lot) -> None:
+    x, y, z = atm_pos(lot)
+    canvas.set(x, y, z, f"citylife:atm[facing={lot.facing}]")
+
+
 def build_lot(canvas: RegionCanvas, lot: Lot) -> None:
     builder = KIND_BUILDERS.get(lot.kind)
     if builder is None:
         build_generic(canvas, lot, floors=2)
-        return
-    builder(canvas, lot)
+    else:
+        builder(canvas, lot)
+    if lot.kind in ATM_KINDS:
+        place_atm(canvas, lot)

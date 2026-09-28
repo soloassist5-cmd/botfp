@@ -24,8 +24,34 @@ from citygen import plan as P  # noqa: E402
 # через NBT в команде summon. Easy NPC хранит предложения в своих синхронных
 # данных и из summon их не читает (проверено на сервере), поэтому
 # человекоподобные NPC ставятся только там, где торговля не нужна.
-TRADER_ENTITY = "minecraft:villager"
-FLAVOUR_ENTITY = "easy_npc:humanoid"
+# Все жители — гуманоиды Easy NPC: выглядят как игроки, а не как ванильные
+# «картофелины». Ванильных торговцев больше нет, торговля включается через
+# TradingDataSet с типом CUSTOM — без него Easy NPC игнорирует готовые Offers.
+NPC_ENTITY = "easy_npc:humanoid"
+
+# Роль -> скин из citylife/tools/gen_skins.py.
+ROLE_SKIN = {
+    "trader_food": "cook",
+    "trader_clothes": "shopkeeper",
+    "trader_tech": "clerk",
+    "phone_seller": "clerk",
+    "banker": "banker",
+    "gunsmith": "gunsmith",
+    "car_dealer": "dealer",
+    "realtor": "realtor",
+    "clerk": "clerk",
+    "cook": "cook",
+    "shopkeeper": "shopkeeper",
+    "bartender": "bartender",
+    "fuel_seller": "mechanic",
+    "medic": "medic",
+    "foreman": "builder",
+    "builder": "builder",
+    "police": "police",
+    "guard": "police",
+    "mechanic": "mechanic",
+}
+CITIZEN_SKINS = ["citizen_a", "citizen_b", "citizen_c", "citizen_d"]
 
 # Профессия жителя подбирается под роль: от неё зависит одежда и звуки.
 ROLE_PROFESSION = {
@@ -46,23 +72,54 @@ ROLE_PROFESSION = {
     "foreman": "minecraft:mason",
     "builder": "minecraft:mason",
 }
-COIN = "lightmanscurrency:coin_{}"
+# Цены раньше считались монетами Lightman's; теперь деньги свои, рублёвые.
+# Сопоставление один к одному, чтобы не пересчитывать все прайсы вручную:
+# медь — десятка, железо — сотня, золото — тысяча, дальше пять тысяч.
+RUBLES = {
+    "copper": "citylife:coin_10",
+    "iron": "citylife:banknote_100",
+    "gold": "citylife:banknote_1000",
+    "emerald": "citylife:banknote_5000",
+    "diamond": "citylife:banknote_5000",
+    "netherite": "citylife:banknote_5000",
+}
 
 # Сколько команд в одном файле: длинные функции неудобно отлаживать.
 BATCH_SIZE = 25
 
 
 def coin(kind: str) -> str:
-    return COIN.format(kind)
+    """Цена в рублях по старому «монетному» тарифу."""
+    return RUBLES[kind]
 
 
 class Byte(int):
     """Целое, которое в SNBT выводится с суффиксом b (нужно для Count)."""
 
 
-def stack(item: str, count: int = 1) -> dict:
+def stack(item: str, count: int = 1, tag: dict | None = None) -> dict:
     # Count в стеке предметов — байт, иначе Minecraft отвергнет команду.
-    return {"id": item, "Count": Byte(count)}
+    out = {"id": item, "Count": Byte(count)}
+    if tag:
+        out["tag"] = tag
+    return out
+
+
+# Автосалон: готовые машины по ключу, без сборки по частям и ремонта.
+CARS = [
+    ("black_suv_body", "Внедорожник, чёрный", "gold", 3),
+    ("white_sport_body", "Спорткар, белый", "emerald", 1),
+    ("red_transporter_body", "Фургон, красный", "gold", 4),
+    ("blue_suv_body", "Внедорожник, синий", "gold", 3),
+    ("yellow_sport_body", "Спорткар, жёлтый", "emerald", 1),
+    ("green_transporter_body", "Фургон, зелёный", "gold", 4),
+]
+
+
+def car_key(body: str, title: str) -> dict:
+    return stack("citylife:car_key", 1,
+                 {"body": f"car:{body}", "model": title,
+                  "display": {"Name": json.dumps({"text": title}, ensure_ascii=False)}})
 
 
 def offer(buy: dict, sell: dict, buy_b: dict | None = None) -> dict:
@@ -108,21 +165,23 @@ ROLE_TRADES: dict[str, list[dict]] = {
         offer(stack(coin("iron"), 3), stack("cameracraft:camera", 1)),
     ],
     "banker": [
-        offer(stack(coin("iron"), 2), stack("lightmanscurrency:atm_card", 1)),
-        offer(stack(coin("gold"), 4), stack("lightmanscurrency:coin_chest", 1)),
-        offer(stack(coin("gold"), 2), stack("lightmanscurrency:cash_register", 1)),
+        offer(stack(coin("gold"), 2), stack("citylife:atm", 1)),
+        offer(stack(coin("iron"), 3), stack("minecraft:paper", 8)),
+        offer(stack(coin("gold"), 1), stack("minecraft:iron_block", 2)),
     ],
     "gunsmith": [
         # Сами стволы собираются на верстаке TaCZ, поэтому продаём верстак и сырьё.
         offer(stack(coin("gold"), 3), stack("tacz:gun_smith_table", 1)),
         offer(stack(coin("iron"), 3), stack("minecraft:iron_ingot", 8)),
         offer(stack(coin("iron"), 2), stack("minecraft:gunpowder", 8)),
-        offer(stack(coin("gold"), 1), stack("tacz:ammo_box.iron", 1)),
+        # Патронный ящик — один предмет с уровнем в NBT: железный это Level 0.
+        offer(stack(coin("gold"), 1), stack("tacz:ammo_box", 1, {"Level": 0})),
     ],
     "car_dealer": [
-        offer(stack(coin("gold"), 2), stack("minecraft:iron_block", 4)),
-        offer(stack(coin("iron"), 4), stack("minecraft:coal", 32)),
-        offer(stack(coin("copper"), 6), stack("minecraft:glass", 16)),
+        offer(stack(coin(price), count), car_key(body, title))
+        for body, title, price, count in CARS
+    ] + [
+        offer(stack(coin("iron"), 2), stack("citylife:fuel_canister", 2)),
     ],
     "realtor": [
         offer(stack(coin("gold"), 1), stack("citylife:smart_lock", 1)),
@@ -132,7 +191,7 @@ ROLE_TRADES: dict[str, list[dict]] = {
     "clerk": [
         offer(stack(coin("copper"), 4), stack("minecraft:paper", 8)),
         offer(stack(coin("iron"), 1), stack("minecraft:map", 1)),
-        offer(stack(coin("iron"), 2), stack("lightmanscurrency:ticket_machine", 1)),
+        offer(stack(coin("iron"), 2), stack("minecraft:compass", 1)),
     ],
     "cook": [
         offer(stack(coin("copper"), 4), stack("minecraft:cooked_chicken", 3)),
@@ -151,9 +210,9 @@ ROLE_TRADES: dict[str, list[dict]] = {
         offer(stack(coin("copper"), 6), stack("minecraft:music_disc_cat", 1)),
     ],
     "fuel_seller": [
-        offer(stack(coin("copper"), 6), stack("minecraft:coal", 16)),
-        offer(stack(coin("iron"), 1), stack("minecraft:coal_block", 2)),
-        offer(stack(coin("copper"), 2), stack("minecraft:bread", 2)),
+        offer(stack(coin("iron"), 1), stack("citylife:fuel_canister", 1)),
+        offer(stack(coin("iron"), 4), stack("citylife:fuel_canister", 5)),
+        offer(stack(coin("copper"), 3), stack("minecraft:cooked_beef", 4)),
     ],
     "medic": [
         offer(stack(coin("iron"), 1), stack("minecraft:golden_apple", 1)),
@@ -214,18 +273,20 @@ def npc_command(spot: dict) -> str:
         "Rotation": [float(spot["rotation"]), 0.0],
         "NoAI": True,
     }
-    if trades:
-        entity = TRADER_ENTITY
-        data["VillagerData"] = {
-            "type": "minecraft:plains",
-            "profession": ROLE_PROFESSION.get(spot["role"], "minecraft:nitwit"),
-            "level": 5,
-        }
-        data["Xp"] = 250
-        data["Offers"] = {"Recipes": trades}
-    else:
-        entity = FLAVOUR_ENTITY
-    return f"summon {entity} {spot['x']}.5 {spot['y']} {spot['z']}.5 {to_snbt(data)}"
+    # Скин по роли; прохожим раздаём разные, чтобы толпа не была на одно лицо.
+    skin = ROLE_SKIN.get(spot["role"])
+    if skin is None:
+        skin = CITIZEN_SKINS[(spot["x"] * 31 + spot["z"] * 17) % len(CITIZEN_SKINS)]
+    data["SkinData"] = {
+        "Type": "RESOURCE_LOCATION",
+        "Texture": f"citylife:textures/entity/npc/{skin}.png",
+        "Name": "",
+        "URL": "",
+    }
+    # Готовые Offers в NBT не кладём: Easy NPC их выбрасывает при спавне
+    # (проверено на сервере — тег исчезает при любом расположении). Торговлю
+    # ведёт мод citylife по тегу роли, цены и товар берутся из ShopCatalog.
+    return f"summon {NPC_ENTITY} {spot['x']}.5 {spot['y']} {spot['z']}.5 {to_snbt(data)}"
 
 
 def to_snbt(value) -> str:
@@ -286,7 +347,20 @@ def has_items(*items: str) -> dict:
 
 
 def placed(block: str) -> dict:
-    return {"trigger": "minecraft:placed_block", "conditions": {"block": block}}
+    """
+    Условие «игрок поставил такой блок».
+
+    В 1.20.1 у триггера minecraft:placed_block больше нет поля block: блок
+    описывается предикатом location. Со старым форматом достижение молча
+    не грузится — «Failed to parse location field» в логе сервера.
+    """
+    return {
+        "trigger": "minecraft:placed_block",
+        "conditions": {"location": [
+            {"condition": "minecraft:location_check",
+             "predicate": {"block": {"blocks": [block]}}},
+        ]},
+    }
 
 
 def in_area(x0: int, z0: int, x1: int, z1: int) -> dict:
@@ -305,7 +379,9 @@ def in_area(x0: int, z0: int, x1: int, z1: int) -> dict:
     }
 
 
-COINS = [coin(k) for k in ("copper", "iron", "gold", "emerald", "diamond", "netherite")]
+MONEY = ["citylife:coin_1", "citylife:coin_10", "citylife:banknote_50",
+         "citylife:banknote_100", "citylife:banknote_500",
+         "citylife:banknote_1000", "citylife:banknote_5000"]
 
 
 def story(city: P.Plan) -> dict[str, dict]:
@@ -329,13 +405,13 @@ def story(city: P.Plan) -> dict[str, dict]:
 
     tree["story/first_money"] = advancement(
         "Первые деньги", "Заработай первую монету.",
-        "lightmanscurrency:coin_copper", "citylife:story/phone",
-        {"has_coin": has_items(*COINS)})
+        "citylife:banknote_100", "citylife:story/phone",
+        {"has_coin": has_items(*MONEY)})
 
     tree["story/bank_account"] = advancement(
-        "Счёт в банке", "Получи банковскую карту в городском банке.",
-        "lightmanscurrency:atm_card", "citylife:story/first_money",
-        {"has_card": has_items("lightmanscurrency:atm_card")})
+        "Счёт в банке", "Выпусти карту «Мир» или Mastercard в банкомате.",
+        "citylife:card_mir", "citylife:story/first_money",
+        {"has_card": has_items("citylife:card_mir", "citylife:card_mastercard")})
 
     tree["story/own_keys"] = advancement(
         "Свои ключи", "Поставь умный замок — теперь у тебя есть своё жильё.",
@@ -349,9 +425,9 @@ def story(city: P.Plan) -> dict[str, dict]:
         {"has_table": has_items("tacz:gun_smith_table")})
 
     tree["story/legal_shop"] = advancement(
-        "Свой бизнес", "Поставь кассу и открой собственную торговлю.",
-        "lightmanscurrency:cash_register", "citylife:story/own_keys",
-        {"placed_register": placed("lightmanscurrency:cash_register")})
+        "Свой бизнес", "Поставь свой банкомат — точка в городе есть.",
+        "citylife:atm", "citylife:story/own_keys",
+        {"placed_register": placed("citylife:atm")})
 
     tree["story/legal_security"] = advancement(
         "Под охраной", "Поставь камеру или кодовый замок на своём объекте.",
@@ -363,9 +439,10 @@ def story(city: P.Plan) -> dict[str, dict]:
     tree["story/legal_security"]["requirements"] = [["camera", "keypad"]]
 
     tree["story/legal_empire"] = advancement(
-        "Городской предприниматель", "Собери сундук монет — дело пошло.",
-        "lightmanscurrency:coin_chest", "citylife:story/legal_security",
-        {"has_chest": has_items("lightmanscurrency:coin_chest")},
+        "Городской предприниматель", "Скопи пачку пятитысячных — дело пошло.",
+        "citylife:banknote_5000", "citylife:story/legal_security",
+        {"has_chest": {"trigger": "minecraft:inventory_changed", "conditions": {
+            "items": [{"items": ["citylife:banknote_5000"], "count": {"min": 10}}]}}},
         frame="goal")
 
     # --- криминальная ветка -------------------------------------------------
@@ -428,35 +505,46 @@ def story(city: P.Plan) -> dict[str, dict]:
 GUIDE_PAGES = [
     [
         {"text": "LOS SANTOS\n\n", "bold": True},
-        {"text": "Современный город: работа, деньги, телефоны, камеры, "
-                 "умные замки и оружие.\n\n"},
+        {"text": "Современный город: работа, рубли, телефоны, камеры, "
+                 "умные замки, машины и оружие.\n\n"},
         {"text": "Цели видны в меню достижений (клавиша L)."},
     ],
     [
         {"text": "С чего начать\n\n", "bold": True},
-        {"text": "1. Салон связи — купи смартфон.\n"
-                 "2. Банк — возьми карту и открой счёт.\n"
-                 "3. Найди работу у NPC в ТЦ.\n"
-                 "4. Сними или купи жильё и поставь умный замок.\n"},
+        {"text": "1. Телефон уже в инвентаре — правый клик.\n"
+                 "2. Банк: карта Мир или Mastercard, счёт открыт.\n"
+                 "3. Работа — команда /work у любого NPC.\n"
+                 "4. Жильё: умный замок у риелтора.\n"},
     ],
     [
         {"text": "Телефон\n\n", "bold": True},
-        {"text": "Правый клик — 6 приложений: сообщения, контакты, банк, "
-                 "карта, умный дом и вызов 112.\n\n"
-                 "Замок привязывается к телефону: кликни телефоном по замку."},
+        {"text": "Правый клик — рабочий стол. Приложения: сообщения, "
+                 "контакты, банк, навигатор, умный дом, 112, маркет и "
+                 "настройки.\n\n"
+                 "В маркете ставятся игры: тетрис и змейка.\n\n"
+                 "Обои — в настройках: закат, луна, Марс и Юпитер."},
+    ],
+    [
+        {"text": "Навигатор\n\n", "bold": True},
+        {"text": "В навигаторе — метки города: банк, мэрия, ТЦ, АЗС, метро. "
+                 "Своя точка добавляется кнопкой «Метка здесь».\n\n"
+                 "Выбери цель — и по земле ляжет линия маршрута, а над "
+                 "точкой повиснет маркер. Линия гаснет по приходу."},
     ],
     [
         {"text": "Деньги\n\n", "bold": True},
-        {"text": "Монеты Lightman's Currency: медь, железо, золото, изумруд.\n\n"
-                 "Банкоматы и кассы стоят в банке и ТЦ. Свой магазин — "
-                 "поставь кассу и настрой ассортимент."},
+        {"text": "Наличные — рубли: монета 10 ₽, купюры 100, 1000 и 5000 ₽.\n\n"
+                 "Безнал — карта Мир или Mastercard, счёт виден в телефоне.\n\n"
+                 "Банкоматы стоят у банка, ТЦ и на заправках: кладут наличные "
+                 "на счёт и снимают обратно."},
     ],
     [
-        {"text": "Транспорт\n\n", "bold": True},
-        {"text": "Машины Immersive Vehicles собираются на верстаке мода, "
-                 "заправка — на АЗС.\n\n"
-                 "Метро: три станции, рельсы между ними уже проложены.\n\n"
-                 "Эстакада идёт с севера на юг по восточной части города."},
+        {"text": "Машины\n\n", "bold": True},
+        {"text": "В автосалоне продаются ключи: правый клик по земле — и "
+                 "машина готова, собирать по частям не нужно.\n\n"
+                 "Бензин — канистра с АЗС: правый клик по машине заливает "
+                 "полный бак. Ремонта в городе нет.\n\n"
+                 "Метро: три станции, рельсы уже проложены."},
     ],
     [
         {"text": "Свободные участки\n\n", "bold": True},
@@ -469,7 +557,11 @@ GUIDE_PAGES = [
 
 def guide_function() -> str:
     pages = [json.dumps(page, ensure_ascii=False) for page in GUIDE_PAGES]
-    pages_snbt = ",".join("'" + page.replace("'", "\\'") + "'" for page in pages)
+    # JSON уже содержит \n внутри кавычек. В SNBT такая строка попадает в
+    # одинарные кавычки, и парсер команд видит \n как недопустимую escape-
+    # последовательность — поэтому обратный слэш удваиваем.
+    pages_snbt = ",".join(
+        "'" + page.replace("\\", "\\\\").replace("'", "\\'") + "'" for page in pages)
     return ("give @s written_book{title:\"Гид по Лос-Сантосу\","
             "author:\"Мэрия города\",generation:0,pages:[" + pages_snbt + "]} 1")
 

@@ -1,13 +1,13 @@
 {
   "display": {
     "icon": {
-      "item": "lightmanscurrency:coin_chest"
+      "item": "citylife:banknote_5000"
     },
     "title": {
       "text": "Городской предприниматель"
     },
     "description": {
-      "text": "Собери сундук монет — дело пошло."
+      "text": "Скопи пачку пятитысячных — дело пошло."
     },
     "frame": "goal",
     "show_toast": true,
@@ -21,8 +21,11 @@
         "items": [
           {
             "items": [
-              "lightmanscurrency:coin_chest"
-            ]
+              "citylife:banknote_5000"
+            ],
+            "count": {
+              "min": 10
+            }
           }
         ]
       }

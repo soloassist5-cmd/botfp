@@ -46,6 +46,34 @@ public final class CityCommands {
                             return 1;
                         })));
 
+        // Диагностика ассортимента: видно, какие товары собрались, а какие
+        // отпали из-за отсутствующего мода.
+        root.then(Commands.literal("shops").requires(source -> source.hasPermission(2))
+                .executes(context -> {
+                    int roles = 0;
+                    int offers = 0;
+                    for (var entry : dev.lscity.citylife.trade.ShopCatalog.BY_ROLE.entrySet()) {
+                        int built = entry.getValue().build().size();
+                        int listed = entry.getValue().offers().size();
+                        roles++;
+                        offers += built;
+                        // Пропавший товар — это чужой мод переименовал предмет,
+                        // поэтому показываем сам идентификатор, а не только счёт.
+                        String lost = entry.getValue().missing();
+                        String tail = lost.isEmpty() ? "" : " — нет: " + lost;
+                        context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component
+                                .literal(entry.getKey() + ": " + built + "/" + listed + tail),
+                                false);
+                    }
+                    int finalRoles = roles;
+                    int finalOffers = offers;
+                    context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component
+                            .literal("ролей " + finalRoles + ", предложений " + finalOffers
+                                    + " (без товара — служебные роли)"),
+                            false);
+                    return roles;
+                }));
+
         root.then(Commands.literal("money").requires(source -> source.hasPermission(2))
                 .then(moneyOp("give"))
                 .then(moneyOp("take"))

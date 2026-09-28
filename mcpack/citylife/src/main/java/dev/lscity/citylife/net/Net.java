@@ -37,6 +37,16 @@ public final class Net {
                 .decoder(OpenPinPacket::decode)
                 .consumerMainThread(OpenPinPacket::handle)
                 .add();
+        CHANNEL.messageBuilder(OpenAtmPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(OpenAtmPacket::encode)
+                .decoder(OpenAtmPacket::decode)
+                .consumerMainThread(OpenAtmPacket::handle)
+                .add();
+        CHANNEL.messageBuilder(NavPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(NavPacket::encode)
+                .decoder(NavPacket::decode)
+                .consumerMainThread(NavPacket::handle)
+                .add();
         CHANNEL.messageBuilder(ActionPacket.class, id, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(ActionPacket::encode)
                 .decoder(ActionPacket::decode)
@@ -54,6 +64,11 @@ public final class Net {
     public static void syncPhone(ServerPlayer player) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                 new OpenPhonePacket(PhoneServer.snapshot(player), false));
+    }
+
+    /** Отправить игроку его маршрут: при выборе цели, отмене и входе в мир. */
+    public static void sendRoute(ServerPlayer player, dev.lscity.citylife.data.Waypoint point) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), NavPacket.of(point));
     }
 
     public static void openPinPrompt(ServerPlayer player, BlockPos pos, String label) {

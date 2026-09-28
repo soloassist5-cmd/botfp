@@ -127,16 +127,14 @@ def write_level_dat(path: str, *, name: str, seed: int, spawn: tuple[int, int, i
             "Disabled": nbt.List(nbt.TAG_STRING),
         },
         "ServerBrands": ["forge"],
-        # Без этого блока сервер пишет ошибку "key missing: DragonFight".
-        "DimensionData": {
-            "1": {
-                "DragonFight": {
-                    "NeedsStateScanning": nbt.Byte(1),
-                    "DragonKilled": nbt.Byte(0),
-                    "PreviouslyKilled": nbt.Byte(0),
-                    "Gateways": nbt.IntArray(list(range(20))),
-                },
-            },
+        # Данные боя с драконом в 1.16+ лежат в корне level.dat, а не внутри
+        # DimensionData: со старым местом сервер пишет «key missing: DragonFight»
+        # и подставляет значения по умолчанию.
+        "DragonFight": {
+            "NeedsStateScanning": nbt.Byte(1),
+            "DragonKilled": nbt.Byte(0),
+            "PreviouslyKilled": nbt.Byte(0),
+            "Gateways": nbt.IntArray(list(range(20))),
         },
     }
     nbt.write_gzip(path, {"Data": data})

@@ -25,7 +25,17 @@ public record ActionPacket(String action, CompoundTag args) {
         NetworkEvent.Context ctx = context.get();
         ctx.enqueueWork(() -> {
             ServerPlayer player = ctx.getSender();
-            if (player != null) {
+            if (player == null) {
+                return;
+            }
+            // Банкомат и телефон ходят по одному каналу, но логика у них разная:
+            // действия банкомата проверяют расстояние до блока, телефонные — нет.
+            if (packet.action().startsWith("atm_")) {
+                if (AtmServer.handle(player, packet.action(), packet.args())) {
+                    AtmServer.sync(player,
+                            net.minecraft.core.BlockPos.of(packet.args().getLong("pos")));
+                }
+            } else {
                 PhoneServer.handle(player, packet.action(), packet.args());
             }
         });

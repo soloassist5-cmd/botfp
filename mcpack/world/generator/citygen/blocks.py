@@ -54,6 +54,13 @@ BRICKS = "minecraft:bricks"
 QUARTZ = "minecraft:quartz_block"
 QUARTZ_SMOOTH = "minecraft:smooth_quartz"
 IRON_BLOCK = "minecraft:iron_block"
+DEEPSLATE_TILES = "minecraft:deepslate_tiles"
+POLISHED_DEEPSLATE = "minecraft:polished_deepslate"
+CUT_COPPER = "minecraft:cut_copper"
+EXPOSED_COPPER = "minecraft:exposed_cut_copper"
+WEATHERED_COPPER = "minecraft:weathered_cut_copper"
+MUD_BRICKS = "minecraft:mud_bricks"
+CALCITE = "minecraft:calcite"
 GLASS = "minecraft:glass"
 GLASS_TINTED = "minecraft:tinted_glass"
 GLASS_PANE = "minecraft:glass_pane[east=false,north=false,south=false,waterlogged=false,west=false]"
@@ -78,6 +85,10 @@ JUNGLE_LEAVES = "minecraft:jungle_leaves[distance=7,persistent=true,waterlogged=
 JUNGLE_LOG = "minecraft:jungle_log[axis=y]"
 
 # --- прочее -----------------------------------------------------------------
+# Невидимый источник света: светит как светокамень, но в помещении его не
+# видно — потолки остаются чистыми. Ставится только генератором, в выживании
+# такой блок не получить.
+LIGHT = "minecraft:light[level=15,waterlogged=false]"
 LAMP = "minecraft:sea_lantern"
 GLOWSTONE = "minecraft:glowstone"
 LANTERN = "minecraft:lantern[hanging=false,waterlogged=false]"
@@ -171,6 +182,11 @@ FACADE_SETS = [
     (QUARTZ, CONCRETE_LIGHT, GLASS_CYAN, "quartz"),
     (TERRACOTTA_LIGHT, CONCRETE_BROWN, GLASS, "stone_brick"),
     (CONCRETE_YELLOW, CONCRETE_ORANGE, GLASS, "smooth_sandstone"),
+    # Современные фасады: тёмный камень и медь дают городу «деловой» вид.
+    (DEEPSLATE_TILES, CALCITE, GLASS_BLACK, "deepslate_tiles"),
+    (POLISHED_DEEPSLATE, CUT_COPPER, GLASS_GRAY, "polished_deepslate"),
+    (CALCITE, WEATHERED_COPPER, GLASS_CYAN, "smooth_quartz"),
+    (MUD_BRICKS, TERRACOTTA_ORANGE, GLASS, "mud_brick"),
 ]
 
 HOUSE_SETS = [

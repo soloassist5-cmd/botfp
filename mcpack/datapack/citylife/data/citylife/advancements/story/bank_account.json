@@ -1,13 +1,13 @@
 {
   "display": {
     "icon": {
-      "item": "lightmanscurrency:atm_card"
+      "item": "citylife:card_mir"
     },
     "title": {
       "text": "Счёт в банке"
     },
     "description": {
-      "text": "Получи банковскую карту в городском банке."
+      "text": "Выпусти карту «Мир» или Mastercard в банкомате."
     },
     "frame": "task",
     "show_toast": true,
@@ -21,7 +21,8 @@
         "items": [
           {
             "items": [
-              "lightmanscurrency:atm_card"
+              "citylife:card_mir",
+              "citylife:card_mastercard"
             ]
           }
         ]

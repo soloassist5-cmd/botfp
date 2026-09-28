@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "citylife:banknote_500"
+    },
+    {
+      "item": "citylife:banknote_500"
+    }
+  ],
+  "result": {
+    "item": "citylife:banknote_1000"
+  }
+}

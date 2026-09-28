@@ -53,12 +53,6 @@ group = "core"
 note = "Пак современного оружия для TaCZ"
 
 [[mods]]
-slug = "lightmans-currency"
-side  = "both"
-group = "core"
-note = "Экономика: монеты, банкоматы, счета, карты, торговые автоматы, налоги"
-
-[[mods]]
 slug = "security-craft"
 side  = "both"
 group = "core"
@@ -76,17 +70,15 @@ side  = "both"
 group = "core"
 note = "Фотоаппараты, плёнка, проявка, фотоальбомы"
 
+# Immersive Vehicles с официальным паком машин убраны: 74 МБ, тяжёлый рендер
+# и сборка машины по частям с ремонтом. Вместо них Ultimate Car Mod — 2,5 МБ,
+# машина целиком, топливо в канистре. Сборку и заправку мы заменяем торговлей:
+# готовые машины продаёт автосалон, канистры — заправка, всё за рубли.
 [[mods]]
-slug = "immersive-vehicles"
+slug = "ultimate-car-mod"
 side  = "both"
 group = "core"
-note = "Автомобили с физикой, заправка, ремонт"
-
-[[mods]]
-slug = "immersive-vehicles-official-content-pack"
-side  = "both"
-group = "core"
-note = "Официальный пак машин для Immersive Vehicles"
+note = "Машины целиком, канистры с топливом, без сборки по частям"
 
 [[mods]]
 slug = "traffic-control-+-roads-mod-by-teerth"
@@ -251,17 +243,13 @@ side  = "client"
 group = "qol"
 note = "Эхо и реверберация в помещениях и переулках"
 
-[[mods]]
-slug = "not-enough-animations"
-side  = "client"
-group = "qol"
-note = "Анимации тела от третьего лица"
-
-[[mods]]
-slug = "first-person-model"
-side  = "client"
-group = "qol"
-note = "Видно своё тело от первого лица"
+# Not Enough Animations и First-person Model убраны намеренно: оба лезут
+# в отрисовку рук и поворот корпуса, из-за чего ломается прицеливание у TaCZ
+# и Elite X. Поодиночке не убрать — NEA обязательная зависимость
+# First-person Model, поэтому уходят вместе.
+#
+# Lightman's Currency убран: деньги теперь свои, рублёвые — банкноты, карты
+# «Мир» и Mastercard, банкоматы citylife. Две валюты рядом только путали бы.
 
 [[mods]]
 slug = "waystones"

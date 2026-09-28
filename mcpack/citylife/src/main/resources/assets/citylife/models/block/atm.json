@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "citylife:block/atm_top",
+    "front": "citylife:block/atm_front",
+    "side": "citylife:block/atm_side"
+  }
+}

@@ -18,7 +18,18 @@
     "placed_lock": {
       "trigger": "minecraft:placed_block",
       "conditions": {
-        "block": "citylife:smart_lock"
+        "location": [
+          {
+            "condition": "minecraft:location_check",
+            "predicate": {
+              "block": {
+                "blocks": [
+                  "citylife:smart_lock"
+                ]
+              }
+            }
+          }
+        ]
       }
     }
   },

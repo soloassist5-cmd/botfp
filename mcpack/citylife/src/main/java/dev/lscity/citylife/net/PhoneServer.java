@@ -39,6 +39,10 @@ public final class PhoneServer {
         tag.putInt("y", player.getBlockY());
         tag.putInt("z", player.getBlockZ());
         tag.putInt("maxWaypoints", CityConfig.CONFIG.maxWaypoints.get());
+        tag.putLong("daytime", player.level().getDayTime() % 24000L);
+        tag.putLong("cash", dev.lscity.citylife.economy.Money.cash(player));
+        tag.putString("owner", player.getGameProfile().getName());
+        tag.putString("wallpaper", data.wallpaper(id));
         tag.putInt("lockRange", CityConfig.CONFIG.phoneLockRange.get());
 
         ListTag messages = new ListTag();
@@ -65,16 +69,31 @@ public final class PhoneServer {
         }
         tag.put("contacts", contacts);
 
-        ListTag waypoints = new ListTag();
-        for (Waypoint point : data.waypoints(id)) {
-            CompoundTag entry = new CompoundTag();
-            entry.putString("name", point.name());
-            entry.putInt("x", point.x());
-            entry.putInt("y", point.y());
-            entry.putInt("z", point.z());
-            waypoints.add(entry);
+        ListTag apps = new ListTag();
+        for (String app : data.apps(id)) {
+            apps.add(net.minecraft.nbt.StringTag.valueOf(app));
         }
+        tag.put("apps", apps);
+
+        // Меток в городе полсотни, а на экране помещается пять: показываем
+        // их по возрастанию расстояния, чтобы ближайший банкомат или метро
+        // был первой строкой, а не двадцатой.
+        List<Waypoint> points = new java.util.ArrayList<>(
+                dev.lscity.citylife.data.CityLandmarks.ALL);
+        points.addAll(data.waypoints(id));
+        List<CompoundTag> rows = new java.util.ArrayList<>();
+        for (Waypoint point : points) {
+            rows.add(withDistance(point, player));
+        }
+        rows.sort(java.util.Comparator.comparingInt(row -> row.getInt("dist")));
+        ListTag waypoints = new ListTag();
+        rows.forEach(waypoints::add);
         tag.put("waypoints", waypoints);
+
+        Waypoint route = data.route(id);
+        if (route != null) {
+            tag.put("route", withDistance(route, player));
+        }
 
         ListTag locks = new ListTag();
         for (BlockPos pos : List.copyOf(data.locks(id))) {
@@ -113,6 +132,15 @@ public final class PhoneServer {
 
     // --- действия -----------------------------------------------------------
 
+    /** Метка вместе с расстоянием до игрока — список сортируется по близости. */
+    private static CompoundTag withDistance(Waypoint point, ServerPlayer player) {
+        CompoundTag entry = point.save();
+        double dx = point.x() - player.getX();
+        double dz = point.z() - player.getZ();
+        entry.putInt("dist", (int) Math.sqrt(dx * dx + dz * dz));
+        return entry;
+    }
+
     public static void handle(ServerPlayer player, String action, CompoundTag args) {
         boolean holdsPhone = player.getMainHandItem().is(Registration.SMARTPHONE.get())
                 || player.getOffhandItem().is(Registration.SMARTPHONE.get());
@@ -143,7 +171,34 @@ public final class PhoneServer {
                             .withStyle(ChatFormatting.RED));
                 }
             }
-            case "wp_del" -> data.removeWaypoint(id, args.getInt("index"));
+            case "wp_del" -> {
+                // Городские метки не удаляем: индекс приходит уже из личного списка.
+                data.removeWaypoint(id, args.getInt("index"));
+                Waypoint active = data.route(id);
+                if (active != null && !active.city()) {
+                    data.setRoute(id, null);
+                    Net.sendRoute(player, null);
+                }
+            }
+            case "app_install" -> {
+                if (data.installApp(id, args.getString("app"))) {
+                    player.sendSystemMessage(Component.translatable("citylife.market.installed",
+                            Component.translatable("citylife.app." + args.getString("app"))));
+                }
+            }
+            case "app_remove" -> data.removeApp(id, args.getString("app"));
+            case "wallpaper" -> data.setWallpaper(id, args.getString("id"));
+            case "nav_set" -> {
+                Waypoint point = Waypoint.load(args.getCompound("point"));
+                data.setRoute(id, point);
+                Net.sendRoute(player, point);
+                player.displayClientMessage(Component.translatable("citylife.nav.started",
+                        point.name()), true);
+            }
+            case "nav_stop" -> {
+                data.setRoute(id, null);
+                Net.sendRoute(player, null);
+            }
             case "lock_toggle" -> lockToggle(player, data, args);
             case "lock_unpair" -> data.unpairLock(id, BlockPos.of(args.getLong("pos")));
             case "lock_grant" -> lockGrant(player, args);

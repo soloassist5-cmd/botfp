@@ -9,6 +9,7 @@ public final class CityConfig {
     public static final CityConfig CONFIG;
 
     public final ForgeConfigSpec.LongValue startingBalance;
+    public final ForgeConfigSpec.IntValue cardPrice;
     public final ForgeConfigSpec.IntValue phoneLockRange;
     public final ForgeConfigSpec.IntValue maxWaypoints;
     public final ForgeConfigSpec.IntValue maxMessages;
@@ -20,8 +21,11 @@ public final class CityConfig {
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
         startingBalance = builder
-                .comment("Стартовый баланс банковского счёта нового игрока.")
-                .defineInRange("startingBalance", 500L, 0L, 1_000_000_000L);
+                .comment("Стартовый баланс банковского счёта нового игрока, в рублях.")
+                .defineInRange("startingBalance", 5000L, 0L, 1_000_000_000L);
+        cardPrice = builder
+                .comment("Сколько банк берёт за выпуск карты в банкомате, в рублях.")
+                .defineInRange("cardPrice", 300, 0, 100_000);
         phoneLockRange = builder
                 .comment("На каком расстоянии телефон управляет привязанным замком.")
                 .defineInRange("phoneLockRange", 64, 8, 512);

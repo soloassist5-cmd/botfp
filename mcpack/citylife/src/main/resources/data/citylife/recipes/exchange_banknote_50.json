@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "citylife:coin_10"
+    },
+    {
+      "item": "citylife:coin_10"
+    },
+    {
+      "item": "citylife:coin_10"
+    },
+    {
+      "item": "citylife:coin_10"
+    },
+    {
+      "item": "citylife:coin_10"
+    }
+  ],
+  "result": {
+    "item": "citylife:banknote_50"
+  }
+}

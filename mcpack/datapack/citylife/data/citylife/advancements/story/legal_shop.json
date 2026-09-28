@@ -1,13 +1,13 @@
 {
   "display": {
     "icon": {
-      "item": "lightmanscurrency:cash_register"
+      "item": "citylife:atm"
     },
     "title": {
       "text": "Свой бизнес"
     },
     "description": {
-      "text": "Поставь кассу и открой собственную торговлю."
+      "text": "Поставь свой банкомат — точка в городе есть."
     },
     "frame": "task",
     "show_toast": true,
@@ -18,7 +18,18 @@
     "placed_register": {
       "trigger": "minecraft:placed_block",
       "conditions": {
-        "block": "lightmanscurrency:cash_register"
+        "location": [
+          {
+            "condition": "minecraft:location_check",
+            "predicate": {
+              "block": {
+                "blocks": [
+                  "citylife:atm"
+                ]
+              }
+            }
+          }
+        ]
       }
     }
   },

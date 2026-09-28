@@ -12,8 +12,10 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -30,6 +32,17 @@ public class CityData extends SavedData {
     private final Map<UUID, List<Message>> inbox = new LinkedHashMap<>();
     private final Map<UUID, List<Waypoint>> waypoints = new LinkedHashMap<>();
     private final Map<UUID, List<BlockPos>> pairedLocks = new LinkedHashMap<>();
+    private final Map<UUID, Set<String>> apps = new LinkedHashMap<>();
+    private final Map<UUID, Waypoint> routes = new LinkedHashMap<>();
+    private final Map<UUID, String> wallpapers = new LinkedHashMap<>();
+
+    /** Что стоит в телефоне сразу: связь, деньги, навигация и безопасность. */
+    public static final List<String> DEFAULT_APPS =
+            List.of("messages", "contacts", "bank", "navigator", "locks", "sos", "market",
+                    "settings");
+
+    /** Что можно доставить из маркета. */
+    public static final List<String> STORE_APPS = List.of("tetris", "snake");
 
     public static CityData get(MinecraftServer server) {
         ServerLevel overworld = server.getLevel(Level.OVERWORLD);
@@ -102,6 +115,51 @@ public class CityData extends SavedData {
 
     // --- метки на карте -----------------------------------------------------
 
+    // --- приложения и маршрут ------------------------------------------------
+
+    public Set<String> apps(UUID player) {
+        return apps.computeIfAbsent(player, key -> new LinkedHashSet<>(DEFAULT_APPS));
+    }
+
+    public boolean installApp(UUID player, String app) {
+        if (!STORE_APPS.contains(app) || !apps(player).add(app)) {
+            return false;
+        }
+        setDirty();
+        return true;
+    }
+
+    public boolean removeApp(UUID player, String app) {
+        // Базовые приложения удалить нельзя: без них телефон превращается в кирпич.
+        if (DEFAULT_APPS.contains(app) || !apps(player).remove(app)) {
+            return false;
+        }
+        setDirty();
+        return true;
+    }
+
+    public String wallpaper(UUID player) {
+        return wallpapers.getOrDefault(player, "sunset");
+    }
+
+    public void setWallpaper(UUID player, String id) {
+        wallpapers.put(player, id);
+        setDirty();
+    }
+
+    public Waypoint route(UUID player) {
+        return routes.get(player);
+    }
+
+    public void setRoute(UUID player, Waypoint point) {
+        if (point == null) {
+            routes.remove(player);
+        } else {
+            routes.put(player, point);
+        }
+        setDirty();
+    }
+
     public List<Waypoint> waypoints(UUID player) {
         return waypoints.computeIfAbsent(player, key -> new ArrayList<>());
     }
@@ -169,6 +227,28 @@ public class CityData extends SavedData {
             }
             data.inbox.put(owner, list);
         }
+        ListTag installed = tag.getList("apps", Tag.TAG_COMPOUND);
+        for (int i = 0; i < installed.size(); i++) {
+            CompoundTag entry = installed.getCompound(i);
+            Set<String> set = new LinkedHashSet<>();
+            ListTag ids = entry.getList("items", Tag.TAG_STRING);
+            for (int j = 0; j < ids.size(); j++) {
+                set.add(ids.getString(j));
+            }
+            data.apps.put(entry.getUUID("id"), set);
+        }
+
+        CompoundTag paper = tag.getCompound("wallpapers");
+        for (String key : paper.getAllKeys()) {
+            data.wallpapers.put(UUID.fromString(key), paper.getString(key));
+        }
+
+        ListTag active = tag.getList("routes", Tag.TAG_COMPOUND);
+        for (int i = 0; i < active.size(); i++) {
+            CompoundTag entry = active.getCompound(i);
+            data.routes.put(entry.getUUID("id"), Waypoint.load(entry.getCompound("point")));
+        }
+
         ListTag marks = tag.getList("waypoints", Tag.TAG_COMPOUND);
         for (int i = 0; i < marks.size(); i++) {
             CompoundTag entry = marks.getCompound(i);
@@ -231,6 +311,30 @@ public class CityData extends SavedData {
             marks.add(entry);
         });
         tag.put("waypoints", marks);
+
+        ListTag installed = new ListTag();
+        apps.forEach((id, set) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("id", id);
+            ListTag ids = new ListTag();
+            set.forEach(app -> ids.add(net.minecraft.nbt.StringTag.valueOf(app)));
+            entry.put("items", ids);
+            installed.add(entry);
+        });
+        tag.put("apps", installed);
+
+        CompoundTag paper = new CompoundTag();
+        wallpapers.forEach((id, name) -> paper.putString(id.toString(), name));
+        tag.put("wallpapers", paper);
+
+        ListTag active = new ListTag();
+        routes.forEach((id, point) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("id", id);
+            entry.put("point", point.save());
+            active.add(entry);
+        });
+        tag.put("routes", active);
 
         ListTag pairs = new ListTag();
         pairedLocks.forEach((id, list) -> {
