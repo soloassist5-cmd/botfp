@@ -315,7 +315,7 @@ def main() -> int:
     start_html = "".join(
         f'<article class="start-step reveal"><div class="start-n">{esc(number)}</div>'
         f'<h3>{esc(title)}</h3><p>{esc(text)}</p>'
-        + (f'<a class="btn btn-ghost step-dl" href="{mrpack_href}" download>'
+        + (f'<a class="btn btn-ghost step-dl" href="{mrpack_href}" download data-download>'
            f'Скачать · {mrpack_mb} МБ</a>' if number == "Шаг 3" else "")
         + (code_block(*command) if command else "")
         + '</article>'
@@ -392,7 +392,7 @@ def main() -> int:
       у каждого свой товар. Город уже построен — {empty_share}% участков оставлены
       под твои постройки.</p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="{mrpack_href}" download>Скачать пак · {mrpack_mb} МБ</a>
+      <a class="btn btn-primary" href="{mrpack_href}" download data-download>Скачать сборку · {mrpack_mb} МБ</a>
       <a class="btn btn-ghost" href="#start">Как поставить</a>
     </div>
     <div class="hero-note">Один файл для Prism Launcher, Modrinth App и ATLauncher:
@@ -542,10 +542,54 @@ def main() -> int:
     <div class="footer-logo">LS City Life {pack["version"]}</div>
     <div>Minecraft {mc} · Forge {forge} · Java 17</div>
     <div>Карта и страница собраны из данных сборки скриптами</div>
-    <div><a href="{mrpack_href}" download>Скачать пак · {mrpack_mb} МБ</a> ·
+    <div><a href="{mrpack_href}" download data-download>Скачать сборку · {mrpack_mb} МБ</a> ·
       <a href="{archive_href}" download>архив с установщиком · {archive_mb} МБ</a></div>
   </div>
 </footer>
+
+<div class="dl-overlay" id="dl" hidden>
+  <div class="dl-sheet" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+    <button class="dl-close" type="button" aria-label="Закрыть">&times;</button>
+    <div class="dl-head">
+      <div class="eyebrow">Скачивание</div>
+      <h3 id="dl-title">Каким лаунчером играешь?</h3>
+      <p>От этого зависит только формат файла. Сборка, город и моды одинаковые.</p>
+    </div>
+    <div class="dl-cards">
+      <article class="dl-card" style="--accent:#35c7f0">
+        <div class="dl-badge">Official</div>
+        <h4>Лицензия Minecraft</h4>
+        <div class="dl-subtitle">примеры лаунчеров</div>
+        <ul class="dl-list">
+          <li>Prism Launcher</li><li>Modrinth App</li><li>ATLauncher</li>
+          <li>CurseForge App</li><li>Minecraft Launcher</li>
+        </ul>
+        <a class="btn btn-primary dl-go" href="{mrpack_href}" download>
+          Пак .mrpack · {mrpack_mb} МБ<span class="dl-arrow">↓</span></a>
+        <p class="dl-hint">Импорт одним файлом в Prism, Modrinth App и ATLauncher.
+          Для CurseForge App и официального лаунчера —
+          <a href="{archive_href}" download>архив с установщиком · {archive_mb} МБ</a>.</p>
+      </article>
+      <article class="dl-card" style="--accent:#ff7a45">
+        <div class="dl-badge">Pirate</div>
+        <h4>Пиратский лаунчер</h4>
+        <div class="dl-subtitle">примеры лаунчеров</div>
+        <ul class="dl-list">
+          <li>TLauncher</li><li>Legacy Launcher</li><li>SKlauncher</li>
+          <li>PollyMC</li><li>Prism в офлайн-режиме</li>
+        </ul>
+        <a class="btn btn-primary dl-go" href="{archive_href}" download>
+          Архив · {archive_mb} МБ<span class="dl-arrow">↓</span></a>
+        <p class="dl-hint">Распаковать и запустить УСТАНОВИТЬ.bat — он всё разложит сам.
+          PollyMC и Prism в офлайн-режиме читают
+          <a href="{mrpack_href}" download>пак .mrpack · {mrpack_mb} МБ</a>.</p>
+      </article>
+    </div>
+    <p class="dl-note">Ни в один файл моды не входят: 26 модов из {lock["mod_count"]} запрещают
+      перевыкладывание. Их скачивает лаунчер или установщик с авторских страниц —
+      {download_mb} МБ с проверкой хэшей.</p>
+  </div>
+</div>
 
 <script src="app.js" defer></script>
 </body>

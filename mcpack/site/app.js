@@ -127,4 +127,69 @@
       }, 1600);
     });
   });
+
+  /* --- окно выбора лаунчера ---
+     Кнопки скачивания сначала спрашивают, официальный лаунчер или пиратский:
+     от этого зависит формат файла. Без JS ссылка работает как обычная. */
+  const overlay = document.querySelector('.dl-overlay');
+  if (overlay) {
+    const sheet = overlay.querySelector('.dl-sheet');
+    const triggers = [...document.querySelectorAll('[data-download]')];
+    let opener = null;
+
+    const focusable = () =>
+      [...sheet.querySelectorAll('a[href], button')].filter((el) => !el.hidden);
+
+    const open = (event) => {
+      event.preventDefault();
+      opener = event.currentTarget;
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      // Кадр задержки: пока элемент скрыт, переход не запускается.
+      requestAnimationFrame(() => {
+        overlay.classList.add('open');
+        const first = focusable()[1] || focusable()[0];
+        if (first) first.focus({ preventScroll: true });
+      });
+    };
+
+    const close = () => {
+      if (overlay.hidden) return;
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+      const done = () => {
+        overlay.hidden = true;
+        if (opener) opener.focus({ preventScroll: true });
+      };
+      if (reduced) done();
+      else setTimeout(done, 260);
+    };
+
+    triggers.forEach((button) => button.addEventListener('click', open));
+    overlay.querySelector('.dl-close').addEventListener('click', close);
+    overlay.addEventListener('mousedown', (event) => {
+      if (event.target === overlay) close();
+    });
+    // Скачивание началось — окно больше не нужно.
+    overlay.querySelectorAll('a[download]').forEach((link) =>
+      link.addEventListener('click', () => setTimeout(close, 180))
+    );
+
+    document.addEventListener('keydown', (event) => {
+      if (overlay.hidden) return;
+      if (event.key === 'Escape') {
+        close();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      // Фокус не должен уходить из окна, пока оно открыто.
+      const items = focusable();
+      if (!items.length) return;
+      const edge = event.shiftKey ? items[0] : items[items.length - 1];
+      if (document.activeElement === edge) {
+        event.preventDefault();
+        (event.shiftKey ? items[items.length - 1] : items[0]).focus();
+      }
+    });
+  }
 })();

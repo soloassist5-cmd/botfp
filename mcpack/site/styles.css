@@ -723,3 +723,201 @@ footer {
   .bar-track { grid-column: 1 / -1; order: 3; }
   .nav-logo { font-size: 16px; letter-spacing: 0.1em; }
 }
+
+/* ===== Окно выбора лаунчера ================================================
+   Открывается по кнопке скачивания: два пути, официальный и пиратский.
+   Без JS ссылка остаётся обычной — окно только уточняет формат файла. */
+.dl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: rgba(3, 4, 10, 0.72);
+  opacity: 0;
+  transition: opacity 0.24s var(--ease), backdrop-filter 0.24s var(--ease);
+}
+
+.dl-overlay[hidden] { display: none; }
+.dl-overlay.open { opacity: 1; backdrop-filter: blur(10px) saturate(120%); }
+
+.dl-sheet {
+  position: relative;
+  width: min(880px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 34px 32px 26px;
+  border: 1px solid var(--line-strong);
+  border-radius: calc(var(--radius) + 6px);
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(255, 122, 69, 0.16), transparent 60%),
+    var(--surface);
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6);
+  transform: translateY(18px) scale(0.97);
+  opacity: 0;
+  transition: transform 0.34s var(--ease), opacity 0.34s var(--ease);
+}
+
+.dl-overlay.open .dl-sheet { transform: none; opacity: 1; }
+
+.dl-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), color 0.2s, border-color 0.2s;
+}
+
+.dl-close:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+  transform: rotate(90deg);
+}
+
+.dl-head { text-align: center; margin-bottom: 26px; }
+.dl-head h3 { font-size: clamp(24px, 3.4vw, 32px); margin: 6px 0 8px; }
+.dl-head p { color: var(--text-dim); font-size: 15px; margin: 0; }
+
+.dl-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.dl-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: transform 0.3s var(--ease), border-color 0.3s, box-shadow 0.3s;
+}
+
+.dl-overlay.open .dl-card {
+  animation: dl-rise 0.42s var(--ease) forwards;
+}
+
+.dl-overlay.open .dl-card:nth-child(1) { animation-delay: 0.08s; }
+.dl-overlay.open .dl-card:nth-child(2) { animation-delay: 0.16s; }
+
+@keyframes dl-rise {
+  to { opacity: 1; transform: none; }
+}
+
+/* Только для мыши: на тапе hover залипает и карточка остаётся подсвеченной. */
+@media (hover: hover) {
+  .dl-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+    transform: translateY(-4px);
+  }
+}
+
+.dl-badge {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dl-card h4 { font-size: 20px; margin: 14px 0 2px; }
+
+.dl-subtitle {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 10px;
+}
+
+.dl-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.dl-list li {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+  color: var(--text-dim);
+  transition: border-color 0.25s, color 0.25s;
+}
+
+@media (hover: hover) {
+  .dl-card:hover .dl-list li {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+    color: var(--text);
+  }
+}
+
+.dl-go {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(96deg,
+    color-mix(in srgb, var(--accent) 88%, white 12%),
+    color-mix(in srgb, var(--accent) 65%, var(--pink) 35%));
+  color: #0a0c16;
+}
+
+.dl-arrow { transition: transform 0.25s var(--ease); }
+.dl-go:hover .dl-arrow { transform: translateY(3px); }
+
+.dl-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-mute);
+}
+
+.dl-hint a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+
+.dl-note {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-mute);
+}
+
+@media (max-width: 560px) {
+  .dl-sheet { padding: 28px 18px 20px; }
+  .dl-card { padding: 20px 16px 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-overlay,
+  .dl-sheet,
+  .dl-card,
+  .dl-close,
+  .dl-arrow { transition: none; }
+  .dl-sheet { transform: none; }
+  .dl-overlay.open .dl-card { animation: none; opacity: 1; transform: none; }
+  .dl-card:hover { transform: none; }
+}
