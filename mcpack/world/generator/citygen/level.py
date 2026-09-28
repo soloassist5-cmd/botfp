@@ -71,7 +71,14 @@ def write_level_dat(path: str, *, name: str, seed: int, spawn: tuple[int, int, i
                     border: int, datapacks: list[str]) -> None:
     data = {
         "DataVersion": nbt.Int(DATA_VERSION),
-        "version": {
+        # Два поля с почти одинаковыми именами, и перепутать их нельзя:
+        # "version" (со строчной) — целое число формата хранения, 19133 = Anvil.
+        # Клиент читает его как int; если там лежит что-то другое, он считает мир
+        # доанвильным, не может собрать о нём сводку и молча прячет из списка
+        # одиночных — при том что выделенный сервер такой мир грузит без жалоб.
+        # "Version" (с заглавной) — компаунд с версией игры, для показа в списке.
+        "version": nbt.Int(19133),
+        "Version": {
             "Id": nbt.Int(DATA_VERSION),
             "Name": "1.20.1",
             "Series": "main",

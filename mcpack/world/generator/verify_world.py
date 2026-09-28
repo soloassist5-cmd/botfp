@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 
+import gzip
 import os
 import struct
 import sys
@@ -134,6 +135,25 @@ def main() -> int:
         if not ok:
             failures += 1
         print(f"  {'OK ' if ok else 'НЕТ'} {label:28} ({x},{y},{z}) = {got}")
+
+    # level.dat: поля версии. Клиент читает "version" как целое (19133 — формат
+    # Anvil) и, если там лежит что-то другое, молча прячет мир из списка
+    # одиночных — выделенный сервер при этом грузит его как ни в чём не бывало.
+    level_path = os.path.join(world, "level.dat")
+    if not os.path.isfile(level_path):
+        print("  НЕТ level.dat не найден")
+        failures += 1
+    else:
+        with gzip.open(level_path, "rb") as fh:
+            _, level_root = nbt.loads(fh.read())
+        info = level_root.get("Data", {})
+        storage = info.get("version")
+        game = info.get("Version")
+        ok = storage == 19133 and isinstance(game, dict) and game.get("Name") == "1.20.1"
+        print(f"  {'OK ' if ok else 'НЕТ'} level.dat: version={storage} (нужно 19133), "
+              f"Version.Name={game.get('Name') if isinstance(game, dict) else game}")
+        if not ok:
+            failures += 1
 
     # Таблички: у свободных участков должны быть блок-сущности с текстом.
     signs = 0
