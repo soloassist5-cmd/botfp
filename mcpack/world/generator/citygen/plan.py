@@ -495,9 +495,10 @@ def _add_npc_spots(plan: Plan) -> None:
         if lot.kind == "shop" and lot.shop_role:
             roles = [(lot.shop_role, lot.shop_title)]
         spots = buildings.npc_spots(lot, len(roles))
-        for (role, title), (x, z, yaw) in zip(roles, spots):
+        for (role, title), spot in zip(roles, spots):
+            x, z, yaw = spot[:3]
             plan.npc_spots.append({
-                "x": x, "y": CITY_Y + 1, "z": z,
+                "x": x, "y": spot[3] if len(spot) > 3 else CITY_Y + 1, "z": z,
                 "role": role, "title": title,
                 "kind": lot.kind,
                 "label": lot.label or lot.kind,

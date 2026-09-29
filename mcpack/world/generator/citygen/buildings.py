@@ -848,8 +848,8 @@ def entrance_point(lot: Lot) -> tuple[int, int, int]:
     return fx + dx * 3, CITY_Y + 1, fz + dz * 3
 
 
-def npc_spots(lot: Lot, count: int) -> list[tuple[int, int, int]]:
-    """Где стоят жители здания: (x, z, поворот головы)."""
+def npc_spots(lot: Lot, count: int) -> list[tuple]:
+    """Где стоят жители здания: (x, z, поворот головы[, высота ног])."""
     yaw = YAW[lot.facing]
     if lot.kind in COMMERCIAL_KINDS:
         lay = C.layout(lot)
@@ -858,7 +858,8 @@ def npc_spots(lot: Lot, count: int) -> list[tuple[int, int, int]]:
         box, door_u = H.apartment_box(lot)
         frame = Frame(None, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)
         x, z = frame.world(box.u0 + 3, box.v0 + 3)
-        return [(x, z, yaw)] * count
+        # Пол жилого дома на цоколе — на блок выше тротуара.
+        return [(x, z, yaw, H.FY + 1)] * count
     if lot.kind == "dealership":
         x, z = dealership_counter(lot)
         return [(x, z, yaw)] * count

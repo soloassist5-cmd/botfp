@@ -20,7 +20,7 @@ summon easy_npc:humanoid 171.5 69 -109.5 {CustomName:'{"text": "Продавец
 # ПРОДУКТЫ — Продавец продуктов
 summon easy_npc:humanoid 171.5 69 -85.5 {CustomName:'{"text": "Продавец продуктов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_food"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[270.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
 # ДОХОДНЫЙ ДОМ — Управдом
-summon easy_npc:humanoid 175.5 69 -17.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
+summon easy_npc:humanoid 175.5 70 -17.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
 # ПОЛИЦИЯ — Полицейский
 summon easy_npc:humanoid 157.5 69 22.5 {CustomName:'{"text": "Полицейский"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cop"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/citizen_b.png",Name:"",URL:""}}
 # ПОЛИЦИЯ — Дежурный

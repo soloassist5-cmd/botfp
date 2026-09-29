@@ -44,7 +44,7 @@ summon easy_npc:humanoid -97.5 69 22.5 {CustomName:'{"text": "Продавец �
 # ОРУЖЕЙНЫЙ МАГАЗИН — Оружейник
 summon easy_npc:humanoid -95.5 69 109.5 {CustomName:'{"text": "Оружейник"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_gunsmith"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/gunsmith.png",Name:"",URL:""}}
 # ЖИЛОЙ ДОМ — Управдом
-summon easy_npc:humanoid -78.5 69 175.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
+summon easy_npc:humanoid -78.5 70 175.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
 # НОЧНОЙ КЛУБ — Бармен
 summon easy_npc:humanoid -98.5 69 214.5 {CustomName:'{"text": "Бармен"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_bartender"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/bartender.png",Name:"",URL:""}}
 # НОЧНОЙ КЛУБ — Охранник
