@@ -653,7 +653,7 @@ def build_house(canvas: RegionCanvas, lot: Lot, villa: bool = False) -> None:
     # Двор: газон, дерево, забор по границе участка.
     canvas.fill(x0, CITY_Y, z0, x1, CITY_Y, z1, B.GRASS)
     canvas.fill(hx0, CITY_Y, hz0, hx1, CITY_Y, hz1, planks)
-    _fence_yard(canvas, x0, z0, x1, z1, lot.facing)
+    _fence_yard(canvas, x0, z0, x1, z1, lot.facing, house=(hx0, hz0, hx1, hz1))
     _tree(canvas, x1 - 3, z1 - 3, rng)
     if villa:
         _pool(canvas, x1 - 12, z1 - 10, x1 - 3, z1 - 3)
@@ -731,20 +731,45 @@ def _garage(canvas: RegionCanvas, lot: Lot, x_from: int, z0: int, z1: int,
 
 
 def _fence_yard(canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int,
-                facing: str) -> None:
+                facing: str, house: tuple[int, int, int, int] | None = None) -> None:
+    """
+    Забор по границе участка, калитка со стороны улицы.
+
+    Дом ставится в тот же угол, что и забор, поэтому у домов фасадом на север
+    или запад передняя стена лежала ровно на линии забора: штакетник затирал
+    дверь, а калитка пробивала дыру в стене. Пятно дома пропускаем.
+    """
     fence = B.fence("oak")
+
+    def occupied(x: int, z: int) -> bool:
+        return house is not None and house[0] <= x <= house[2] and house[1] <= z <= house[3]
+
+    def put(x: int, z: int) -> None:
+        if not occupied(x, z):
+            canvas.set(x, CITY_Y + 1, z, fence)
+
     for x in range(x0, x1 + 1):
-        canvas.set(x, CITY_Y + 1, z0, fence)
-        canvas.set(x, CITY_Y + 1, z1, fence)
+        put(x, z0)
+        put(x, z1)
     for z in range(z0, z1 + 1):
-        canvas.set(x0, CITY_Y + 1, z, fence)
-        canvas.set(x1, CITY_Y + 1, z, fence)
-    # Калитка со стороны улицы.
+        put(x0, z)
+        put(x1, z)
+
+    # Калитка со стороны улицы: если в середине фасада стоит дом, отходим вбок.
     gx, gz = front_center(x0, z0, x1, z1, facing)
-    canvas.set(gx, CITY_Y + 1, gz, B.AIR)
-    canvas.set(gx + 1 if facing in ("north", "south") else gx,
-               CITY_Y + 1,
-               gz if facing in ("north", "south") else gz + 1, B.AIR)
+    along_x = facing in ("north", "south")
+    for shift in range(0, max(x1 - x0, z1 - z0)):
+        for sign in (1, -1):
+            cx = gx + sign * shift if along_x else gx
+            cz = gz if along_x else gz + sign * shift
+            if cx < x0 or cx > x1 or cz < z0 or cz > z1 or occupied(cx, cz):
+                continue
+            nx = cx + 1 if along_x else cx
+            nz = cz if along_x else cz + 1
+            canvas.set(cx, CITY_Y + 1, cz, B.AIR)
+            if not occupied(nx, nz) and x0 <= nx <= x1 and z0 <= nz <= z1:
+                canvas.set(nx, CITY_Y + 1, nz, B.AIR)
+            return
 
 
 def _tree(canvas: RegionCanvas, x: int, z: int, rng: random.Random) -> None:
