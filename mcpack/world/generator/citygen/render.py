@@ -23,14 +23,29 @@ ROAD_Z_MAX = (IZ_MAX + 1) * CELL
 #  Рельеф
 # ---------------------------------------------------------------------------
 
+# Доля бедрока на слоях над дном мира: 80% на -63 и дальше по убыванию.
+BEDROCK_GRADIENT = ((-63, 0.8), (-62, 0.6), (-61, 0.4), (-60, 0.2))
+
+
+def _noise(x: int, y: int, z: int) -> float:
+    """Детерминированный шум 0..1 для блока: один и тот же на любом прогоне."""
+    h = (x * 73856093) ^ (y * 19349663) ^ (z * 83492791)
+    h = (h ^ (h >> 13)) * 1274126177
+    return ((h ^ (h >> 16)) & 0xFFFF) / 65536.0
+
 def draw_terrain(canvas: RegionCanvas, terrain: Terrain) -> None:
     """Залить весь регион рельефом: камень, подпочва, поверхность, вода."""
     for x in range(canvas.x0, canvas.x1 + 1):
         for z in range(canvas.z0, canvas.z1 + 1):
             height = terrain.height(x, z)
             top, subsoil = terrain.surface(x, z, height)
-            canvas.column(x, z, -64, -61, B.BEDROCK)
-            canvas.column(x, z, -60, min(-1, height - 4), B.DEEPSLATE)
+            # Бедрок как в ванили: сплошной только на -64, выше — редеющие
+            # вкрапления до -60 среди глубинного сланца, а не ровная плита.
+            canvas.set(x, -64, z, B.BEDROCK)
+            canvas.column(x, z, -63, min(-1, height - 4), B.DEEPSLATE)
+            for y, chance in BEDROCK_GRADIENT:
+                if _noise(x, y, z) < chance:
+                    canvas.set(x, y, z, B.BEDROCK)
             if height - 4 >= 0:
                 canvas.column(x, z, 0, height - 4, B.STONE)
             canvas.column(x, z, max(0, height - 3), height - 1, subsoil)
@@ -215,6 +230,10 @@ def draw_freeway(canvas: RegionCanvas) -> None:
         if z % 16 == 0 and y == FREEWAY_Y:
             canvas.fill(x0 + 1, y + 1, z, x0 + 1, y + 3, z, B.CONCRETE_BLACK)
             canvas.set(x0 + 1, y + 4, z, B.LAMP)
+        # Под эстакадой светло: лампы в пролёте, чтобы там не было тёмной дыры.
+        if z % 6 == 0 and y > CITY_Y + 4:
+            for lx in (x0 + 3, x1 - 3):
+                canvas.set(lx, y - 2, z, B.LIGHT)
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +273,7 @@ def draw_pier(canvas: RegionCanvas, terrain: Terrain) -> None:
     canvas.set(cafe_x0 + 2, deck + 1, PIER_Z, B.BARREL)
     canvas.set(cafe_x0 + 3, deck + 1, PIER_Z, B.slab("spruce", top=False))
     canvas.set(cafe_x0 + 5, deck + 4, PIER_Z, B.LIGHT)
-    canvas.sign(cafe_x1, deck + 4, PIER_Z, B.SIGN_WALL.format(f="east"),
+    canvas.sign(cafe_x1 + 1, deck + 4, PIER_Z, B.SIGN_WALL.format(f="east"),
                 ["КАФЕ", "НА ПИРСЕ"], color="blue", glowing=True)
 
 
@@ -332,16 +351,18 @@ def draw_bus_stop(canvas: RegionCanvas) -> None:
     # Лавка.
     for z in range(sz - 3, sz + 4):
         canvas.set(sx - 1, CITY_Y + 1, z, B.stairs("spruce", facing="east"))
-    # Вводные таблички.
+    # Вводные таблички на столбиках.
+    for dz in (-4, -2, 0, 2):
+        canvas.set(sx + 1, CITY_Y + 1, sz + dz, B.fence("spruce"))
     canvas.sign(sx + 1, CITY_Y + 2, sz - 4, B.SIGN_STANDING.format(r=0),
                 ["LOS SANTOS", "автовокзал", "добро", "пожаловать"],
                 color="white", glowing=True)
     canvas.sign(sx + 1, CITY_Y + 2, sz - 2, B.SIGN_STANDING.format(r=0),
-                ["С чего начать:", "1. телефон", "2. счёт в банке", "3. работа"],
+                ["С чего начать:", "1. SIM в телефон", "2. /work", "3. банк, магазины"],
                 color="blue", glowing=False)
     canvas.sign(sx + 1, CITY_Y + 2, sz, B.SIGN_STANDING.format(r=0),
-                ["Центр — на север", "Пляж — на запад", "Холмы — на север",
-                 "Порт — на юг"], color="green", glowing=False)
+                ["Ты в центре", "Пляж — запад", "Холмы — север",
+                 "Пригород — юг"], color="green", glowing=False)
     canvas.sign(sx + 1, CITY_Y + 2, sz + 2, B.SIGN_STANDING.format(r=0),
                 ["Свободные", "участки:", "ищи табличку", "ПРОДАЁТСЯ"],
                 color="red", glowing=False)

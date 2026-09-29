@@ -39,7 +39,7 @@ GOODS_RU = {
     "cooked_chicken": "курица", "pumpkin_pie": "пирог", "cake": "торт",
     "torch": "факелы", "oak_planks": "доски", "stone": "камень",
     "scaffolding": "леса", "golden_apple": "золотые яблоки", "potion": "зелья",
-    "car_key": "ключи от машин", "fuel_canister": "канистра",
+    "vehicle_crate": "ящики с машинами", "wrench": "гаечный ключ", "fuel_canister": "канистра",
     "banknote_5000": "5000 ₽", "jukebox": "патефон",
     "iron_pickaxe": "кирка", "bucket": "ведро", "honey_bottle": "лимонад",
     "music_disc_cat": "пластинка", "smooth_stone": "плиты", "compass": "компас",

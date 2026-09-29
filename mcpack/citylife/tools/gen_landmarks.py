@@ -51,12 +51,10 @@ def entrance(lot) -> tuple[int, int, int]:
     """Точка метки: тротуар перед входом, на уровне ног.
 
     Раньше метка стояла в центре участка — внутри здания, где маркер
-    навигатора не увидеть и в него не войти.
+    навигатора не увидеть и в него не войти. Теперь координату считает
+    тот же код, что ставит дверь (buildings.entrance_point).
     """
-    x0, z0, x1, z1 = B.pad(lot, 1)
-    fx, fz = B.front_center(x0, z0, x1, z1, lot.facing)
-    dx, dz = STEP[lot.facing]
-    return fx + dx * 3, P.CITY_Y + 1, fz + dz * 3
+    return B.entrance_point(lot)
 
 
 def title(kind: str, label: str) -> str:
@@ -100,6 +98,18 @@ def main() -> int:
         atms.append((f"Банкомат — {title(lot.kind, lot.label or lot.kind)}", "atm",
                      x + dx, y, z + dz))
     rows += sorted(atms, key=lambda row: (row[2], row[4]))
+
+    # Пункты выдачи маркетплейса: сюда навигатор ведёт за заказом.
+    pickups = []
+    for lot in city.lots:
+        if lot.kind not in ("pickup", "mall"):
+            continue
+        x, y, z = entrance(lot)
+        street = lot.address.rsplit(", ", 1)[0] if lot.address else ""
+        if lot.kind == "mall":
+            street = "Торговый центр"
+        pickups.append((f"Пункт выдачи — {street}".strip(" —"), "pickup", x, y, z))
+    rows += sorted(pickups, key=lambda row: (row[2], row[4]))
 
     lines = [
         "package dev.lscity.citylife.data;",

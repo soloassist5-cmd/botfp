@@ -56,6 +56,9 @@ LOT_FILL = {
     "diner": "#6b5a8f",
     "house": "#454c70",
     "villa": "#525b8c",
+    "rowhouse": "#4d5580",
+    "square": "#2a6b47",
+    "pickup": "#c77dff",
     "empty": "#30563f",
 }
 
@@ -80,6 +83,9 @@ PINS = [
     ("Метро «Пляж»", "МЕТРО «ПЛЯЖ»", None, "metro"),
     ("Метро «Восток»", "МЕТРО «ВОСТОК»", None, "metro"),
     ("Пирс с кафе", None, (P.PIER_X_TO + 14, P.PIER_Z), "pier"),
+    ("Центральный парк", "ЦЕНТРАЛЬНЫЙ ПАРК", None, "park"),
+    ("Парк «Дубрава»", "ПАРК «ДУБРАВА»", None, "park"),
+    ("Парк на холмах", "ПАРК НА ХОЛМАХ", None, "park"),
 ]
 
 PIN_COLOR = {
@@ -91,6 +97,8 @@ PIN_COLOR = {
     "night": "#c86bff",
     "metro": "#9b7bff",
     "pier": "#35c7f0",
+    "park": "#5fd38d",
+    "pickup": "#c77dff",
 }
 
 
@@ -182,7 +190,7 @@ def build_svg() -> tuple[str, list[dict]]:
         fill = LOT_FILL.get(lot.kind, "#3c4260")
         extra = ' class="lot-empty"' if lot.kind == "empty" else ""
         add(f'<rect x="{lot.x0}" y="{lot.z0}" width="{lot.width}" '
-            f'height="{lot.depth}" fill="{fill}"{extra}/>')
+            f'height="{lot.depth}" fill="{fill}" stroke="#0b0d16" stroke-width="1.2"{extra}/>')
     add('</g>')
 
     # Эстакада, пирс, линии метро.
@@ -220,6 +228,17 @@ def build_svg() -> tuple[str, list[dict]]:
             f'<circle cx="{x}" cy="{z}" r="13.5" fill="{color}" stroke="#05060c" stroke-width="2"/>'
             f'<text x="{x}" y="{z + 7}" text-anchor="middle" font-size="19" '
             f'font-weight="700" fill="#06070d">{number}</text></g>')
+    # Пункты выдачи маркетплейса: без номеров, одной строкой в легенде.
+    pickups = [lot for lot in city.lots if lot.kind == "pickup"]
+    for lot in pickups:
+        x, z = lot.center()
+        add(f'<g class="pin pin-pickup" filter="url(#pinShadow)">'
+            f'<circle cx="{x}" cy="{z}" r="9" fill="{PIN_COLOR["pickup"]}" '
+            f'stroke="#05060c" stroke-width="2"/></g>')
+    if pickups:
+        x, z = pickups[0].center()
+        pins.append({"n": "◆", "name": f"Пункты выдачи ({len(pickups)})", "x": x, "z": z,
+                     "color": PIN_COLOR["pickup"]})
     add('</g>')
 
     # Подписи сторон света и масштаб.

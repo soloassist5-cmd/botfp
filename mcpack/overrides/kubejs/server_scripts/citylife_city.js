@@ -16,10 +16,13 @@ ServerEvents.commandRegistry(event => {
       if (!player) {
         return 0
       }
-      player.tell(Text.gold('Смартфон'))
-      player.tell(Text.gray('  3 стеклянных панели / железо + SIM + железо / железо + редстоун'))
+      player.tell(Text.gold('Смартфон LS'))
+      player.tell(Text.gray('  3 стеклянных панели / железо + золото + железо / железо + редстоун + железо'))
       player.tell(Text.gold('SIM-карта'))
-      player.tell(Text.gray('  2 золотых самородка + редстоун (даёт 2 штуки)'))
+      player.tell(Text.gray('  2 золотых самородка + редстоун (даёт 2 штуки, номер выдаётся сам)'))
+      player.tell(Text.gray('  Вставить: перетащить SIM на телефон в инвентаре.'))
+      player.tell(Text.gold('Другие телефоны, планшет, ноутбук, детали ПК'))
+      player.tell(Text.gray('  в салоне связи, у продавца техники или в маркетплейсе'))
       player.tell(Text.gold('Умный замок'))
       player.tell(Text.gray('  железо вокруг, редстоун в центре, компаратор снизу'))
       player.tell(Text.gold('Отмычка'))

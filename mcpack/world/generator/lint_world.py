@@ -118,7 +118,9 @@ NON_SOLID_EXACT = {"air", "cave_air", "void_air", "light", "water", "lava", "gra
                    "allium", "azure_bluet", "oxeye_daisy", "cornflower", "lily_of_the_valley",
                    "rose_bush", "peony", "lilac", "sunflower", "snow", "dead_bush"}
 PASSABLE_PARTS = ("_door", "_sign", "torch", "_carpet", "_pressure_plate", "rail",
-                  "_button", "light", "flower", "_sapling", "grass", "fern")
+                  "_button", "_sapling")
+PASSABLE_EXACT = {"light", "short_grass", "tall_grass", "grass", "fern", "large_fern",
+                  "lily_pad", "vine", "ladder"}
 LIGHT_LEVEL = {"light": 15, "glowstone": 15, "sea_lantern": 15, "lantern": 15,
                "soul_lantern": 10, "torch": 14, "wall_torch": 14, "redstone_lamp": 15,
                "shroomlight": 15, "jack_o_lantern": 15, "end_rod": 14, "campfire": 15,
@@ -140,7 +142,8 @@ def classify(palette: Palette):
         air[i] = is_air
         non_solid = base in NON_SOLID_EXACT or any(p in base for p in NON_SOLID_PARTS)
         solid[i] = not non_solid
-        passable[i] = is_air or any(p in base for p in PASSABLE_PARTS) or base in NON_SOLID_EXACT
+        passable[i] = (is_air or any(p in base for p in PASSABLE_PARTS)
+                       or base in PASSABLE_EXACT or base in NON_SOLID_EXACT)
         level = LIGHT_LEVEL.get(base, 0)
         if base == "redstone_lamp" and props.get("lit") != "true":
             level = 0
@@ -180,6 +183,7 @@ def lint_region(blocks: np.ndarray, palette: Palette, ox: int, oz: int,
         ys, zs, xs = np.nonzero(mask)
         for y, z, x in zip(ys.tolist(), zs.tolist(), xs.tolist()):
             found[kind].append((ox + x, Y0 + y, oz + z))
+            found["@" + kind].append(palette.names[blocks[y, z, x]])
 
     names = palette.names
     props = palette.props
@@ -251,13 +255,17 @@ def lint_region(blocks: np.ndarray, palette: Palette, ox: int, oz: int,
         for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
             spread = np.maximum(spread, shift(level, *d, fill=0) - 1)
         level = np.where(opaque, 0, np.maximum(level, spread))
-    # Помещение: пол твёрдый, голова свободна, над головой в пределах 12 блоков крыша.
-    roofed = np.zeros_like(air)
-    cover = np.zeros_like(air)
-    for dy in range(2, 13):
-        cover |= shift(solid, dy, 0, 0)
-    roofed = air & shift(air, 1, 0, 0) & shift(solid, -1, 0, 0) & cover
-    dark = roofed & (level < 7)
+    # Помещение: воздух, до которого нельзя дойти с неба, не открывая дверей.
+    # Раньше «помещением» считалось всё, над чем есть крыша, и под эстакадой,
+    # навесами и деревьями набегали тысячи ложных тёмных клеток.
+    from scipy import ndimage
+    doors = np.isin(blocks, [i for i, n in enumerate(names) if n.endswith("_door")])
+    open_cells = passable & ~doors
+    labels, _ = ndimage.label(open_cells)
+    outside = np.unique(labels[-1][labels[-1] > 0])
+    inside = open_cells & ~np.isin(labels, outside) & (labels > 0)
+    standing = inside & shift(passable, 1, 0, 0) & shift(solid, -1, 0, 0)
+    dark = standing & (level < 7)
     # Ниже уровня улицы — тоннели метро и подвалы, их считаем отдельно не будем.
     dark[:ground + 1] = False
     report("dark_room", dark)
@@ -292,7 +300,8 @@ def main() -> int:
         palette = Palette()
         blocks = read_region(path, palette)
         lint_region(blocks, palette, rx * 512, rz * 512, found)
-        print(f"  r.{rx}.{rz}: " + ", ".join(f"{k} {len(v)}" for k, v in sorted(found.items())),
+        print(f"  r.{rx}.{rz}: " + ", ".join(f"{k} {len(v)}" for k, v in sorted(found.items())
+                                         if not k.startswith("@")),
               flush=True)
 
     print()
@@ -303,6 +312,9 @@ def main() -> int:
         total += len(items) if kind != "dark_room" else 0
         example = "  ".join(f"{x},{y},{z}" for x, y, z in items[:args.examples])
         print(f"{kind:18s} {len(items):7d}   {example}")
+        names = collections.Counter(found.get("@" + kind, [])).most_common(4)
+        if names:
+            print(" " * 28 + ", ".join(f"{n.split(':')[-1]}×{c}" for n, c in names))
     print(f"\nдефектов (без тёмных клеток): {total}")
     return 0 if total == 0 else 1
 
