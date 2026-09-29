@@ -48,6 +48,13 @@ public final class AppIcons {
             case "sysinfo" -> new int[]{0xFF2FD1A0, 0xFF16806A};
             case "tetris" -> new int[]{0xFF8E7BFF, 0xFF4C3FD0};
             case "snake" -> new int[]{0xFF7BE07B, 0xFF2F9E4F};
+            case "cameras" -> new int[]{0xFF5B6B8C, 0xFF263049};
+            case "browser" -> new int[]{0xFF45A3F0, 0xFF1A5FA8};
+            case "mail" -> new int[]{0xFFFF8A65, 0xFFD04A2E};
+            case "music" -> new int[]{0xFFFF5C8A, 0xFFB0245A};
+            case "mines" -> new int[]{0xFF9AA3B5, 0xFF4A5268};
+            case "game2048" -> new int[]{0xFFF2B179, 0xFFD27A2E};
+            case "terminal" -> new int[]{0xFF2A2F38, 0xFF0E1014};
             default -> new int[]{0xFF6E7488, 0xFF3A3F50};
         };
     }
@@ -197,6 +204,60 @@ public final class AppIcons {
                 g.fill(cx - b, cy - b * 2, cx, cy - b, WHITE);
                 g.fill(cx, cy, cx + b * 2, cy + b, WHITE);
                 PhoneUi.disc(g, cx + b * 2, cy + b / 2, b, 0xFFFFE066);
+            }
+            case "cameras" -> {
+                // Камера на кронштейне: корпус, объектив и штанга.
+                int b = s / 5;
+                PhoneUi.roundedRect(g, cx - b - 2, cy - b / 2 - 2, b * 2, b + 2, 2, WHITE);
+                PhoneUi.disc(g, cx + b - 1, cy - 1, Math.max(2, s / 12), 0xFF263049);
+                g.fill(cx - b / 2, cy + b / 2, cx - b / 2 + 2, cy + b + 2, WHITE);
+                g.fill(cx - b - 2, cy + b + 1, cx + 1, cy + b + 3, WHITE);
+            }
+            case "browser" -> {
+                // Глобус: круг, экватор и меридиан.
+                PhoneUi.ring(g, cx, cy, s / 4, 2, WHITE);
+                g.fill(cx - s / 4, cy - 1, cx + s / 4, cy + 1, WHITE);
+                g.fill(cx - 1, cy - s / 4, cx + 1, cy + s / 4, WHITE);
+            }
+            case "mail" -> {
+                // Конверт с клапаном.
+                int w = s / 3;
+                int h = s / 4;
+                PhoneUi.roundedRect(g, cx - w, cy - h, w * 2, h * 2, 2, WHITE);
+                for (int i = 0; i < w; i++) {
+                    g.fill(cx - w + i, cy - h + i / 2, cx - w + i + 1, cy - h + i / 2 + 1, 0xFFD04A2E);
+                    g.fill(cx + w - i - 1, cy - h + i / 2, cx + w - i, cy - h + i / 2 + 1, 0xFFD04A2E);
+                }
+            }
+            case "music" -> {
+                // Нота: головка и штиль с флажком.
+                PhoneUi.disc(g, cx - s / 10, cy + s / 7, Math.max(2, s / 9), WHITE);
+                g.fill(cx - s / 10 + s / 9 - 1, cy - s / 4, cx - s / 10 + s / 9 + 1, cy + s / 7, WHITE);
+                g.fill(cx - s / 10 + s / 9, cy - s / 4, cx + s / 5, cy - s / 4 + 3, WHITE);
+            }
+            case "mines" -> {
+                // Мина: круг с шипами.
+                PhoneUi.disc(g, cx, cy, s / 6, 0xFF15171F);
+                g.fill(cx - s / 4, cy - 1, cx + s / 4, cy + 1, 0xFF15171F);
+                g.fill(cx - 1, cy - s / 4, cx + 1, cy + s / 4, 0xFF15171F);
+                g.fill(cx - s / 12, cy - s / 12, cx - s / 24, cy - s / 24, WHITE);
+            }
+            case "game2048" -> {
+                // Четыре плитки.
+                int t = s / 7;
+                g.fill(cx - t * 2, cy - t * 2, cx - 1, cy - 1, WHITE);
+                g.fill(cx + 1, cy - t * 2, cx + t * 2, cy - 1, 0xFFFFE0B0);
+                g.fill(cx - t * 2, cy + 1, cx - 1, cy + t * 2, 0xFFFFE0B0);
+                g.fill(cx + 1, cy + 1, cx + t * 2, cy + t * 2, WHITE);
+            }
+            case "terminal" -> {
+                // Приглашение командной строки: «>_».
+                int t = s / 8;
+                for (int i = 0; i < t; i++) {
+                    g.fill(cx - s / 4 + i, cy - t + i, cx - s / 4 + i + 2, cy - t + i + 2, 0xFF7BE07B);
+                    g.fill(cx - s / 4 + i, cy + t - i, cx - s / 4 + i + 2, cy + t - i + 2, 0xFF7BE07B);
+                }
+                g.fill(cx, cy + t, cx + s / 4, cy + t + 2, 0xFF7BE07B);
             }
             default -> PhoneUi.disc(g, cx, cy, s / 5, WHITE);
         }

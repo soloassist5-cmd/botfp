@@ -23,8 +23,8 @@ summon easy_npc:humanoid -35.5 69 22.5 {CustomName:'{"text": "Чиновник"}
 summon easy_npc:humanoid -33.5 69 22.5 {CustomName:'{"text": "Риелтор"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
 # ГОРОДСКОЙ БАНК — Банкир
 summon easy_npc:humanoid -22.5 69 95.5 {CustomName:'{"text": "Банкир"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_banker"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[270.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/banker.png",Name:"",URL:""}}
-# ПРОДУКТЫ — Продавец техники
-summon easy_npc:humanoid -33.5 69 170.5 {CustomName:'{"text": "Продавец техники"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_tech"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
+# ПРОДУКТЫ — Продавец продуктов
+summon easy_npc:humanoid -33.5 69 170.5 {CustomName:'{"text": "Продавец продуктов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_food"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
 # КОФЕЙНЯ — Повар
 summon easy_npc:humanoid -34.5 69 214.5 {CustomName:'{"text": "Повар"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cook"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
 # МАГАЗИН — Продавец

@@ -1,11 +1,11 @@
 {
-  "generated": "2026-09-29T15:06:29Z",
+  "generated": "2026-09-29T17:58:03Z",
   "pack_version": "1.0.0",
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 55,
-  "total_size": 272742258,
+  "mod_count": 56,
+  "total_size": 286166046,
   "mods": [
     {
       "slug": "cameracraft",
@@ -25,7 +25,7 @@
         "server": "required"
       },
       "group": "core",
-      "note": "Фотоаппараты, плёнка, проявка, фотоальбомы",
+      "note": "Фотоаппарат с альбомом, видеокамеры на штативе",
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/cameracraft"
@@ -1137,6 +1137,29 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/polymorph"
+    },
+    {
+      "slug": "prismprotect",
+      "title": "PrismProtect",
+      "project_id": "FIpr9lji",
+      "version_id": "LcBh53eF",
+      "version_number": "1.3.2",
+      "version_type": "release",
+      "filename": "prismprotect-forge-1.3.2-mc1.20.1-1.20.4.jar",
+      "url": "https://cdn.modrinth.com/data/FIpr9lji/versions/LcBh53eF/prismprotect-forge-1.3.2-mc1.20.1-1.20.4.jar",
+      "size": 13423788,
+      "sha1": "6007d0da3f86633859135179029b70dc82108be0",
+      "sha512": "d365ed50a55e0b2feb1ede2f26c47ef7579b2899923130128b265e85a4ac2a590e70a95e1c16b10554466871f5e008cebf93c825009640a4e45e10930930447b",
+      "side": "server",
+      "env": {
+        "client": "unsupported",
+        "server": "required"
+      },
+      "group": "qol",
+      "note": "Аналог CoreProtect: лог построек и поломок, проверка блока (/pp inspect) и откат гриферства (/pp rollback)",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/prismprotect"
     },
     {
       "slug": "simple-voice-chat",

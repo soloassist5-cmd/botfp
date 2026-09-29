@@ -12,10 +12,12 @@ import net.minecraft.network.chat.Component;
  *
  * Клик по метке — маршрут. Своя метка ставится там, где стоишь, вместе с
  * высотой: на крыше, в метро, на пирсе — туда и поведёт навигатор.
+ * Поле поиска сверху фильтрует список по названию: «банк», «выдач», «метро».
  */
 class NavigatorApp extends DeviceApp {
 
     private int scroll;
+    private String lastQuery = "";
 
     NavigatorApp(DeviceScreen screen) {
         super(screen);
@@ -33,6 +35,8 @@ class NavigatorApp extends DeviceApp {
 
     @Override
     public void init(int[] area) {
+        screen.input("nav_search", area[0] + 12, searchTop(area) + 4, area[2] - 16,
+                "citylife.nav.search", 32);
         screen.input("mark", area[0], area[1] + area[3] - 16, area[2] - markWidth() - 8,
                 "citylife.phone.mark_name", 20);
     }
@@ -41,8 +45,37 @@ class NavigatorApp extends DeviceApp {
         return screen.buttonWidth(Component.translatable("citylife.button.mark").getString());
     }
 
-    private int listTop(int[] area) {
+    private int searchTop(int[] area) {
         return area[1] + (screen.data().contains("route") ? 32 : 0);
+    }
+
+    private int listTop(int[] area) {
+        return searchTop(area) + 20;
+    }
+
+    /** Буквы, которые люди пишут по-разному: ё и е, регистр. */
+    private static String norm(String text) {
+        return text.toLowerCase(java.util.Locale.ROOT).replace('ё', 'е');
+    }
+
+    /** Метки, подходящие под строку поиска (все, если строка пустая). */
+    private ListTag filtered() {
+        String query = norm(screen.value("nav_search").trim());
+        if (!query.equals(lastQuery)) {
+            lastQuery = query;
+            scroll = 0;
+        }
+        ListTag all = screen.list("waypoints");
+        if (query.isEmpty()) {
+            return all;
+        }
+        ListTag out = new ListTag();
+        for (int i = 0; i < all.size(); i++) {
+            if (norm(all.getCompound(i).getString("name")).contains(query)) {
+                out.add(all.getCompound(i));
+            }
+        }
+        return out;
     }
 
     private int visible(int[] area) {
@@ -64,7 +97,13 @@ class NavigatorApp extends DeviceApp {
             screen.button(g, area[0] + area[2] - screen.buttonWidth(stop) - 5, area[1] + 6, 0,
                     stop, 0xFFB03434, mouseX, mouseY);
         }
-        ListTag points = screen.list("waypoints");
+        int[] search = {area[0], searchTop(area), area[2], 16};
+        screen.card(g, search, false);
+        screen.text(g, "⌕", area[0] + 3, searchTop(area) + 4, t.dim());
+        ListTag points = filtered();
+        if (points.isEmpty()) {
+            screen.empty(g, new int[]{area[0], listTop(area), area[2], 40}, "citylife.nav.nothing");
+        }
         int y = listTop(area);
         for (int i = scroll; i < points.size() && i < scroll + visible(area); i++) {
             CompoundTag point = points.getCompound(i);
@@ -106,7 +145,7 @@ class NavigatorApp extends DeviceApp {
             screen.clear("mark");
             return true;
         }
-        ListTag points = screen.list("waypoints");
+        ListTag points = filtered();
         int y = listTop(area);
         for (int i = scroll; i < points.size() && i < scroll + visible(area); i++) {
             CompoundTag point = points.getCompound(i);
@@ -130,7 +169,7 @@ class NavigatorApp extends DeviceApp {
 
     @Override
     public boolean scroll(double delta) {
-        int max = Math.max(0, screen.list("waypoints").size() - 3);
+        int max = Math.max(0, filtered().size() - 3);
         scroll = Math.max(0, Math.min(max, scroll - (int) Math.signum(delta)));
         return true;
     }

@@ -19,15 +19,17 @@ public final class Devices {
 
     /** Без интернета не открываются. */
     public static final Set<String> NETWORK_APPS =
-            Set.of("messages", "contacts", "bank", "navigator", "locks", "store", "marketplace");
+            Set.of("messages", "contacts", "bank", "navigator", "locks", "store", "marketplace",
+                    "cameras", "browser", "mail");
 
     /** Что можно доставить из магазина приложений, если этого нет в прошивке. */
     public static final List<String> STORE_APPS =
-            List.of("tetris", "snake", "calc", "notes", "compass");
+            List.of("tetris", "snake", "calc", "notes", "compass", "cameras", "browser", "mail",
+                    "music", "mines", "game2048", "terminal");
 
     private static final List<String> BASIC = List.of(
-            "messages", "contacts", "bank", "navigator", "locks", "sos", "store", "marketplace",
-            "settings");
+            "messages", "contacts", "bank", "navigator", "locks", "cameras", "sos", "store",
+            "marketplace", "settings");
 
     public static final DeviceModel LS_PHONE = new DeviceModel("smartphone", Kind.PHONE,
             true, 4, BASIC, 9000, 0xFF0E1018);
@@ -41,8 +43,9 @@ public final class Devices {
             "marketplace", "settings"), 6000, 0xFF26303F);
 
     public static final DeviceModel GRAN_X = new DeviceModel("phone_gran_x", Kind.PHONE,
-            true, 10, List.of("messages", "contacts", "bank", "navigator", "locks", "sos",
-            "store", "marketplace", "notes", "calc", "compass", "flashlight", "settings"),
+            true, 10, List.of("messages", "contacts", "bank", "navigator", "locks", "cameras", "sos",
+            "store", "marketplace", "browser", "notes", "calc", "compass", "flashlight",
+            "settings"),
             30000, 0xFF1A1A1E);
 
     public static final DeviceModel POLUS = new DeviceModel("phone_polus", Kind.PHONE,
@@ -50,25 +53,29 @@ public final class Devices {
             "store", "settings"), 12000, 0xFF3B4A2C);
 
     public static final DeviceModel FOLD = new DeviceModel("phone_fold", Kind.PHONE,
-            true, 10, List.of("messages", "contacts", "bank", "navigator", "locks", "sos",
-            "store", "marketplace", "notes", "calc", "settings"), 40000, 0xFF2A2440);
+            true, 10, List.of("messages", "contacts", "bank", "navigator", "locks", "cameras", "sos",
+            "store", "marketplace", "browser", "mail", "notes", "calc", "settings"), 40000,
+            0xFF2A2440);
 
     public static final DeviceModel MINIFON = new DeviceModel("phone_mini", Kind.PHONE,
             true, 2, List.of("messages", "contacts", "navigator", "sos", "tetris", "snake",
             "store", "settings"), 4000, 0xFF3A7BD5);
 
     public static final DeviceModel TABLET = new DeviceModel("tablet", Kind.TABLET,
-            true, 10, List.of("messages", "contacts", "bank", "navigator", "locks", "store",
-            "marketplace", "notes", "calc", "settings"), 18000, 0xFF20242E);
+            true, 10, List.of("messages", "contacts", "bank", "navigator", "locks", "cameras",
+            "store", "marketplace", "browser", "mail", "music", "notes", "calc", "settings"),
+            18000, 0xFF20242E);
 
     public static final DeviceModel LAPTOP = new DeviceModel("laptop", Kind.LAPTOP,
-            false, 10, List.of("bank", "navigator", "locks", "store", "marketplace", "notes",
-            "calc", "settings"), 28000, 0xFF2C3038);
+            false, 10, List.of("browser", "mail", "bank", "marketplace", "cameras", "locks",
+            "navigator", "music", "notes", "calc", "terminal", "mines", "game2048", "store",
+            "settings"), 28000, 0xFF2C3038);
 
     /** Компьютер собирается из комплектующих, отдельным предметом не продаётся. */
     public static final DeviceModel COMPUTER = new DeviceModel("computer", Kind.COMPUTER,
-            false, 10, List.of("bank", "navigator", "locks", "store", "marketplace", "notes",
-            "calc", "sysinfo", "settings"), 0, 0xFF15171C);
+            false, 10, List.of("browser", "mail", "bank", "marketplace", "cameras", "locks",
+            "navigator", "music", "notes", "calc", "terminal", "sysinfo", "mines", "game2048",
+            "tetris", "snake", "store", "settings"), 0, 0xFF15171C);
 
     public static final Map<String, DeviceModel> BY_ID = new LinkedHashMap<>();
 

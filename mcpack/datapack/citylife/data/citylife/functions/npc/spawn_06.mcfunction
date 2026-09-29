@@ -1,6 +1,6 @@
 # NPC, пачка 6 из 8
-# МИНИ-МАРКЕТ — Продавец продуктов
-summon easy_npc:humanoid 226.5 69 170.5 {CustomName:'{"text": "Продавец продуктов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_food"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
+# МИНИ-МАРКЕТ — Продавец
+summon easy_npc:humanoid 226.5 69 170.5 {CustomName:'{"text": "Продавец"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_shopkeeper"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/shopkeeper.png",Name:"",URL:""}}
 # ЭЛЕКТРОНИКА — Продавец техники
 summon easy_npc:humanoid 238.5 69 271.5 {CustomName:'{"text": "Продавец техники"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_tech"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[270.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
 # КАФЕ — Повар
@@ -25,8 +25,8 @@ summon easy_npc:humanoid 298.5 69 213.5 {CustomName:'{"text": "Продавец 
 summon easy_npc:humanoid 305.5 69 302.5 {CustomName:'{"text": "Продавец"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_shopkeeper"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/shopkeeper.png",Name:"",URL:""}}
 # ЭЛЕКТРОНИКА — Продавец техники
 summon easy_npc:humanoid 304.5 69 430.5 {CustomName:'{"text": "Продавец техники"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_tech"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
-# СТРОЙМАТЕРИАЛЫ — Продавец
-summon easy_npc:humanoid 289.5 69 554.5 {CustomName:'{"text": "Продавец"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_shopkeeper"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/shopkeeper.png",Name:"",URL:""}}
+# СТРОЙМАТЕРИАЛЫ — Продавец стройматериалов
+summon easy_npc:humanoid 289.5 69 554.5 {CustomName:'{"text": "Продавец стройматериалов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_builder"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/builder.png",Name:"",URL:""}}
 # ПРОДУКТЫ — Продавец продуктов
 summon easy_npc:humanoid 350.5 69 -46.5 {CustomName:'{"text": "Продавец продуктов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_food"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
 # МАГАЗИН — Продавец

@@ -4,8 +4,10 @@ import dev.lscity.citylife.CityConfig;
 import dev.lscity.citylife.Registration;
 import dev.lscity.citylife.block.SmartLockBlock;
 import dev.lscity.citylife.block.SmartLockBlockEntity;
+import dev.lscity.citylife.data.Ad;
 import dev.lscity.citylife.data.CityData;
 import dev.lscity.citylife.data.CityLandmarks;
+import dev.lscity.citylife.data.Mail;
 import dev.lscity.citylife.data.Message;
 import dev.lscity.citylife.data.Order;
 import dev.lscity.citylife.data.Waypoint;
@@ -49,7 +51,11 @@ public final class DeviceServer {
 
     /** Действия, которым нужен интернет (SIM или провод). */
     private static final List<String> NEEDS_NETWORK = List.of("msg", "pay", "wp_add", "nav_set",
-            "lock_toggle", "lock_grant", "lock_pin", "app_install", "market_order");
+            "lock_toggle", "lock_grant", "lock_pin", "app_install", "market_order", "cam_view",
+            "mail_send", "ad_post");
+
+    /** Сколько стоит объявление на городской доске. */
+    private static final long AD_PRICE = 100;
 
     private DeviceServer() {
     }
@@ -198,9 +204,47 @@ public final class DeviceServer {
         }
 
         tag.put("locks", locks(player, data));
+        tag.put("cameras", cameras(player, data));
+
+        long now = player.level().getGameTime();
+        ListTag inbox = new ListTag();
+        int unread = 0;
+        for (Mail letter : data.mail(id)) {
+            CompoundTag entry = letter.save();
+            entry.remove("from");
+            entry.putLong("ago", Math.max(0, (now - letter.time()) / 20));
+            inbox.add(entry);
+            unread += letter.read() ? 0 : 1;
+        }
+        tag.put("mail", inbox);
+        tag.putInt("unread", unread);
+
+        ListTag board = new ListTag();
+        for (Ad ad : data.ads()) {
+            CompoundTag entry = new CompoundTag();
+            entry.putInt("id", ad.id());
+            entry.putString("author", ad.authorName());
+            entry.putString("text", ad.text());
+            entry.putLong("ago", Math.max(0, (now - ad.time()) / 20));
+            entry.putBoolean("mine", ad.author().equals(id));
+            board.add(entry);
+        }
+        tag.put("ads", board);
+        tag.putLong("adPrice", AD_PRICE);
+
+        CompoundTag news = new CompoundTag();
+        news.putLong("day", player.level().getDayTime() / 24000L + 1);
+        news.putBoolean("rain", player.level().isRaining());
+        news.putBoolean("thunder", player.level().isThundering());
+        ListTag online = new ListTag();
+        for (ServerPlayer other : player.server.getPlayerList().getPlayers()) {
+            online.add(StringTag.valueOf(other.getGameProfile().getName()));
+        }
+        news.put("online", online);
+        tag.put("news", news);
 
         ListTag orders = new ListTag();
-        long now = player.level().getGameTime();
+        now = player.level().getGameTime();
         for (Order order : data.orders(id)) {
             CompoundTag entry = order.save();
             entry.putString("status", order.taken() ? "taken" : order.ready(now) ? "ready" : "wait");
@@ -288,6 +332,83 @@ public final class DeviceServer {
         return locks;
     }
 
+    private static ListTag cameras(ServerPlayer player, CityData data) {
+        UUID id = player.getUUID();
+        ListTag out = new ListTag();
+        int index = 0;
+        for (BlockPos pos : List.copyOf(data.cameras(id))) {
+            index++;
+            // Камеру сломали — убираем из списка, но только если чанк загружен:
+            // про далёкую камеру мы честно ничего не знаем.
+            if (player.level().isLoaded(pos) && !dev.lscity.citylife.city.Cameras.isCamera(
+                    player.level(), pos)) {
+                data.unpairCamera(id, pos);
+                continue;
+            }
+            CompoundTag entry = new CompoundTag();
+            entry.putLong("pos", pos.asLong());
+            entry.putInt("dist", (int) Math.sqrt(pos.distToCenterSqr(player.position())));
+            entry.putString("label", "Камера " + index + " · " + pos.getX() + ", " + pos.getY()
+                    + ", " + pos.getZ());
+            out.add(entry);
+        }
+        return out;
+    }
+
+    private static void mailSend(ServerPlayer player, CityData data, CompoundTag args) {
+        String to = args.getString("to").trim();
+        String text = args.getString("text").trim();
+        if (to.isEmpty() || text.isEmpty()) {
+            return;
+        }
+        text = text.substring(0, Math.min(text.length(), 240));
+        var profile = player.server.getProfileCache() == null ? java.util.Optional.<com.mojang
+                .authlib.GameProfile>empty() : player.server.getProfileCache().get(to);
+        ServerPlayer live = player.server.getPlayerList().getPlayerByName(to);
+        UUID target = live != null ? live.getUUID()
+                : profile.map(com.mojang.authlib.GameProfile::getId).orElse(null);
+        if (target == null) {
+            player.displayClientMessage(Component.translatable("citylife.mail.unknown", to)
+                    .withStyle(net.minecraft.ChatFormatting.RED), true);
+            return;
+        }
+        data.deliverMail(target, new Mail(player.getUUID(), player.getGameProfile().getName(),
+                text, player.level().getGameTime(), false));
+        player.displayClientMessage(Component.translatable("citylife.mail.sent", to)
+                .withStyle(net.minecraft.ChatFormatting.GREEN), true);
+        if (live != null && live != player) {
+            live.displayClientMessage(Component.translatable("citylife.mail.new",
+                    player.getGameProfile().getName()).withStyle(net.minecraft.ChatFormatting.AQUA),
+                    false);
+        }
+    }
+
+    private static void adPost(ServerPlayer player, CityData data, CompoundTag args) {
+        String text = args.getString("text").trim();
+        if (text.isEmpty()) {
+            return;
+        }
+        if (!data.withdraw(player.getUUID(), AD_PRICE)) {
+            player.displayClientMessage(Component.translatable("citylife.bank.no_money")
+                    .withStyle(net.minecraft.ChatFormatting.RED), true);
+            return;
+        }
+        data.postAd(player.getUUID(), player.getGameProfile().getName(),
+                text.substring(0, Math.min(text.length(), 120)), player.level().getGameTime());
+        player.displayClientMessage(Component.translatable("citylife.ads.posted", AD_PRICE)
+                .withStyle(net.minecraft.ChatFormatting.GREEN), true);
+    }
+
+    private static void cameraView(ServerPlayer player, CompoundTag args) {
+        BlockPos pos = BlockPos.of(args.getLong("pos"));
+        var result = dev.lscity.citylife.city.Cameras.view(player, pos);
+        if (result != dev.lscity.citylife.city.Cameras.Result.OK) {
+            player.displayClientMessage(Component.translatable("citylife.camera."
+                    + result.name().toLowerCase(java.util.Locale.ROOT))
+                    .withStyle(net.minecraft.ChatFormatting.RED), true);
+        }
+    }
+
     // --- действия -----------------------------------------------------------
 
     public static void handle(ServerPlayer player, String action, CompoundTag args) {
@@ -371,6 +492,12 @@ public final class DeviceServer {
             }
             case "market_order" -> order(player, data, args.getString("offer"));
             case "lock_toggle" -> lockToggle(player, data, args);
+            case "cam_view" -> cameraView(player, args);
+            case "mail_send" -> mailSend(player, data, args);
+            case "mail_read" -> data.readAllMail(id);
+            case "ad_post" -> adPost(player, data, args);
+            case "ad_del" -> data.removeAd(id, args.getInt("id"), player.hasPermissions(2));
+            case "cam_del" -> data.unpairCamera(id, BlockPos.of(args.getLong("pos")));
             case "lock_unpair" -> data.unpairLock(id, BlockPos.of(args.getLong("pos")));
             case "lock_grant" -> lockGrant(player, args);
             case "lock_pin" -> lockSetPin(player, args);

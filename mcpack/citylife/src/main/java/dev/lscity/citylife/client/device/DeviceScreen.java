@@ -58,6 +58,8 @@ public class DeviceScreen extends Screen {
 
     private final Map<String, EditBox> inputs = new LinkedHashMap<>();
     private final Map<String, String> drafts = new HashMap<>();
+    /** Для какого appId создан текущий экземпляр приложения. */
+    private String appFor;
 
     public DeviceScreen(CompoundTag snapshot) {
         super(Component.translatable("citylife.screen.phone"));
@@ -86,7 +88,14 @@ public class DeviceScreen extends Screen {
         frame.layout(width, height);
         inputs.forEach((key, box) -> drafts.put(key, box.getValue()));
         inputs.clear();
-        app = create(appId);
+        // Приложение пересоздаём только при переходе в другое: обновление данных
+        // с сервера приходит часто, и раньше оно обнуляло игры и прокрутку.
+        boolean networkChanged = app instanceof OfflineApp ? online()
+                : app != null && app.needsNetwork() && !online();
+        if (app == null || !appId.equals(appFor) || networkChanged) {
+            app = create(appId);
+            appFor = appId;
+        }
         app.init(contentArea());
     }
 
@@ -98,6 +107,14 @@ public class DeviceScreen extends Screen {
             case "bank" -> new BankApp(this);
             case "navigator" -> new NavigatorApp(this);
             case "locks" -> new LocksApp(this);
+            case "cameras" -> new CamerasApp(this);
+            case "browser" -> new BrowserApp(this, false);
+            case "browser_board" -> new BrowserApp(this, true);
+            case "mail" -> new MailApp(this);
+            case "music" -> new MusicApp(this);
+            case "mines" -> new MinesApp(this);
+            case "game2048" -> new Game2048App(this);
+            case "terminal" -> new TerminalApp(this);
             case "sos" -> new SosApp(this);
             case "store" -> new StoreApp(this);
             case "marketplace" -> new MarketApp(this);
@@ -313,6 +330,12 @@ public class DeviceScreen extends Screen {
         appId = id;
         appSince = System.currentTimeMillis();
         rebuildWidgets();
+    }
+
+    /** Начать приложение заново (новая партия в игре). */
+    public void restart() {
+        appFor = null;
+        open(appId);
     }
 
     public void openChat(int number) {

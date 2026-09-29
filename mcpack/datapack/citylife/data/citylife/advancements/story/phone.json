@@ -21,7 +21,13 @@
         "items": [
           {
             "items": [
-              "citylife:smartphone"
+              "citylife:smartphone",
+              "citylife:phone_nokta",
+              "citylife:phone_mini",
+              "citylife:phone_gran_a5",
+              "citylife:phone_polus",
+              "citylife:phone_gran_x",
+              "citylife:phone_fold"
             ]
           }
         ]

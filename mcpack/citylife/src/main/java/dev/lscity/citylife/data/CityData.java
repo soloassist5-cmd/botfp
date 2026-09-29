@@ -34,6 +34,10 @@ public class CityData extends SavedData {
     private final Map<Integer, List<Message>> sms = new LinkedHashMap<>();
     private final Map<UUID, List<Waypoint>> waypoints = new LinkedHashMap<>();
     private final Map<UUID, List<BlockPos>> pairedLocks = new LinkedHashMap<>();
+    private final Map<UUID, List<BlockPos>> pairedCameras = new LinkedHashMap<>();
+    private final Map<UUID, List<Mail>> mail = new LinkedHashMap<>();
+    private final List<Ad> ads = new ArrayList<>();
+    private int nextAd = 1;
     private final Map<UUID, Waypoint> routes = new LinkedHashMap<>();
     private final Map<UUID, List<Order>> orders = new LinkedHashMap<>();
     private int nextOrder = 1;
@@ -223,6 +227,76 @@ public class CityData extends SavedData {
         }
     }
 
+    // --- камеры видеонаблюдения в приложении ---------------------------------
+
+    /** Сколько камер можно держать в приложении — как у монитора SecurityCraft. */
+    public static final int MAX_CAMERAS = 30;
+
+    public List<BlockPos> cameras(UUID player) {
+        return pairedCameras.computeIfAbsent(player, key -> new ArrayList<>());
+    }
+
+    public boolean pairCamera(UUID player, BlockPos pos) {
+        List<BlockPos> list = cameras(player);
+        BlockPos immutable = pos.immutable();
+        if (list.contains(immutable) || list.size() >= MAX_CAMERAS) {
+            return false;
+        }
+        list.add(immutable);
+        setDirty();
+        return true;
+    }
+
+    public void unpairCamera(UUID player, BlockPos pos) {
+        if (cameras(player).remove(pos.immutable())) {
+            setDirty();
+        }
+    }
+
+    // --- почта и объявления ------------------------------------------------------
+
+    public static final int MAX_MAIL = 40;
+    public static final int MAX_ADS = 40;
+
+    public List<Mail> mail(UUID player) {
+        return mail.computeIfAbsent(player, key -> new ArrayList<>());
+    }
+
+    public void deliverMail(UUID to, Mail letter) {
+        List<Mail> box = mail(to);
+        box.add(0, letter);
+        while (box.size() > MAX_MAIL) {
+            box.remove(box.size() - 1);
+        }
+        setDirty();
+    }
+
+    public void readAllMail(UUID player) {
+        List<Mail> box = mail(player);
+        box.replaceAll(Mail::markRead);
+        setDirty();
+    }
+
+    public List<Ad> ads() {
+        return ads;
+    }
+
+    public void postAd(UUID author, String name, String text, long time) {
+        ads.add(0, new Ad(nextAd++, author, name, text, time));
+        while (ads.size() > MAX_ADS) {
+            ads.remove(ads.size() - 1);
+        }
+        setDirty();
+    }
+
+    public boolean removeAd(UUID author, int id, boolean admin) {
+        boolean removed = ads.removeIf(ad -> ad.id() == id && (admin || ad.author().equals(author)));
+        if (removed) {
+            setDirty();
+        }
+        return removed;
+    }
+
     // --- сохранение ---------------------------------------------------------
 
     public static CityData load(CompoundTag tag) {
@@ -265,6 +339,24 @@ public class CityData extends SavedData {
             }
             data.pairedLocks.put(entry.getUUID("id"), list);
         }
+        for (CompoundTag entry : compounds(tag, "cameras")) {
+            List<BlockPos> list = new ArrayList<>();
+            for (long packed : entry.getLongArray("positions")) {
+                list.add(BlockPos.of(packed));
+            }
+            data.pairedCameras.put(entry.getUUID("id"), list);
+        }
+        for (CompoundTag entry : compounds(tag, "mail")) {
+            List<Mail> list = new ArrayList<>();
+            for (CompoundTag item : compounds(entry, "items")) {
+                list.add(Mail.load(item));
+            }
+            data.mail.put(entry.getUUID("id"), list);
+        }
+        for (CompoundTag entry : compounds(tag, "ads")) {
+            data.ads.add(Ad.load(entry));
+        }
+        data.nextAd = Math.max(1, tag.getInt("nextAd"));
         return data;
     }
 
@@ -364,6 +456,38 @@ public class CityData extends SavedData {
             pairs.add(entry);
         });
         tag.put("locks", pairs);
+        tag.put("cameras", positions(pairedCameras));
+        ListTag letters = new ListTag();
+        mail.forEach((id, list) -> {
+            if (list.isEmpty()) {
+                return;
+            }
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("id", id);
+            ListTag items = new ListTag();
+            list.forEach(letter -> items.add(letter.save()));
+            entry.put("items", items);
+            letters.add(entry);
+        });
+        tag.put("mail", letters);
+        ListTag board = new ListTag();
+        ads.forEach(ad -> board.add(ad.save()));
+        tag.put("ads", board);
+        tag.putInt("nextAd", nextAd);
         return tag;
+    }
+
+    private static ListTag positions(Map<UUID, List<BlockPos>> map) {
+        ListTag out = new ListTag();
+        map.forEach((id, list) -> {
+            if (list.isEmpty()) {
+                return;
+            }
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("id", id);
+            entry.putLongArray("positions", list.stream().mapToLong(BlockPos::asLong).toArray());
+            out.add(entry);
+        });
+        return out;
     }
 }

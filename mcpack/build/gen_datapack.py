@@ -277,102 +277,240 @@ RIFLE_TRADES = gun_offers([t for t in GUN_ORDER if t not in SIDEARMS])
 AMMO_TRADES = [ammo_offer(a) for a in TACZ["ammo"] if not wonder(a["id"])]
 
 
+def sell(item: str, count: int, price: int, tag: dict | None = None) -> dict:
+    """Товар за рубли одной стопкой купюр."""
+    return offer(rubles(price), stack(item, count, tag))
+
+
+def potion(kind: str, price: int, item: str = "minecraft:potion") -> dict:
+    return sell(item, 1, price, {"Potion": f"minecraft:{kind}"})
+
+
+# Цвета одежды: чёрный, белый, тёмно-синий, красный, бежевый.
+CLOTH_COLOURS = [0x1D1D21, 0xF9FFFE, 0x3C44AA, 0xB02E26, 0xC8AD7F]
+CLOTH_PIECES = [("leather_helmet", 150), ("leather_chestplate", 300),
+                ("leather_leggings", 250), ("leather_boots", 120)]
+
+# Прилавки.
+#
+# Правило одно: всё, что продаётся, должно работать сразу после покупки.
+# Камера видеонаблюдения — вместе с монитором, ПК — со всеми деталями,
+# зелье — с настоящим эффектом, а не «незельеваримое» без тега.
 ROLE_TRADES: dict[str, list[dict]] = {
+    # Продукты: еда на каждый день, от хлеба до торта.
     "trader_food": [
-        offer(stack(coin("copper"), 3), stack("minecraft:bread", 4)),
-        offer(stack(coin("copper"), 6), stack("minecraft:cooked_beef", 3)),
-        offer(stack(coin("iron"), 1), stack("minecraft:golden_carrot", 4)),
-        offer(stack(coin("copper"), 2), stack("minecraft:sweet_berries", 6)),
+        sell("minecraft:bread", 4, 40),
+        sell("minecraft:baked_potato", 4, 40),
+        sell("minecraft:apple", 6, 40),
+        sell("minecraft:carrot", 8, 30),
+        sell("minecraft:sweet_berries", 8, 30),
+        sell("minecraft:melon_slice", 8, 30),
+        sell("minecraft:cooked_chicken", 3, 60),
+        sell("minecraft:cooked_salmon", 3, 60),
+        sell("minecraft:cooked_beef", 3, 90),
+        sell("minecraft:cooked_porkchop", 3, 90),
+        sell("minecraft:cookie", 8, 50),
+        sell("minecraft:pumpkin_pie", 2, 60),
+        sell("minecraft:honey_bottle", 2, 60),
+        sell("minecraft:milk_bucket", 1, 50),
+        sell("minecraft:golden_carrot", 4, 100),
+        sell("minecraft:cake", 1, 150),
     ],
+    # Одежда: кожаный комплект в пяти цветах и краски, чтобы перекрасить.
     "trader_clothes": [
-        offer(stack(coin("iron"), 2), stack("minecraft:leather_chestplate", 1)),
-        offer(stack(coin("iron"), 1), stack("minecraft:leather_boots", 1)),
-        offer(stack(coin("copper"), 8), stack("minecraft:white_dye", 8)),
+        sell(f"minecraft:{piece}", 1, price, {"display": {"color": colour}})
+        for colour in CLOTH_COLOURS for piece, price in CLOTH_PIECES
+    ] + [
+        sell(f"minecraft:{dye}_dye", 8, 80)
+        for dye in ("white", "black", "blue", "red", "yellow", "green", "pink", "gray")
     ],
-    # Цены гаджетов — те же, что в маркетплейсе мода (device/Devices.java,
-    # pc/PcPart.java): в салоне дороже не бывает, зато без ожидания доставки.
+    # Электроника: гаджеты, ПК со всеми базовыми деталями, фото- и видеотехника.
     "trader_tech": [
-        offer(rubles(18000), stack("citylife:tablet", 1)),
-        offer(rubles(28000), stack("citylife:laptop", 1)),
-        offer(rubles(5000), stack("citylife:monitor", 1)),
-        offer(rubles(1000), stack("citylife:keyboard", 1)),
-        offer(rubles(600), stack("citylife:mouse", 1)),
-        offer(rubles(2500), stack("citylife:pc_case", 1)),
-        offer(rubles(2000), stack("cameracraft:camera", 1)),
+        sell("citylife:tablet", 1, 18000),
+        sell("citylife:laptop", 1, 28000),
+        sell("citylife:pc_case", 1, 2500),
+        sell("citylife:mb_k1", 1, 4000),
+        sell("citylife:cpu_k1_i5", 1, 7000),
+        sell("citylife:cooler_air", 1, 900),
+        sell("citylife:ram_8", 1, 1500),
+        sell("citylife:gpu_gx1650", 1, 6000),
+        sell("citylife:psu_450", 1, 1800),
+        sell("citylife:ssd_512", 1, 2000),
+        sell("citylife:monitor", 1, 5000),
+        sell("citylife:keyboard", 1, 1000),
+        sell("citylife:mouse", 1, 600),
+        sell("citylife:headset", 1, 1500),
+        sell("citylife:sim_card", 1, 300),
+        sell("cameracraft:camera", 1, 2000),
+        sell("cameracraft:video_camera", 1, 4000),
+        sell("cameracraft:tripod", 1, 800),
+        sell("cameracraft:laptop", 1, 6000),
     ],
+    # Салон связи: SIM-карты и все семь телефонов, планшет.
     "phone_seller": [
-        offer(rubles(300), stack("citylife:sim_card", 1)),
-        offer(rubles(1500), stack("citylife:phone_nokta", 1)),
-        offer(rubles(4000), stack("citylife:phone_mini", 1)),
-        offer(rubles(6000), stack("citylife:phone_gran_a5", 1)),
-        offer(rubles(9000), stack("citylife:smartphone", 1)),
-        offer(rubles(12000), stack("citylife:phone_polus", 1)),
-        offer(rubles(30000), stack("citylife:phone_gran_x", 1)),
-        offer(rubles(40000), stack("citylife:phone_fold", 1)),
+        sell("citylife:sim_card", 1, 300),
+        sell("citylife:phone_nokta", 1, 1500),
+        sell("citylife:phone_mini", 1, 4000),
+        sell("citylife:phone_gran_a5", 1, 6000),
+        sell("citylife:smartphone", 1, 9000),
+        sell("citylife:phone_polus", 1, 12000),
+        sell("citylife:phone_gran_x", 1, 30000),
+        sell("citylife:phone_fold", 1, 40000),
+        sell("citylife:tablet", 1, 18000),
     ],
+    # Банк: карты (их же выпускает банкомат), свой банкомат, кейс для денег.
     "banker": [
-        offer(stack(coin("gold"), 2), stack("citylife:atm", 1)),
-        offer(stack(coin("iron"), 3), stack("minecraft:paper", 8)),
-        offer(stack(coin("gold"), 1), stack("minecraft:iron_block", 2)),
+        sell("citylife:card_mir", 1, 300),
+        sell("citylife:card_mastercard", 1, 300),
+        sell("citylife:atm", 1, 2000),
+        sell("securitycraft:briefcase", 1, 1500),
     ],
     "gunsmith": GUNSMITH_TRADES,
     "arms_dealer": ARMS_TRADES,
     "rifle_dealer": RIFLE_TRADES,
     "ammo_seller": AMMO_TRADES + [
         # Патронный ящик — один предмет с уровнем в NBT: железный это Level 0.
-        offer(rubles(1000), stack("tacz:ammo_box", 1, {"Level": 0})),
+        sell("tacz:ammo_box", 1, 1000, {"Level": 0}),
     ],
     "car_dealer": [
         # Ключ нужен один раз и навсегда: им же вскрываются все ящики.
-        offer(rubles(300), stack("vehicle:wrench", 1)),
-        offer(rubles(200), stack("citylife:fuel_canister", 1)),
+        sell("vehicle:wrench", 1, 300),
+        sell("citylife:fuel_canister", 1, 200),
     ] + [
         offer(rubles(price), vehicle_crate(vehicle, title, engine, wheel, colour))
         for vehicle, title, engine, wheel, colour, price in CARS
     ],
+    # Риелтор: всё для своего жилья — замки, двери, сейф и видеонаблюдение.
+    # Камера без монитора бесполезна, поэтому монитор стоит рядом (или
+    # приложение «Камеры» в телефоне).
     "realtor": [
-        offer(stack(coin("gold"), 1), stack("citylife:smart_lock", 1)),
-        offer(stack(coin("iron"), 2), stack("securitycraft:keypad", 1)),
-        offer(stack(coin("emerald"), 1), stack("securitycraft:security_camera", 2)),
+        sell("citylife:smart_lock", 1, 1000),
+        sell("securitycraft:keypad", 1, 200),
+        sell("securitycraft:keypad_door_item", 1, 1500),
+        sell("securitycraft:keypad_chest", 1, 3000),
+        sell("securitycraft:security_camera", 1, 2500),
+        sell("securitycraft:camera_monitor", 1, 1500),
+        sell("securitycraft:keycard_reader", 1, 1000),
+        sell("securitycraft:keycard_lv1", 1, 200),
+        sell("securitycraft:keycard_holder", 1, 300),
+        sell("securitycraft:alarm", 1, 800),
+        sell("securitycraft:motion_activated_light", 1, 400),
+        sell("securitycraft:panic_button", 1, 300),
+        sell("securitycraft:portable_radar", 1, 1500),
     ],
+    # Мэрия: бумаги, книги, карта, часы, бирки и таблички.
     "clerk": [
-        offer(stack(coin("copper"), 4), stack("minecraft:paper", 8)),
-        offer(stack(coin("iron"), 1), stack("minecraft:map", 1)),
-        offer(stack(coin("iron"), 2), stack("minecraft:compass", 1)),
+        sell("minecraft:paper", 8, 40),
+        sell("minecraft:book", 1, 50),
+        sell("minecraft:writable_book", 1, 80),
+        sell("minecraft:map", 1, 100),
+        sell("minecraft:compass", 1, 200),
+        sell("minecraft:clock", 1, 200),
+        sell("minecraft:name_tag", 1, 300),
+        sell("minecraft:oak_sign", 4, 40),
+        sell("minecraft:white_banner", 1, 100),
     ],
+    # Закусочная, кафе, фастфуд: горячая еда и напитки.
     "cook": [
-        offer(stack(coin("copper"), 4), stack("minecraft:cooked_chicken", 3)),
-        offer(stack(coin("copper"), 5), stack("minecraft:pumpkin_pie", 2)),
-        offer(stack(coin("copper"), 3), stack("minecraft:cake", 1)),
+        sell("minecraft:cooked_chicken", 3, 60),
+        sell("minecraft:cooked_beef", 2, 60),
+        sell("minecraft:cooked_porkchop", 2, 60),
+        sell("minecraft:baked_potato", 4, 40),
+        sell("minecraft:mushroom_stew", 1, 60),
+        sell("minecraft:rabbit_stew", 1, 80),
+        sell("minecraft:beetroot_soup", 1, 50),
+        sell("minecraft:cookie", 8, 50),
+        sell("minecraft:pumpkin_pie", 2, 60),
+        sell("minecraft:cake", 1, 150),
+        sell("minecraft:honey_bottle", 2, 60),
+        sell("minecraft:milk_bucket", 1, 50),
     ],
+    # Магазин у дома и мини-маркет: хозтовары, инструменты, мебель и хлеб.
     "shopkeeper": [
-        offer(stack(coin("copper"), 3), stack("minecraft:torch", 16)),
-        offer(stack(coin("copper"), 5), stack("minecraft:oak_planks", 32)),
-        offer(stack(coin("iron"), 1), stack("minecraft:iron_pickaxe", 1)),
-        offer(stack(coin("copper"), 2), stack("minecraft:bucket", 1)),
+        sell("minecraft:bread", 4, 40),
+        sell("minecraft:torch", 16, 30),
+        sell("minecraft:lantern", 4, 100),
+        sell("minecraft:oak_planks", 32, 50),
+        sell("minecraft:glass", 16, 80),
+        sell("minecraft:ladder", 16, 60),
+        sell("minecraft:oak_door", 2, 60),
+        sell("minecraft:chest", 1, 50),
+        sell("minecraft:crafting_table", 1, 30),
+        sell("minecraft:furnace", 1, 50),
+        sell("minecraft:white_bed", 1, 150),
+        sell("minecraft:flower_pot", 4, 40),
+        sell("minecraft:painting", 2, 60),
+        sell("minecraft:item_frame", 4, 60),
+        sell("minecraft:bucket", 1, 20),
+        sell("minecraft:shears", 1, 50),
+        sell("minecraft:fishing_rod", 1, 60),
+        sell("minecraft:iron_shovel", 1, 80),
+        sell("minecraft:iron_axe", 1, 100),
+        sell("minecraft:iron_pickaxe", 1, 100),
     ],
+    # Бар и ночной клуб: напитки, музыка — и кое-что из-под стойки для тех,
+    # кто выбрал криминальную ветку (отмычка и кодолом).
     "bartender": [
-        offer(stack(coin("copper"), 4), stack("minecraft:honey_bottle", 2)),
-        offer(stack(coin("iron"), 1), stack("minecraft:jukebox", 1)),
-        offer(stack(coin("copper"), 6), stack("minecraft:music_disc_cat", 1)),
+        sell("minecraft:honey_bottle", 2, 60),
+        sell("minecraft:milk_bucket", 1, 50),
+        sell("minecraft:glow_berries", 8, 60),
+        sell("minecraft:jukebox", 1, 1000),
+        sell("minecraft:note_block", 1, 200),
+    ] + [
+        sell(f"minecraft:music_disc_{disc}", 1, 600)
+        for disc in ("cat", "blocks", "chirp", "mall", "mellohi", "stal", "wait", "pigstep")
+    ] + [
+        sell("citylife:lockpick", 1, 1500),
+        sell("securitycraft:codebreaker", 1, 20000),
     ],
+    # Заправка: бензин, ключ для ящиков с машинами, перекус в дорогу.
     "fuel_seller": [
-        offer(rubles(150), stack("citylife:fuel_canister", 1)),
-        offer(rubles(600), stack("citylife:fuel_canister", 5)),
-        offer(rubles(300), stack("vehicle:wrench", 1)),
-        offer(stack(coin("copper"), 3), stack("minecraft:cooked_beef", 4)),
+        sell("citylife:fuel_canister", 1, 150),
+        sell("citylife:fuel_canister", 5, 600),
+        sell("vehicle:wrench", 1, 300),
+        sell("minecraft:bread", 4, 40),
+        sell("minecraft:cookie", 8, 50),
+        sell("minecraft:honey_bottle", 2, 60),
     ],
+    # Аптека и больница: настоящие зелья с эффектом, золотое яблоко, молоко.
     "medic": [
-        offer(stack(coin("iron"), 1), stack("minecraft:golden_apple", 1)),
-        offer(stack(coin("copper"), 8), stack("minecraft:potion", 1)),
+        potion("healing", 150),
+        potion("strong_healing", 300),
+        potion("healing", 250, "minecraft:splash_potion"),
+        potion("regeneration", 300),
+        potion("fire_resistance", 250),
+        potion("night_vision", 200),
+        potion("water_breathing", 200),
+        sell("minecraft:golden_apple", 1, 500),
+        sell("minecraft:milk_bucket", 1, 50),
+        sell("minecraft:honey_bottle", 2, 60),
     ],
+    # Склад: сырьё и стройматериалы крупным оптом.
     "foreman": [
-        offer(stack(coin("copper"), 6), stack("minecraft:stone", 32)),
-        offer(stack(coin("iron"), 1), stack("minecraft:iron_ingot", 3)),
+        sell("minecraft:stone", 32, 60),
+        sell("minecraft:cobblestone", 64, 60),
+        sell("minecraft:sand", 32, 40),
+        sell("minecraft:oak_log", 16, 100),
+        sell("minecraft:iron_ingot", 3, 100),
+        sell("minecraft:copper_ingot", 16, 500),
+        sell("minecraft:coal", 16, 100),
     ],
+    # Стройка и магазин стройматериалов: всё для своего дома.
     "builder": [
-        offer(stack(coin("copper"), 5), stack("minecraft:scaffolding", 16)),
-        offer(stack(coin("iron"), 1), stack("minecraft:smooth_stone", 32)),
+        sell("minecraft:scaffolding", 16, 50),
+        sell("minecraft:smooth_stone", 32, 100),
+        sell("minecraft:stone_bricks", 32, 100),
+        sell("minecraft:bricks", 16, 100),
+        sell("minecraft:white_concrete", 16, 100),
+        sell("minecraft:light_gray_concrete", 16, 100),
+        sell("minecraft:gray_concrete", 16, 100),
+        sell("minecraft:black_concrete", 16, 100),
+        sell("minecraft:glass_pane", 16, 60),
+        sell("minecraft:iron_bars", 16, 100),
+        sell("minecraft:oak_stairs", 16, 80),
+        sell("minecraft:spruce_planks", 32, 50),
+        sell("minecraft:white_terracotta", 16, 80),
+        sell("minecraft:quartz_block", 16, 200),
     ],
     # Роли без торговли: охрана, полиция, пожарные.
     "security": [],
@@ -555,7 +693,10 @@ def story(city: P.Plan) -> dict[str, dict]:
     tree["story/phone"] = advancement(
         "На связи", "Заведи смартфон: без него в городе никак.",
         "citylife:smartphone", "citylife:story/arrival",
-        {"has_phone": has_items("citylife:smartphone")})
+        {"has_phone": has_items("citylife:smartphone", "citylife:phone_nokta",
+                                "citylife:phone_mini", "citylife:phone_gran_a5",
+                                "citylife:phone_polus", "citylife:phone_gran_x",
+                                "citylife:phone_fold")})
 
     tree["story/first_money"] = advancement(
         "Первые деньги", "Заработай первую монету.",

@@ -8,7 +8,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import dev.lscity.citylife.city.Cameras;
+import dev.lscity.citylife.data.CityData;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
@@ -49,6 +54,33 @@ public class DeviceItem extends Item {
             Net.openDevice(server, hand);
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
+    /**
+     * Клик гаджетом по камере SecurityCraft привязывает её к приложению
+     * «Камеры». Срабатывает раньше, чем сама камера обработает клик, поэтому
+     * привязка не мешает ни монитору, ни универсальному инструменту.
+     */
+    @Override
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        if (!Cameras.isCamera(level, pos)) {
+            return InteractionResult.PASS;
+        }
+        if (context.getPlayer() instanceof ServerPlayer player) {
+            if (!Cameras.allowed(level, pos, player)) {
+                player.displayClientMessage(Component.translatable("citylife.camera.not_owner")
+                        .withStyle(ChatFormatting.RED), true);
+            } else if (CityData.get(player.server).pairCamera(player.getUUID(), pos)) {
+                player.displayClientMessage(Component.translatable("citylife.camera.paired")
+                        .withStyle(ChatFormatting.GREEN), true);
+            } else {
+                player.displayClientMessage(Component.translatable("citylife.camera.already")
+                        .withStyle(ChatFormatting.YELLOW), true);
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     // --- SIM-карта в инвентаре ------------------------------------------------

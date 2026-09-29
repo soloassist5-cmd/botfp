@@ -68,7 +68,7 @@ note = "Расширение SecurityCraft на блоки других модо
 slug = "cameracraft"
 side  = "both"
 group = "core"
-note = "Фотоаппараты, плёнка, проявка, фотоальбомы"
+note = "Фотоаппарат с альбомом, видеокамеры на штативе"
 
 # Машины — MrCrayfish's Vehicle Mod (неофициальный порт на 1.20.1).
 # Ultimate Car Mod убран: в игре он оказался неудобным. Здесь техника приходит
@@ -263,6 +263,12 @@ slug = "corpse"
 side  = "both"
 group = "qol"
 note = "Труп с вещами вместо разбросанного лута — нужно для погонь и перестрелок"
+
+[[mods]]
+slug = "prismprotect"
+side  = "server"
+group = "qol"
+note = "Аналог CoreProtect: лог построек и поломок, проверка блока (/pp inspect) и откат гриферства (/pp rollback)"
 
 [[mods]]
 slug = "worldedit"

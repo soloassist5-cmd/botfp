@@ -287,6 +287,21 @@ SHOP_KINDS = [
 ]
 
 
+# Именные магазины-ориентиры: у них вывеска задана в LANDMARKS, и продавец
+# должен ей соответствовать. Раньше он выбирался случайно, и в одной из
+# «Электроник» за прилавком стоял продавец продуктов.
+LABEL_PROFILE = {
+    "ЭЛЕКТРОНИКА": ("trader_tech", "Продавец техники"),
+    "ПРОДУКТЫ": ("trader_food", "Продавец продуктов"),
+    "МИНИ-МАРКЕТ": ("shopkeeper", "Продавец"),
+    "МАГАЗИН": ("shopkeeper", "Продавец"),
+    "АПТЕКА": ("medic", "Аптекарь"),
+    "ОДЕЖДА": ("trader_clothes", "Продавец одежды"),
+    "КАФЕ": ("cook", "Повар"),
+    "СТРОЙМАТЕРИАЛЫ": ("builder", "Продавец стройматериалов"),
+}
+
+
 def shop_profile(rng: random.Random) -> tuple[str, str, str]:
     """Профиль лавки: кто за прилавком и что написано на вывеске."""
     total = sum(weight for _, _, _, weight in SHOP_KINDS)
@@ -426,6 +441,8 @@ def build_plan(seed: int) -> Plan:
                         random.Random(lot.seed * 2654435761 % (1 << 61)))
                     if not lot.label:
                         lot.label = shop_label
+                    elif lot.label in LABEL_PROFILE:
+                        lot.shop_role, lot.shop_title = LABEL_PROFILE[lot.label]
                 plan.lots.append(lot)
                 if kind == "metro":
                     cx, cz = lot.center()
