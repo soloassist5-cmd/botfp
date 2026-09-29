@@ -12,37 +12,31 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Random;
 import java.util.UUID;
 
 /**
- * Городские данные сервера: банковские счета, сообщения, метки на карте
- * и привязки телефонов к замкам.
+ * Городские данные сервера.
  *
- * Хранится в data/citylife_city.dat мира, поэтому переживает перезапуск
- * сервера и не зависит от инвентаря игрока (телефон можно потерять).
+ * Банковский счёт принадлежит игроку (его нику), а не телефону: телефон можно
+ * потерять или продать, деньги остаются. Сообщения, наоборот, принадлежат
+ * номеру SIM-карты — кто держит карту, тот и читает переписку.
+ *
+ * Хранится в data/citylife_city.dat мира, поэтому переживает перезапуск.
  */
 public class CityData extends SavedData {
     private static final String NAME = "citylife_city";
 
     private final Map<UUID, Long> balances = new LinkedHashMap<>();
-    private final Map<UUID, List<Message>> inbox = new LinkedHashMap<>();
+    private final Map<Integer, UUID> numbers = new LinkedHashMap<>();
+    private final Map<Integer, List<Message>> sms = new LinkedHashMap<>();
     private final Map<UUID, List<Waypoint>> waypoints = new LinkedHashMap<>();
     private final Map<UUID, List<BlockPos>> pairedLocks = new LinkedHashMap<>();
-    private final Map<UUID, Set<String>> apps = new LinkedHashMap<>();
     private final Map<UUID, Waypoint> routes = new LinkedHashMap<>();
-    private final Map<UUID, String> wallpapers = new LinkedHashMap<>();
-
-    /** Что стоит в телефоне сразу: связь, деньги, навигация и безопасность. */
-    public static final List<String> DEFAULT_APPS =
-            List.of("messages", "contacts", "bank", "navigator", "locks", "sos", "market",
-                    "settings");
-
-    /** Что можно доставить из маркета. */
-    public static final List<String> STORE_APPS = List.of("tetris", "snake");
+    private final Map<UUID, List<Order>> orders = new LinkedHashMap<>();
+    private int nextOrder = 1;
 
     public static CityData get(MinecraftServer server) {
         ServerLevel overworld = server.getLevel(Level.OVERWORLD);
@@ -97,58 +91,80 @@ public class CityData extends SavedData {
         return true;
     }
 
-    // --- сообщения ----------------------------------------------------------
+    // --- номера и SMS -------------------------------------------------------
 
-    public List<Message> messages(UUID player) {
-        return inbox.computeIfAbsent(player, key -> new ArrayList<>());
+    /** Новый свободный номер из четырёх цифр. */
+    public int issueNumber(UUID owner) {
+        Random random = new Random();
+        for (int attempt = 0; attempt < 20000; attempt++) {
+            int number = 1000 + random.nextInt(9000);
+            if (!numbers.containsKey(number)) {
+                numbers.put(number, owner);
+                setDirty();
+                return number;
+            }
+        }
+        throw new IllegalStateException("City Life: свободных номеров не осталось");
     }
 
-    public void addMessage(UUID to, Message message) {
-        List<Message> list = messages(to);
-        list.add(0, message);
+    public boolean numberExists(int number) {
+        return numbers.containsKey(number);
+    }
+
+    public List<Message> sms(int number) {
+        return sms.computeIfAbsent(number, key -> new ArrayList<>());
+    }
+
+    /** Положить сообщение и получателю, и отправителю: переписка видна с обеих сторон. */
+    public void deliver(Message message) {
         int limit = CityConfig.CONFIG.maxMessages.get();
-        while (list.size() > limit) {
+        for (int box : new int[]{message.toNumber(), message.fromNumber()}) {
+            List<Message> list = sms(box);
+            list.add(0, message);
+            while (list.size() > limit) {
+                list.remove(list.size() - 1);
+            }
+        }
+        setDirty();
+    }
+
+    // --- заказы маркетплейса -------------------------------------------------
+
+    public List<Order> orders(UUID player) {
+        return orders.computeIfAbsent(player, key -> new ArrayList<>());
+    }
+
+    public Order placeOrder(UUID player, String offer, String title, long price, long readyAt) {
+        Order order = new Order(nextOrder++, offer, title, price, readyAt, false);
+        List<Order> list = orders(player);
+        list.add(0, order);
+        // Историю держим короткой: полученные старше двадцати заказов забываем.
+        while (list.size() > 30 && list.get(list.size() - 1).taken()) {
             list.remove(list.size() - 1);
         }
         setDirty();
+        return order;
     }
 
-    // --- метки на карте -----------------------------------------------------
-
-    // --- приложения и маршрут ------------------------------------------------
-
-    public Set<String> apps(UUID player) {
-        return apps.computeIfAbsent(player, key -> new LinkedHashSet<>(DEFAULT_APPS));
-    }
-
-    public boolean installApp(UUID player, String app) {
-        if (!STORE_APPS.contains(app) || !apps(player).add(app)) {
-            return false;
+    public void markTaken(UUID player, int id) {
+        List<Order> list = orders(player);
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).id() == id) {
+                list.set(i, list.get(i).take());
+                setDirty();
+                return;
+            }
         }
-        setDirty();
-        return true;
     }
 
-    public boolean removeApp(UUID player, String app) {
-        // Базовые приложения удалить нельзя: без них телефон превращается в кирпич.
-        if (DEFAULT_APPS.contains(app) || !apps(player).remove(app)) {
-            return false;
-        }
-        setDirty();
-        return true;
-    }
-
-    public String wallpaper(UUID player) {
-        return wallpapers.getOrDefault(player, "sunset");
-    }
-
-    public void setWallpaper(UUID player, String id) {
-        wallpapers.put(player, id);
-        setDirty();
-    }
+    // --- метки и маршрут ----------------------------------------------------
 
     public Waypoint route(UUID player) {
         return routes.get(player);
+    }
+
+    public Map<UUID, Waypoint> routes() {
+        return routes;
     }
 
     public void setRoute(UUID player, Waypoint point) {
@@ -211,66 +227,54 @@ public class CityData extends SavedData {
 
     public static CityData load(CompoundTag tag) {
         CityData data = new CityData();
-        ListTag accounts = tag.getList("accounts", Tag.TAG_COMPOUND);
-        for (int i = 0; i < accounts.size(); i++) {
-            CompoundTag entry = accounts.getCompound(i);
+        for (CompoundTag entry : compounds(tag, "accounts")) {
             data.balances.put(entry.getUUID("id"), entry.getLong("balance"));
         }
-        ListTag boxes = tag.getList("inbox", Tag.TAG_COMPOUND);
-        for (int i = 0; i < boxes.size(); i++) {
-            CompoundTag entry = boxes.getCompound(i);
-            UUID owner = entry.getUUID("id");
+        for (CompoundTag entry : compounds(tag, "numbers")) {
+            data.numbers.put(entry.getInt("number"), entry.getUUID("owner"));
+        }
+        for (CompoundTag entry : compounds(tag, "sms")) {
             List<Message> list = new ArrayList<>();
-            ListTag items = entry.getList("items", Tag.TAG_COMPOUND);
-            for (int j = 0; j < items.size(); j++) {
-                list.add(Message.load(items.getCompound(j)));
+            for (CompoundTag item : compounds(entry, "items")) {
+                list.add(Message.load(item));
             }
-            data.inbox.put(owner, list);
+            data.sms.put(entry.getInt("number"), list);
         }
-        ListTag installed = tag.getList("apps", Tag.TAG_COMPOUND);
-        for (int i = 0; i < installed.size(); i++) {
-            CompoundTag entry = installed.getCompound(i);
-            Set<String> set = new LinkedHashSet<>();
-            ListTag ids = entry.getList("items", Tag.TAG_STRING);
-            for (int j = 0; j < ids.size(); j++) {
-                set.add(ids.getString(j));
+        for (CompoundTag entry : compounds(tag, "orders")) {
+            List<Order> list = new ArrayList<>();
+            for (CompoundTag item : compounds(entry, "items")) {
+                list.add(Order.load(item));
             }
-            data.apps.put(entry.getUUID("id"), set);
+            data.orders.put(entry.getUUID("id"), list);
         }
-
-        CompoundTag paper = tag.getCompound("wallpapers");
-        for (String key : paper.getAllKeys()) {
-            data.wallpapers.put(UUID.fromString(key), paper.getString(key));
-        }
-
-        ListTag active = tag.getList("routes", Tag.TAG_COMPOUND);
-        for (int i = 0; i < active.size(); i++) {
-            CompoundTag entry = active.getCompound(i);
+        data.nextOrder = Math.max(1, tag.getInt("nextOrder"));
+        for (CompoundTag entry : compounds(tag, "routes")) {
             data.routes.put(entry.getUUID("id"), Waypoint.load(entry.getCompound("point")));
         }
-
-        ListTag marks = tag.getList("waypoints", Tag.TAG_COMPOUND);
-        for (int i = 0; i < marks.size(); i++) {
-            CompoundTag entry = marks.getCompound(i);
-            UUID owner = entry.getUUID("id");
+        for (CompoundTag entry : compounds(tag, "waypoints")) {
             List<Waypoint> list = new ArrayList<>();
-            ListTag items = entry.getList("items", Tag.TAG_COMPOUND);
-            for (int j = 0; j < items.size(); j++) {
-                list.add(Waypoint.load(items.getCompound(j)));
+            for (CompoundTag item : compounds(entry, "items")) {
+                list.add(Waypoint.load(item));
             }
-            data.waypoints.put(owner, list);
+            data.waypoints.put(entry.getUUID("id"), list);
         }
-        ListTag pairs = tag.getList("locks", Tag.TAG_COMPOUND);
-        for (int i = 0; i < pairs.size(); i++) {
-            CompoundTag entry = pairs.getCompound(i);
-            UUID owner = entry.getUUID("id");
+        for (CompoundTag entry : compounds(tag, "locks")) {
             List<BlockPos> list = new ArrayList<>();
             for (long packed : entry.getLongArray("positions")) {
                 list.add(BlockPos.of(packed));
             }
-            data.pairedLocks.put(owner, list);
+            data.pairedLocks.put(entry.getUUID("id"), list);
         }
         return data;
+    }
+
+    private static List<CompoundTag> compounds(CompoundTag tag, String key) {
+        ListTag list = tag.getList(key, Tag.TAG_COMPOUND);
+        List<CompoundTag> out = new ArrayList<>(list.size());
+        for (int i = 0; i < list.size(); i++) {
+            out.add(list.getCompound(i));
+        }
+        return out;
     }
 
     @Override
@@ -284,19 +288,43 @@ public class CityData extends SavedData {
         });
         tag.put("accounts", accounts);
 
+        ListTag issued = new ListTag();
+        numbers.forEach((number, owner) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putInt("number", number);
+            entry.putUUID("owner", owner);
+            issued.add(entry);
+        });
+        tag.put("numbers", issued);
+
         ListTag boxes = new ListTag();
-        inbox.forEach((id, list) -> {
+        sms.forEach((number, list) -> {
+            if (list.isEmpty()) {
+                return;
+            }
+            CompoundTag entry = new CompoundTag();
+            entry.putInt("number", number);
+            ListTag items = new ListTag();
+            list.forEach(message -> items.add(message.save()));
+            entry.put("items", items);
+            boxes.add(entry);
+        });
+        tag.put("sms", boxes);
+
+        ListTag bought = new ListTag();
+        orders.forEach((id, list) -> {
             if (list.isEmpty()) {
                 return;
             }
             CompoundTag entry = new CompoundTag();
             entry.putUUID("id", id);
             ListTag items = new ListTag();
-            list.forEach(message -> items.add(message.save()));
+            list.forEach(order -> items.add(order.save()));
             entry.put("items", items);
-            boxes.add(entry);
+            bought.add(entry);
         });
-        tag.put("inbox", boxes);
+        tag.put("orders", bought);
+        tag.putInt("nextOrder", nextOrder);
 
         ListTag marks = new ListTag();
         waypoints.forEach((id, list) -> {
@@ -311,21 +339,6 @@ public class CityData extends SavedData {
             marks.add(entry);
         });
         tag.put("waypoints", marks);
-
-        ListTag installed = new ListTag();
-        apps.forEach((id, set) -> {
-            CompoundTag entry = new CompoundTag();
-            entry.putUUID("id", id);
-            ListTag ids = new ListTag();
-            set.forEach(app -> ids.add(net.minecraft.nbt.StringTag.valueOf(app)));
-            entry.put("items", ids);
-            installed.add(entry);
-        });
-        tag.put("apps", installed);
-
-        CompoundTag paper = new CompoundTag();
-        wallpapers.forEach((id, name) -> paper.putString(id.toString(), name));
-        tag.put("wallpapers", paper);
 
         ListTag active = new ListTag();
         routes.forEach((id, point) -> {

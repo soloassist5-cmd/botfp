@@ -53,6 +53,7 @@ $Fallback = @{
     'install.from_bundle'    = '(from bundle)'
     'install.custom_mod'     = '(custom mod)'
     'install.extra'          = '(not in the pack)'
+    'install.retired'        = '(removed from the pack)'
     'install.mods_count'     = 'Mods in the mods folder: {0}'
     'install.head_configs'   = 'Configs'
     'install.head_world'     = 'Los Santos world'
@@ -199,6 +200,37 @@ if (Test-Path $localDir) {
         Write-Host ("  + " + $jar.Name + " " + (T 'install.custom_mod'))
     }
 }
+
+# Mods the pack itself installed last time are listed in a manifest inside the
+# mods folder. Whatever is on that list but no longer ships with the pack gets
+# removed; mods the player added by hand are never on the list and stay.
+# Folders set up by older installers have no manifest, so retired.list names
+# the jars the pack used to ship (Immersive Vehicles, animation mods...).
+$manifest = Join-Path $TargetMods '.lscity-installed.txt'
+$previous = @()
+if (Test-Path -LiteralPath $manifest) {
+    $previous = @(Get-Content -LiteralPath $manifest -Encoding UTF8)
+}
+$retired = @()
+$retiredFile = Join-Path $ScriptDir 'retired.list'
+if (Test-Path -LiteralPath $retiredFile) {
+    $retired = @(Get-Content -LiteralPath $retiredFile -Encoding UTF8 |
+                 Where-Object { $_ -and ($_ -notmatch '^\s*#') })
+}
+foreach ($jar in Get-ChildItem -LiteralPath $TargetMods -Filter *.jar) {
+    if ($expected -contains $jar.Name) { continue }
+    $ours = $previous -contains $jar.Name
+    if (-not $ours) {
+        foreach ($pattern in $retired) {
+            if ($jar.Name -like $pattern.Trim()) { $ours = $true; break }
+        }
+    }
+    if ($ours) {
+        Remove-Item -LiteralPath $jar.FullName -Force
+        Write-Host ("  - " + $jar.Name + " " + (T 'install.retired'))
+    }
+}
+Set-Content -LiteralPath $manifest -Value $expected -Encoding UTF8
 
 if ($Clean) {
     foreach ($jar in Get-ChildItem -LiteralPath $TargetMods -Filter *.jar) {

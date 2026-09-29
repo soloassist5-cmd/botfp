@@ -1,0 +1,16 @@
+# Моды, которые раньше входили в пак и были из него убраны.
+#
+# Установщик удаляет их из папки mods при обновлении: старые установщики не
+# вели список установленного, и без этого файла Immersive Vehicles или моды
+# анимаций остались бы в папке навсегда. Шаблоны — как в имени файла, * — любые
+# символы. Моды, которые игрок ставил сам, сюда не попадают и не трогаются.
+
+# Анимации ломали прицеливание TaCZ.
+notenoughanimations-*.jar
+firstperson-*.jar
+# Своя рублёвая экономика вместо Lightman's Currency.
+lightmanscurrency-*.jar
+# Машины: сначала Immersive Vehicles, потом Ultimate Car Mod, теперь MrCrayfish's Vehicle.
+Immersive Vehicles-*.jar
+MTS Official Pack-*.jar
+car-forge-*.jar

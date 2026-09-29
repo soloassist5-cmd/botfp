@@ -13,6 +13,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import urllib.parse
+import urllib.request
 import datetime as dt
 import json
 import os
@@ -65,6 +68,47 @@ def env_for(side: str) -> dict:
         "client": {"client": "required", "server": "unsupported"},
         "server": {"client": "unsupported", "server": "required"},
     }[side]
+
+
+def curseforge_url(file_id: int, filename: str) -> str:
+    """Прямая ссылка на файл в CDN CurseForge: /files/<первые цифры>/<последние три>/."""
+    return (f"https://mediafilez.forgecdn.net/files/{file_id // 1000}/"
+            f"{file_id % 1000:03d}/{urllib.parse.quote(filename)}")
+
+
+def curseforge_entry(cf: dict) -> dict:
+    """Запись mods.lock.json для мода с CurseForge: качаем и считаем хэши."""
+    url = curseforge_url(int(cf["file_id"]), cf["filename"])
+    request = urllib.request.Request(url, headers={"User-Agent": "ls-city-life-packbuilder/1.0"})
+    with urllib.request.urlopen(request, timeout=120) as resp:
+        data = resp.read()
+    if not data.startswith(b"PK"):
+        raise ValueError(f"по ссылке не jar: {url}")
+    side = cf.get("side", "both")
+    return {
+        "slug": cf["slug"],
+        "title": cf.get("title", cf["slug"]),
+        "project_id": f"cf-{cf['project_id']}",
+        "version_id": f"cf-{cf['file_id']}",
+        "version_number": cf["filename"].rsplit("-", 1)[-1].removesuffix(".jar"),
+        "version_type": "release",
+        "filename": cf["filename"],
+        "url": url,
+        "size": len(data),
+        "sha1": hashlib.sha1(data).hexdigest(),
+        "sha512": hashlib.sha512(data).hexdigest(),
+        "side": side,
+        "env": env_for(side),
+        "group": cf.get("group", "lib"),
+        "note": cf.get("note", ""),
+        "optional": False,
+        "required_by": cf.get("required_by"),
+        "page": f"https://www.curseforge.com/minecraft/mc-mods/{cf['slug']}",
+        "source": "curseforge",
+        "cf_project": int(cf["project_id"]),
+        "cf_file": int(cf["file_id"]),
+        "license": cf.get("license", ""),
+    }
 
 
 def main() -> int:
@@ -143,6 +187,15 @@ def main() -> int:
             # мода серверу не нужна, и в серверный пак она не попадёт.
             queue.append((dep_id, side, "lib", "Библиотека-зависимость",
                           proj["slug"], False, beta))
+
+    # Моды только с CurseForge: версию задаёт pack.toml, хэши считаем сами,
+    # скачав файл по прямой ссылке CDN — так установщик сверит его так же,
+    # как моды с Modrinth.
+    for cf in pack.get("cf_mods", []):
+        try:
+            resolved["cf:" + cf["slug"]] = curseforge_entry(cf)
+        except Exception as exc:
+            problems.append(f"{cf['slug']} (CurseForge): {exc}")
 
     if problems:
         print("ОШИБКИ РАЗРЕШЕНИЯ:", file=sys.stderr)

@@ -39,6 +39,7 @@ install.retry_hint = Запусти установщик снова — дока
 install.from_bundle = (из комплекта)
 install.custom_mod = (самописный)
 install.extra = (лишний)
+install.retired = (убран из пака)
 install.mods_count = Модов в папке mods: {0}
 install.head_configs = Конфиги
 install.head_world = Мир Los Santos

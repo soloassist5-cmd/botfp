@@ -105,21 +105,59 @@ def stack(item: str, count: int = 1, tag: dict | None = None) -> dict:
     return out
 
 
-# Автосалон: готовые машины по ключу, без сборки по частям и ремонта.
+def rubles(price: int) -> dict:
+    """Цена в рублях одной стопкой: крупными купюрами, если делится."""
+    for note, item in ((5000, "citylife:banknote_5000"), (1000, "citylife:banknote_1000"),
+                       (100, "citylife:banknote_100"), (10, "citylife:coin_10")):
+        if price % note == 0 and price // note <= 64:
+            return stack(item, price // note)
+    raise ValueError(f"цену {price} не собрать одной стопкой купюр")
+
+
+# Автосалон: техника MrCrayfish's Vehicle Mod в ящиках.
+#
+# В ящике уже лежит машина с мотором и колёсами, поэтому собирать ничего не
+# нужно: поставил ящик, ударил сверху гаечным ключом — техника готова. Тип
+# мотора обязан совпадать с тем, что ждёт машина (смарт-кар электрический,
+# внедорожник — большой мотор), иначе она не поедет: список сверен с файлами
+# описаний машин в самом моде. Ступень мотора (железо … незерит) — скорость.
+#   (машина, название, мотор, колёса, цвет, цена в рублях)
 CARS = [
-    ("black_suv_body", "Внедорожник, чёрный", "gold", 3),
-    ("white_sport_body", "Спорткар, белый", "emerald", 1),
-    ("red_transporter_body", "Фургон, красный", "gold", 4),
-    ("blue_suv_body", "Внедорожник, синий", "gold", 3),
-    ("yellow_sport_body", "Спорткар, жёлтый", "emerald", 1),
-    ("green_transporter_body", "Фургон, зелёный", "gold", 4),
+    ("moped", "Мопед", "iron_small_engine", "standard_wheel", 0xE0413A, 4000),
+    ("mini_bike", "Минибайк", "iron_small_engine", "standard_wheel", 0x2F7FE0, 3000),
+    ("dirt_bike", "Мотокросс", "gold_small_engine", "off_road_wheel", 0xF08A24, 9000),
+    ("quad_bike", "Квадроцикл", "gold_small_engine", "off_road_wheel", 0x3E8E41, 12000),
+    ("atv", "Вездеход ATV", "gold_small_engine", "all_terrain_wheel", 0x8C6A3E, 14000),
+    ("go_kart", "Картинг", "diamond_small_engine", "racing_wheel", 0xF2C12E, 10000),
+    ("golf_cart", "Гольф-кар", "iron_electric_engine", "standard_wheel", 0xF4F4F4, 8000),
+    ("smart_car", "Смарт-кар", "gold_electric_engine", "standard_wheel", 0x2E9BD6, 18000),
+    ("dune_buggy", "Багги", "gold_small_engine", "off_road_wheel", 0xE8C15A, 15000),
+    ("off_roader", "Внедорожник", "gold_large_engine", "off_road_wheel", 0x1E1E24, 35000),
+    ("mini_bus", "Микроавтобус", "iron_large_engine", "standard_wheel", 0xD9D9DC, 45000),
+    ("tractor", "Трактор", "iron_large_engine", "off_road_wheel", 0x3F9B3A, 20000),
+    ("aluminum_boat", "Лодка", "iron_small_engine", None, 0xB8C2CC, 6000),
+    ("jet_ski", "Гидроцикл", "gold_small_engine", None, 0xE23B6A, 15000),
+    ("speed_boat", "Катер", "gold_large_engine", None, 0xFFFFFF, 30000),
+    ("compact_helicopter", "Вертолёт", "diamond_small_engine", None, 0x2B2F3A, 120000),
+    ("sports_plane", "Самолёт", "diamond_large_engine", None, 0xC0392B, 150000),
 ]
 
 
-def car_key(body: str, title: str) -> dict:
-    return stack("citylife:car_key", 1,
-                 {"body": f"car:{body}", "model": title,
-                  "display": {"Name": json.dumps({"text": title}, ensure_ascii=False)}})
+def vehicle_crate(vehicle: str, title: str, engine: str, wheel: str | None,
+                  colour: int) -> dict:
+    """Ящик с готовой машиной: мотор, колёса и цвет уже внутри."""
+    entity = {
+        "Vehicle": f"vehicle:{vehicle}",
+        "Color": colour,
+        "EngineStack": stack(f"vehicle:{engine}", 1),
+    }
+    if wheel:
+        entity["WheelStack"] = stack(f"vehicle:{wheel}", 1)
+    name = json.dumps({"text": f"{title} — ящик", "italic": False}, ensure_ascii=False)
+    lore = json.dumps({"text": "Поставь и ударь сверху гаечным ключом",
+                       "color": "gray", "italic": False}, ensure_ascii=False)
+    return stack("vehicle:vehicle_crate", 1,
+                 {"BlockEntityTag": entity, "display": {"Name": name, "Lore": [lore]}})
 
 
 def offer(buy: dict, sell: dict, buy_b: dict | None = None) -> dict:
@@ -153,16 +191,26 @@ ROLE_TRADES: dict[str, list[dict]] = {
         offer(stack(coin("iron"), 1), stack("minecraft:leather_boots", 1)),
         offer(stack(coin("copper"), 8), stack("minecraft:white_dye", 8)),
     ],
+    # Цены гаджетов — те же, что в маркетплейсе мода (device/Devices.java,
+    # pc/PcPart.java): в салоне дороже не бывает, зато без ожидания доставки.
     "trader_tech": [
-        offer(stack(coin("gold"), 1), stack("citylife:smartphone", 1)),
-        offer(stack(coin("iron"), 2), stack("citylife:sim_card", 2)),
-        offer(stack(coin("iron"), 4), stack("minecraft:redstone", 16)),
-        offer(stack(coin("gold"), 2), stack("cameracraft:camera", 1)),
+        offer(rubles(18000), stack("citylife:tablet", 1)),
+        offer(rubles(28000), stack("citylife:laptop", 1)),
+        offer(rubles(5000), stack("citylife:monitor", 1)),
+        offer(rubles(1000), stack("citylife:keyboard", 1)),
+        offer(rubles(600), stack("citylife:mouse", 1)),
+        offer(rubles(2500), stack("citylife:pc_case", 1)),
+        offer(rubles(2000), stack("cameracraft:camera", 1)),
     ],
     "phone_seller": [
-        offer(stack(coin("gold"), 1), stack("citylife:smartphone", 1)),
-        offer(stack(coin("copper"), 9), stack("citylife:sim_card", 1)),
-        offer(stack(coin("iron"), 3), stack("cameracraft:camera", 1)),
+        offer(rubles(300), stack("citylife:sim_card", 1)),
+        offer(rubles(1500), stack("citylife:phone_nokta", 1)),
+        offer(rubles(4000), stack("citylife:phone_mini", 1)),
+        offer(rubles(6000), stack("citylife:phone_gran_a5", 1)),
+        offer(rubles(9000), stack("citylife:smartphone", 1)),
+        offer(rubles(12000), stack("citylife:phone_polus", 1)),
+        offer(rubles(30000), stack("citylife:phone_gran_x", 1)),
+        offer(rubles(40000), stack("citylife:phone_fold", 1)),
     ],
     "banker": [
         offer(stack(coin("gold"), 2), stack("citylife:atm", 1)),
@@ -178,10 +226,12 @@ ROLE_TRADES: dict[str, list[dict]] = {
         offer(stack(coin("gold"), 1), stack("tacz:ammo_box", 1, {"Level": 0})),
     ],
     "car_dealer": [
-        offer(stack(coin(price), count), car_key(body, title))
-        for body, title, price, count in CARS
+        # Ключ нужен один раз и навсегда: им же вскрываются все ящики.
+        offer(rubles(300), stack("vehicle:wrench", 1)),
+        offer(rubles(200), stack("citylife:fuel_canister", 1)),
     ] + [
-        offer(stack(coin("iron"), 2), stack("citylife:fuel_canister", 2)),
+        offer(rubles(price), vehicle_crate(vehicle, title, engine, wheel, colour))
+        for vehicle, title, engine, wheel, colour, price in CARS
     ],
     "realtor": [
         offer(stack(coin("gold"), 1), stack("citylife:smart_lock", 1)),
@@ -210,8 +260,9 @@ ROLE_TRADES: dict[str, list[dict]] = {
         offer(stack(coin("copper"), 6), stack("minecraft:music_disc_cat", 1)),
     ],
     "fuel_seller": [
-        offer(stack(coin("iron"), 1), stack("citylife:fuel_canister", 1)),
-        offer(stack(coin("iron"), 4), stack("citylife:fuel_canister", 5)),
+        offer(rubles(150), stack("citylife:fuel_canister", 1)),
+        offer(rubles(600), stack("citylife:fuel_canister", 5)),
+        offer(rubles(300), stack("vehicle:wrench", 1)),
         offer(stack(coin("copper"), 3), stack("minecraft:cooked_beef", 4)),
     ],
     "medic": [

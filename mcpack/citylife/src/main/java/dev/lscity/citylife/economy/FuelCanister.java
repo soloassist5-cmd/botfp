@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -20,19 +21,49 @@ import net.minecraftforge.registries.ForgeRegistries;
  * Заправка канистрой.
  *
  * Бензин в городе покупается готовым: канистра с заправки, правый клик по
- * машине — бак полный. Ни производства биодизеля, ни насосов, ни проводов:
- * это ровно то, чего ждёшь от аркадной езды по городу.
+ * машине — бак полный. Ни насосов, ни труб, ни смешивания топлива: это ровно
+ * то, чего ждёшь от простой езды по городу.
  *
- * С модом машин не связываемся напрямую: просто дописываем его сущности тег
- * fuel. Поэтому пак собирается и без мода машин, а канистра тогда молчит.
+ * С модом машин (MrCrayfish's Vehicle) не связываемся напрямую: дописываем
+ * сущности тег CurrentFuel до её же FuelCapacity. Поэтому пак собирается и без
+ * мода машин, а канистра тогда молчит.
  */
 @Mod.EventBusSubscriber(modid = CityLife.MOD_ID)
 public final class FuelCanister {
 
-    /** Полный бак: с запасом на любой кузов. */
-    private static final int FULL = 20000;
+    /** Пространство имён мода машин. */
+    private static final String VEHICLES = "vehicle";
 
     private FuelCanister() {
+    }
+
+    /** Метка «бак уже заливали»: полный бак дают только новой машине. */
+    private static final String FIRST_FILL = "citylife_first_fill";
+
+    /**
+     * Новая машина из ящика выходит с пустым баком — купил, открыл, а она
+     * не едет. Поэтому при первом появлении в мире заливаем бак полностью.
+     * Метка в тегах сущности сохраняется, и при повторной загрузке чанка
+     * пустой бак уже не наполнится сам.
+     */
+    @SubscribeEvent
+    public static void onJoin(EntityJoinLevelEvent event) {
+        Entity entity = event.getEntity();
+        if (event.getLevel().isClientSide() || entity.getTags().contains(FIRST_FILL)) {
+            return;
+        }
+        var key = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+        if (key == null || !VEHICLES.equals(key.getNamespace())) {
+            return;
+        }
+        entity.addTag(FIRST_FILL);
+        CompoundTag tag = new CompoundTag();
+        entity.saveWithoutId(tag);
+        float capacity = tag.getFloat("FuelCapacity");
+        if (capacity > 0 && tag.contains("CurrentFuel")) {
+            tag.putFloat("CurrentFuel", capacity);
+            entity.load(tag);
+        }
     }
 
     @SubscribeEvent
@@ -44,7 +75,7 @@ public final class FuelCanister {
         }
         Entity target = event.getTarget();
         var key = ForgeRegistries.ENTITY_TYPES.getKey(target.getType());
-        if (key == null || !"car".equals(key.getNamespace())) {
+        if (key == null || !VEHICLES.equals(key.getNamespace())) {
             return;
         }
 
@@ -56,16 +87,19 @@ public final class FuelCanister {
 
         CompoundTag tag = new CompoundTag();
         target.saveWithoutId(tag);
-        int fuel = tag.getInt("fuel");
-        if (fuel >= FULL) {
+        float capacity = tag.getFloat("FuelCapacity");
+        if (capacity <= 0 || !tag.contains("CurrentFuel")) {
+            // Лодка без мотора, прицеп, тележка — им топливо не нужно.
+            player.displayClientMessage(Component.translatable("citylife.fuel.not_needed")
+                    .withStyle(ChatFormatting.GRAY), true);
+            return;
+        }
+        if (tag.getFloat("CurrentFuel") >= capacity - 0.5F) {
             player.displayClientMessage(Component.translatable("citylife.fuel.full")
                     .withStyle(ChatFormatting.YELLOW), true);
             return;
         }
-        tag.putInt("fuel", FULL);
-        if (!tag.contains("fuel_type")) {
-            tag.putString("fuel_type", "car:bio_diesel");
-        }
+        tag.putFloat("CurrentFuel", capacity);
         target.load(tag);
 
         if (!player.isCreative()) {

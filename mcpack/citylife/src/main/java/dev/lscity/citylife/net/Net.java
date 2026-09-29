@@ -27,10 +27,10 @@ public final class Net {
 
     public static void onCommonSetup(FMLCommonSetupEvent event) {
         int id = 0;
-        CHANNEL.messageBuilder(OpenPhonePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(OpenPhonePacket::encode)
-                .decoder(OpenPhonePacket::decode)
-                .consumerMainThread(OpenPhonePacket::handle)
+        CHANNEL.messageBuilder(OpenDevicePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(OpenDevicePacket::encode)
+                .decoder(OpenDevicePacket::decode)
+                .consumerMainThread(OpenDevicePacket::handle)
                 .add();
         CHANNEL.messageBuilder(OpenPinPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(OpenPinPacket::encode)
@@ -54,16 +54,29 @@ public final class Net {
                 .add();
     }
 
-    /** Открыть телефон у игрока: собрать снимок и отправить клиенту. */
-    public static void openPhone(ServerPlayer player) {
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new OpenPhonePacket(PhoneServer.snapshot(player), true));
+    /** Открыть гаджет из руки: собрать снимок и отправить клиенту. */
+    public static void openDevice(ServerPlayer player, net.minecraft.world.InteractionHand hand) {
+        DeviceServer.Device device = DeviceServer.resolve(player, DeviceServer.handContext(hand));
+        if (device != null) {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                    new OpenDevicePacket(DeviceServer.snapshot(player, device), true));
+        }
     }
 
-    /** Обновить уже открытый телефон. */
-    public static void syncPhone(ServerPlayer player) {
+    /** Включить компьютер: рабочий стол живёт в системном блоке. */
+    public static void openComputer(ServerPlayer player, BlockPos casePos) {
+        DeviceServer.Device device =
+                DeviceServer.resolve(player, DeviceServer.computerContext(casePos));
+        if (device != null) {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                    new OpenDevicePacket(DeviceServer.snapshot(player, device), true));
+        }
+    }
+
+    /** Обновить уже открытый гаджет. */
+    public static void syncDevice(ServerPlayer player, DeviceServer.Device device) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new OpenPhonePacket(PhoneServer.snapshot(player), false));
+                new OpenDevicePacket(DeviceServer.snapshot(player, device), false));
     }
 
     /** Отправить игроку его маршрут: при выборе цели, отмене и входе в мир. */

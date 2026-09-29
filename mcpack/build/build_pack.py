@@ -460,7 +460,8 @@ def build_mrpack(pack: dict, lock: dict) -> str:
                 "downloads": [m["url"]],
                 "fileSize": m["size"],
             }
-            for m in lock["mods"] if not m.get("optional")
+            for m in lock["mods"]
+            if not m.get("optional") and m.get("source") != "curseforge"
         ],
         "dependencies": {
             "minecraft": p["minecraft"],
@@ -474,7 +475,15 @@ def build_mrpack(pack: dict, lock: dict) -> str:
         for src, rel in iter_overrides():
             z.write(src, f"overrides/{rel.replace(os.sep, '/')}")
         jars, saves = add_client_extras(z)
-        print(f"  .mrpack: самописных модов {jars}, файлов мира {saves}")
+        # Лаунчеры Modrinth качают только с разрешённых доменов, CurseForge в их
+        # число не входит. Такие моды кладём в архив целиком — это допустимо
+        # лишь при лицензии, разрешающей раздачу, и pack.toml её указывает.
+        foreign = [m for m in lock["mods"]
+                   if m.get("source") == "curseforge" and not m.get("optional")]
+        for path, mod in collect_jars({"mods": foreign}, None):
+            z.write(path, f"overrides/mods/{mod['filename']}")
+        print(f"  .mrpack: самописных модов {jars}, файлов мира {saves}, "
+              f"модов с CurseForge внутри {len(foreign)}")
         # Необязательные моды — отдельным списком, чтобы лаунчер их не тянул,
         # но пользователь знал, что можно добавить.
         opt = [m for m in lock["mods"] if m.get("optional")]
@@ -514,6 +523,9 @@ def build_curseforge(pack: dict, lock: dict) -> str:
     p = pack["pack"]
     cf = load_curseforge()
     by_file = {m["filename"]: m for m in cf["mods"]} if cf else {}
+    for m in lock["mods"]:
+        if m.get("source") == "curseforge":
+            by_file[m["filename"]] = {"projectID": m["cf_project"], "fileID": m["cf_file"]}
 
     wanted = [m for m in lock["mods"] if not m.get("optional") and m["side"] != "server"]
     matched = [by_file[m["filename"]] for m in wanted if m["filename"] in by_file]

@@ -17,6 +17,8 @@ public final class CityConfig {
     public final ForgeConfigSpec.IntValue lockAutoCloseTicks;
     public final ForgeConfigSpec.BooleanValue emergencyToEveryone;
     public final ForgeConfigSpec.BooleanValue lockpickAlarm;
+    public final ForgeConfigSpec.IntValue deliverySeconds;
+    public final ForgeConfigSpec.DoubleValue arrivalRadius;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -33,12 +35,19 @@ public final class CityConfig {
                 .comment("Сколько меток можно хранить в приложении «Карта».")
                 .defineInRange("maxWaypoints", 12, 1, 64);
         maxMessages = builder
-                .comment("Сколько последних сообщений хранится у игрока.")
+                .comment("Сколько последних сообщений хранится на одном номере.")
                 .defineInRange("maxMessages", 50, 5, 500);
         emergencyToEveryone = builder
                 .comment("Экстренный вызов 112 виден всем игрокам.",
                          "Выключи, если на сервере есть отдельная роль полиции (тогда видят только операторы).")
                 .define("emergencyToEveryone", true);
+        deliverySeconds = builder
+                .comment("Сколько секунд заказ маркетплейса едет до пункта выдачи.")
+                .defineInRange("deliverySeconds", 120, 0, 86_400);
+        arrivalRadius = builder
+                .comment("В каком радиусе от метки навигатор считает, что игрок пришёл,",
+                         "и сам снимает маршрут.")
+                .defineInRange("arrivalRadius", 1.6D, 0.5D, 16.0D);
         builder.pop();
 
         builder.comment("Умные замки").push("locks");

@@ -1,0 +1,105 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "cup": "citylife:block/headset",
+    "particle": "citylife:block/headset"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0,
+        6
+      ],
+      "to": [
+        5,
+        5,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cup"
+        },
+        "south": {
+          "texture": "#cup"
+        },
+        "east": {
+          "texture": "#cup"
+        },
+        "west": {
+          "texture": "#cup"
+        },
+        "up": {
+          "texture": "#cup"
+        },
+        "down": {
+          "texture": "#cup"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        0,
+        6
+      ],
+      "to": [
+        13,
+        5,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cup"
+        },
+        "south": {
+          "texture": "#cup"
+        },
+        "east": {
+          "texture": "#cup"
+        },
+        "west": {
+          "texture": "#cup"
+        },
+        "up": {
+          "texture": "#cup"
+        },
+        "down": {
+          "texture": "#cup"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        5,
+        7.5
+      ],
+      "to": [
+        12,
+        7,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cup"
+        },
+        "south": {
+          "texture": "#cup"
+        },
+        "east": {
+          "texture": "#cup"
+        },
+        "west": {
+          "texture": "#cup"
+        },
+        "up": {
+          "texture": "#cup"
+        },
+        "down": {
+          "texture": "#cup"
+        }
+      }
+    }
+  ]
+}

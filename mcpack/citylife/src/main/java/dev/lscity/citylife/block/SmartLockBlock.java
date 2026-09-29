@@ -1,6 +1,5 @@
 package dev.lscity.citylife.block;
 
-import dev.lscity.citylife.Registration;
 import dev.lscity.citylife.data.CityData;
 import dev.lscity.citylife.net.Net;
 import net.minecraft.core.BlockPos;
@@ -107,8 +106,8 @@ public class SmartLockBlock extends HorizontalDirectionalBlock implements Entity
         }
         ItemStack held = player.getItemInHand(hand);
 
-        // Телефон в руке: привязать замок, если доступ есть; иначе спросить код.
-        if (held.is(Registration.SMARTPHONE.get())) {
+        // Гаджет в руке: привязать замок, если доступ есть; иначе спросить код.
+        if (held.getItem() instanceof dev.lscity.citylife.item.DeviceItem) {
             if (lock.isAllowed(player.getUUID())) {
                 boolean added = CityData.get(serverPlayer.server).pairLock(player.getUUID(), pos);
                 serverPlayer.sendSystemMessage(Component.translatable(

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "citylife:block/mouse"
+    },
+    "facing=east": {
+      "model": "citylife:block/mouse",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "citylife:block/mouse",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "citylife:block/mouse",
+      "y": 270
+    }
+  }
+}

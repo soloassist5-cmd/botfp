@@ -118,8 +118,127 @@ class RegionCanvas:
     def write(self, directory: str) -> str | None:
         if not self.chunks:
             return None
+        connect_blocks(self)
         writer = RegionWriter(self.rx, self.rz)
         for chunk in self.chunks.values():
             if not chunk.is_empty():
                 writer.add(chunk, self.registry)
         return writer.write(directory)
+
+
+# ---------------------------------------------------------------------------
+#  Соединения заборов, стёкол-панелей, решёток и оград
+# ---------------------------------------------------------------------------
+#
+# Игра пересчитывает, куда тянется забор, только когда рядом что-то меняется.
+# Блоки, записанные прямо в чанк, так и остаются с теми соединениями, с какими
+# их записали, — а генератор писал все стороны выключенными. В игре это
+# выглядело как ряд одиночных столбиков вместо забора и как дыры вместо окон.
+# Поэтому перед записью региона каждому такому блоку соединения считаем сами,
+# ровно по правилам игры: к таким же блокам и к любой полной грани.
+
+_SIDES = (("north", 0, -1), ("south", 0, 1), ("west", -1, 0), ("east", 1, 0))
+
+# Всё, у чего нет полной грани: к такому забор и стекло не цепляются.
+# Части имени проверяем подстрокой, короткие имена — только целиком:
+# «light» подстрокой задело бы light_gray_concrete, «grass» — grass_block.
+_NOT_SOLID_PARTS = ("_stairs", "_slab", "_fence", "_pane", "iron_bars", "_wall",
+                    "_door", "_trapdoor", "_sign", "torch", "lantern", "_carpet",
+                    "_button", "_pressure_plate", "rail", "_bed", "chest", "ladder",
+                    "scaffolding", "flower_pot", "_sapling", "_banner", "tripwire",
+                    "candle", "campfire", "_tulip", "_orchid", "_head", "_skull")
+_NOT_SOLID_EXACT = {"air", "cave_air", "void_air", "light", "water", "lava", "grass",
+                    "short_grass", "tall_grass", "fern", "large_fern", "dandelion",
+                    "poppy", "allium", "azure_bluet", "oxeye_daisy", "cornflower",
+                    "lily_of_the_valley", "rose_bush", "peony", "lilac", "sunflower",
+                    "snow", "lever", "cobweb", "vine", "chain", "end_rod",
+                    "lightning_rod", "bell", "dead_bush", "sweet_berry_bush"}
+
+
+def _family(name: str) -> str | None:
+    """К какой группе соединяемых блоков относится блок, или None."""
+    if name.endswith("_fence_gate"):
+        return None
+    if name.endswith("_fence"):
+        return "nether_fence" if name == "minecraft:nether_brick_fence" else "fence"
+    if name.endswith("_pane") or name == "minecraft:iron_bars":
+        return "pane"
+    if name.endswith("_wall") and "sign" not in name and "torch" not in name \
+            and "banner" not in name and "head" not in name and "skull" not in name \
+            and "fan" not in name:
+        return "wall"
+    return None
+
+
+def _solid(name: str) -> bool:
+    base = name.split(":", 1)[-1]
+    if base in _NOT_SOLID_EXACT:
+        return False
+    return not any(part in base for part in _NOT_SOLID_PARTS)
+
+
+def connect_blocks(canvas: "RegionCanvas") -> None:
+    registry = canvas.registry
+    families: dict[int, str] = {}
+    solid: dict[int, bool] = {}
+    names: dict[int, str] = {}
+
+    def info(block_id: int) -> tuple[str, str | None, bool]:
+        name = names.get(block_id)
+        if name is None:
+            name = registry.state_nbt(block_id)["Name"]
+            names[block_id] = name
+            families[block_id] = _family(name)
+            solid[block_id] = _solid(name)
+        return name, families[block_id], solid[block_id]
+
+    # Сначала узнаём, какие id вообще соединяемые, чтобы не перебирать
+    # каждый блок региона: секции без заборов и стёкол пропускаются целиком.
+    connectable = {i for i in range(len(registry)) if info(i)[1] is not None}
+    if not connectable:
+        return
+
+    targets: list[tuple[int, int, int, int]] = []
+    for (cx, cz), chunk in canvas.chunks.items():
+        for sec_y, buf in chunk.sections.items():
+            if connectable.isdisjoint(buf):
+                continue
+            for index, block_id in enumerate(buf):
+                if block_id in connectable:
+                    lx = index & 15
+                    lz = (index >> 4) & 15
+                    y = sec_y * 16 + (index >> 8)
+                    targets.append((cx * 16 + lx, y, cz * 16 + lz, block_id))
+
+    for x, y, z, block_id in targets:
+        name, family, _ = info(block_id)
+        state = registry.state_nbt(block_id)
+        props = dict(state.get("Properties", {}))
+        linked = {}
+        for side, dx, dz in _SIDES:
+            other = canvas.get(x + dx, y, z + dz)
+            other_name, other_family, other_solid = info(other)
+            gate = other_name.endswith("_fence_gate")
+            if family == "pane":
+                ok = other_family == "pane" or other_solid or other_name.endswith("glass")
+            elif family == "wall":
+                ok = other_family == "wall" or other_solid or gate
+            else:
+                ok = other_family == family or other_solid or gate
+            linked[side] = ok
+
+        if family == "wall":
+            for side in linked:
+                props[side] = "low" if linked[side] else "none"
+            above = info(canvas.get(x, y + 1, z))
+            straight = (linked["north"] and linked["south"] and not linked["east"]
+                        and not linked["west"]) or \
+                       (linked["east"] and linked["west"] and not linked["north"]
+                        and not linked["south"])
+            props["up"] = "false" if straight and not above[2] else "true"
+        else:
+            for side in linked:
+                props[side] = "true" if linked[side] else "false"
+
+        text = name + "[" + ",".join(f"{k}={v}" for k, v in sorted(props.items())) + "]"
+        canvas.set(x, y, z, text)

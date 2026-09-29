@@ -1,12 +1,12 @@
 package dev.lscity.citylife.client;
 
 import dev.lscity.citylife.client.screen.AtmScreen;
-import dev.lscity.citylife.client.screen.PhoneScreen;
+import dev.lscity.citylife.client.device.DeviceScreen;
 import dev.lscity.citylife.client.screen.PinPromptScreen;
 import dev.lscity.citylife.data.Waypoint;
 import dev.lscity.citylife.net.NavPacket;
 import dev.lscity.citylife.net.OpenAtmPacket;
-import dev.lscity.citylife.net.OpenPhonePacket;
+import dev.lscity.citylife.net.OpenDevicePacket;
 import dev.lscity.citylife.net.OpenPinPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,14 +19,14 @@ public final class ClientHooks {
     private ClientHooks() {
     }
 
-    public static void handlePhone(OpenPhonePacket packet) {
+    public static void handleDevice(OpenDevicePacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof PhoneScreen screen) {
+        if (minecraft.screen instanceof DeviceScreen screen && !packet.open()) {
             screen.update(packet.snapshot());
             return;
         }
         if (packet.open()) {
-            minecraft.setScreen(new PhoneScreen(packet.snapshot()));
+            minecraft.setScreen(new DeviceScreen(packet.snapshot()));
         }
     }
 

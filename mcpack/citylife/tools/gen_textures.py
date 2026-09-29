@@ -110,18 +110,6 @@ def canister() -> None:
     c.write(os.path.join(ITEMS, "fuel_canister.png"))
 
 
-def car_key() -> None:
-    """Ключ от машины: брелок с колечком и бородка."""
-    c = Canvas(16, 16)
-    c.ring(5, 5, 3.4, 1.2, (214, 186, 96, 255))
-    c.rect(6, 7, 7, 13, (214, 186, 96, 255))
-    c.rect(8, 11, 10, 11, (214, 186, 96, 255))
-    c.rect(8, 13, 9, 13, (214, 186, 96, 255))
-    c.rect(6, 7, 6, 13, (150, 120, 40, 255))
-    c.disc(5, 5, 1.4, (30, 32, 40, 255))
-    c.write(os.path.join(ITEMS, "car_key.png"))
-
-
 def atm_front() -> None:
     c = Canvas(16, 16)
     c.rect(0, 0, 15, 15, (58, 62, 74, 255))
@@ -169,7 +157,6 @@ def main() -> int:
     card("card_mir", (24, 108, 180), (16, 62, 120), (86, 196, 132))
     card("card_mastercard", (52, 56, 70), (28, 30, 40), (214, 88, 60), (240, 166, 60))
     canister()
-    car_key()
     atm_front()
     atm_side()
     atm_top()

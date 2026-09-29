@@ -12,11 +12,11 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
 /**
- * City Life — телефоны и умные замки для городской сборки.
+ * City Life — рубли, гаджеты, маркетплейс и умные замки для городской сборки.
  *
- * Мод сознательно не зависит ни от одного другого мода: экономика,
- * сообщения и замки работают сами по себе, а связка с Lightman's Currency
- * и магазинами делается через команды из KubeJS.
+ * Мод сознательно не зависит ни от одного другого мода: экономика, связь,
+ * компьютеры и замки работают сами по себе. С модом машин и Easy NPC он
+ * связан только через теги сущностей, поэтому без них просто молчит.
  */
 @Mod(CityLife.MOD_ID)
 public class CityLife {
@@ -32,6 +32,6 @@ public class CityLife {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CityConfig.SPEC);
 
         MinecraftForge.EVENT_BUS.register(CityCommands.class);
-        LOG.info("City Life: телефоны и умные замки загружены");
+        LOG.info("City Life: гаджеты, банк и замки загружены");
     }
 }

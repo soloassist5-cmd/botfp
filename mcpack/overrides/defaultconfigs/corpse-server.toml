@@ -1,0 +1,34 @@
+# Corpse: при смерти вещи ложатся в труп, а не разлетаются по земле.
+# Файл копируется в мир при первом запуске (serverconfig/corpse-server.toml).
+
+#The time (in real life days) deaths get stored
+#-1 for infinite storage
+#0 for not storing deaths at all
+#Range: > -1
+death_storage_duration = -1
+
+[corpse]
+	#The time passed (in ticks) after a corpse turns into a skeleton
+	#Range: > 0
+	skeleton_time = 72000
+	#If the corpse should lie on its face
+	lie_on_face = false
+	#If the corpse should wear the players equipment
+	show_equipment = true
+	#If the corpse should fall into the void
+	fall_into_void = false
+	#If the corpse should get removed when in lava
+	lava_damage = false
+
+	[corpse.access]
+		# Обыскать труп может любой: в городе есть ограбления и перестрелки.
+		only_owner = false
+		skeleton = false
+
+	[corpse.despawn]
+		# Пустой труп исчезает через секунду после того, как забрали последнее.
+		#Range: > 20
+		time = 21
+		# С вещами труп лежит, пока их не заберут (-1 = не исчезать).
+		#Range: > -1
+		force_time = -1

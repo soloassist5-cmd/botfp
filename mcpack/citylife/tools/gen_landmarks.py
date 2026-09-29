@@ -43,6 +43,22 @@ KIND_RU = {
 }
 
 
+# Шаг наружу от фасада: куда смотрит вход.
+STEP = {"north": (0, -1), "south": (0, 1), "west": (-1, 0), "east": (1, 0)}
+
+
+def entrance(lot) -> tuple[int, int, int]:
+    """Точка метки: тротуар перед входом, на уровне ног.
+
+    Раньше метка стояла в центре участка — внутри здания, где маркер
+    навигатора не увидеть и в него не войти.
+    """
+    x0, z0, x1, z1 = B.pad(lot, 1)
+    fx, fz = B.front_center(x0, z0, x1, z1, lot.facing)
+    dx, dz = STEP[lot.facing]
+    return fx + dx * 3, P.CITY_Y + 1, fz + dz * 3
+
+
 def title(kind: str, label: str) -> str:
     """Человеческое имя метки: у башен своё имя, у остальных — тип объекта."""
     pretty = label.strip()
@@ -67,10 +83,9 @@ def main() -> int:
         lot = centre.get((ix, iz))
         if lot is None:
             continue
-        x = (lot.x0 + lot.x1) // 2
-        z = (lot.z0 + lot.z1) // 2
+        x, y, z = entrance(lot)
         icon = KIND_RU.get(kind, ("", "pin"))[1]
-        rows.append((title(kind, label), icon, x, P.SPAWN[1], z))
+        rows.append((title(kind, label), icon, x, y, z))
 
     # Банкоматы: наличные нужны каждому, а искать их по городу вручную —
     # худшее, что можно предложить игроку. Координаты считает тот же код,
@@ -80,7 +95,10 @@ def main() -> int:
         if lot.kind not in B.ATM_KINDS:
             continue
         x, y, z = B.atm_pos(lot)
-        atms.append((f"Банкомат — {title(lot.kind, lot.label or lot.kind)}", "atm", x, y, z))
+        dx, dz = STEP[lot.facing]
+        # Метка — на шаг перед банкоматом: сам он стоит в блоке, в него не войти.
+        atms.append((f"Банкомат — {title(lot.kind, lot.label or lot.kind)}", "atm",
+                     x + dx, y, z + dz))
     rows += sorted(atms, key=lambda row: (row[2], row[4]))
 
     lines = [

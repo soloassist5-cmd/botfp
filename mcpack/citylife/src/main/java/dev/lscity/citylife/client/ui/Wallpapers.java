@@ -25,6 +25,31 @@ public final class Wallpapers {
         return ALL.contains(id) ? id : "sunset";
     }
 
+    /**
+     * Цвет подписей под значками.
+     *
+     * Подпись лежит на полупрозрачной подложке, поэтому читается и над
+     * тёмным небом, и над светлым диском луны. Сам цвет текста подобран под
+     * обои: на луне — холодный голубой, на закате и планетах — тёплый белый.
+     */
+    public static int labelText(String id) {
+        return switch (normalize(id)) {
+            case "moon" -> 0xFFDDE8FF;
+            case "mars" -> 0xFFFFE6D8;
+            case "jupiter" -> 0xFFFFF1D6;
+            default -> 0xFFFFF4F0;
+        };
+    }
+
+    /** Подложка подписи: на светлой луне темнее, чтобы текст не терялся. */
+    public static int labelPlate(String id) {
+        return switch (normalize(id)) {
+            case "moon" -> 0xB0081226;
+            case "jupiter" -> 0x90201404;
+            default -> 0x80100A18;
+        };
+    }
+
     /** Полноэкранные обои со скруглением под корпус телефона. */
     public static void draw(GuiGraphics g, String id, int x, int y, int w, int h, int radius) {
         switch (normalize(id)) {

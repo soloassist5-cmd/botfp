@@ -7,7 +7,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-/** Клиент -> сервер: действие в телефоне. Сервер всё проверяет сам. */
+/** Клиент -> сервер: действие в гаджете или банкомате. Сервер всё проверяет сам. */
 public record ActionPacket(String action, CompoundTag args) {
 
     public static void encode(ActionPacket packet, FriendlyByteBuf buf) {
@@ -36,7 +36,7 @@ public record ActionPacket(String action, CompoundTag args) {
                             net.minecraft.core.BlockPos.of(packet.args().getLong("pos")));
                 }
             } else {
-                PhoneServer.handle(player, packet.action(), packet.args());
+                DeviceServer.handle(player, packet.action(), packet.args());
             }
         });
         ctx.setPacketHandled(true);

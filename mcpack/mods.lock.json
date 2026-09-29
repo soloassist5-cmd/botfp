@@ -1,11 +1,11 @@
 {
-  "generated": "2026-09-28T18:53:15Z",
+  "generated": "2026-09-29T15:06:29Z",
   "pack_version": "1.0.0",
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 54,
-  "total_size": 270434071,
+  "mod_count": 55,
+  "total_size": 272742258,
   "mods": [
     {
       "slug": "cameracraft",
@@ -169,6 +169,29 @@
       "page": "https://modrinth.com/mod/more-protectables"
     },
     {
+      "slug": "mrcrayfishs-vehicle-unofficial",
+      "title": "MrCrayfish's Vehicle Unofficial",
+      "project_id": "cIL71c6X",
+      "version_id": "85Lkbw5U",
+      "version_number": "1.20.1-20260413",
+      "version_type": "release",
+      "filename": "Vehicle-Unofficial-1.20.1.20260413.jar",
+      "url": "https://cdn.modrinth.com/data/cIL71c6X/versions/85Lkbw5U/Vehicle-Unofficial-1.20.1.20260413.jar",
+      "size": 4590431,
+      "sha1": "f172a1ee9a977ad0a5c322e5496b0541982b577b",
+      "sha512": "1883dc15738f266869694fd41c20a4a185d5eb6062bc6fd54ce1ec1bea7e05ff2b2f7fe3b33891d76b152c6750c4e627bf12a434523827c3ec68915615049bf8",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "core",
+      "note": "Машины целиком в ящике: вскрыл ключом — поехал. 28 видов техники",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/mrcrayfishs-vehicle-unofficial"
+    },
+    {
       "slug": "security-craft",
       "title": "SecurityCraft",
       "project_id": "v8jzRtAt",
@@ -236,29 +259,6 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/traffic-control-+-roads-mod-by-teerth"
-    },
-    {
-      "slug": "ultimate-car-mod",
-      "title": "Ultimate Car Mod",
-      "project_id": "DCPUF5Rv",
-      "version_id": "ImfnHW7F",
-      "version_number": "forge-1.20.1-1.0.42",
-      "version_type": "release",
-      "filename": "car-forge-1.20.1-1.0.42.jar",
-      "url": "https://cdn.modrinth.com/data/DCPUF5Rv/versions/ImfnHW7F/car-forge-1.20.1-1.0.42.jar",
-      "size": 2666112,
-      "sha1": "f9aecfb74bc6bc9ce8a7ff4d9b6118091bfb1ecc",
-      "sha512": "4bb1939fcabc23c3139b0dc34997d587920aceab3640eaf368f7fd00721d69dcfb286578969078fffba498cf38b7d592196eb705d2bcc3953ddadb103993e169",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "core",
-      "note": "Машины целиком, канистры с топливом, без сборки по частям",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/ultimate-car-mod"
     },
     {
       "slug": "chipped",
@@ -604,6 +604,33 @@
       "optional": false,
       "required_by": "waystones",
       "page": "https://modrinth.com/mod/balm"
+    },
+    {
+      "slug": "framework",
+      "title": "Framework",
+      "project_id": "cf-549225",
+      "version_id": "cf-7573740",
+      "version_number": "0.8.0",
+      "version_type": "release",
+      "filename": "framework-forge-1.20.1-0.8.0.jar",
+      "url": "https://mediafilez.forgecdn.net/files/7573/740/framework-forge-1.20.1-0.8.0.jar",
+      "size": 383868,
+      "sha1": "27347879f8760a7bc0b4bd71977abc50e498811c",
+      "sha512": "489320e5e5496a569b5c05e5b0b37c6a688f7d2166f42f88588fe433664a035d2ea8a6d270b32aa26a1018302c9066b88b39104507919800954b58d20ff850d7",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Библиотека MrCrayfish, нужна моду машин",
+      "optional": false,
+      "required_by": "mrcrayfishs-vehicle-unofficial",
+      "page": "https://www.curseforge.com/minecraft/mc-mods/framework",
+      "source": "curseforge",
+      "cf_project": 549225,
+      "cf_file": 7573740,
+      "license": "LGPL-3.0"
     },
     {
       "slug": "fusion-connected-textures",

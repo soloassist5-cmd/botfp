@@ -144,6 +144,37 @@ for local_jar in "$PACK_DIR"/mods-local/*.jar; do
   printf '  + %s (самописный)\n' "$(basename "$local_jar")"
 done
 
+# Моды, которые пак ставил в прошлый раз, записаны в манифест в папке mods.
+# Всё из него, чего в паке больше нет, удаляем; моды, поставленные игроком
+# вручную, в манифест не попадают и остаются. Для папок от старых
+# установщиков без манифеста есть retired.list — моды, убранные из пака.
+manifest="$MODS_DIR/.lscity-installed.txt"
+retired=()
+if [[ -f "$SCRIPT_DIR/retired.list" ]]; then
+  while IFS= read -r pattern; do
+    pattern="${pattern%$'\r'}"
+    [[ -z "$pattern" || "$pattern" == \#* ]] && continue
+    retired+=("$pattern")
+  done < "$SCRIPT_DIR/retired.list"
+fi
+for existing in "$MODS_DIR"/*.jar; do
+  [[ -e "$existing" ]] || continue
+  base="$(basename "$existing")"
+  wanted=0
+  for want in "${expected_files[@]}"; do [[ "$base" == "$want" ]] && wanted=1 && break; done
+  (( wanted )) && continue
+  ours=0
+  [[ -f "$manifest" ]] && grep -Fxq -- "$base" "$manifest" && ours=1
+  if (( ! ours )); then
+    for pattern in "${retired[@]}"; do
+      # shellcheck disable=SC2053  # шаблон нарочно без кавычек: это glob
+      [[ "$base" == $pattern ]] && ours=1 && break
+    done
+  fi
+  (( ours )) && { rm -f "$existing"; printf '  - %s (убран из пака)\n' "$base"; }
+done
+printf '%s\n' "${expected_files[@]}" > "$manifest"
+
 if (( CLEAN )); then
   for existing in "$MODS_DIR"/*.jar; do
     [[ -e "$existing" ]] || continue
