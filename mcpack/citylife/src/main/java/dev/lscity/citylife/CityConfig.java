@@ -19,6 +19,8 @@ public final class CityConfig {
     public final ForgeConfigSpec.BooleanValue lockpickAlarm;
     public final ForgeConfigSpec.IntValue deliverySeconds;
     public final ForgeConfigSpec.DoubleValue arrivalRadius;
+    public final ForgeConfigSpec.BooleanValue noMobs;
+    public final ForgeConfigSpec.BooleanValue explosionsKeepBlocks;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -48,6 +50,16 @@ public final class CityConfig {
                 .comment("В каком радиусе от метки навигатор считает, что игрок пришёл,",
                          "и сам снимает маршрут.")
                 .defineInRange("arrivalRadius", 1.6D, 0.5D, 16.0D);
+        builder.pop();
+
+        builder.comment("Правила города").push("city");
+        noMobs = builder
+                .comment("Никаких мобов в мире: ни враждебных, ни животных, ни стражей.",
+                         "Остаются только жители Easy NPC, машины, предметы и прочие не-мобы.")
+                .define("noMobs", true);
+        explosionsKeepBlocks = builder
+                .comment("Взрывы (гранаты, ракеты, мины, динамит) ранят, но не ломают блоки.")
+                .define("explosionsKeepBlocks", true);
         builder.pop();
 
         builder.comment("Умные замки").push("locks");

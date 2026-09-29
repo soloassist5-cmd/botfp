@@ -1,0 +1,1071 @@
+{
+ "guns": [
+  {
+   "id": "elitex:ak47",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "АК-47",
+   "ammo": "tacz:762x39",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:akx105",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "АК-105 (мод.)",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:benelli_super",
+   "pack": "elitex_quality_guns",
+   "type": "shotgun",
+   "name": "Benelli SuperNova",
+   "ammo": "tacz:12g",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:bo1_1911",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Colt M1911A1 (Black Ops 1)",
+   "ammo": "tacz:45acp",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:colt_m1911x1",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Colt M1911A1",
+   "ammo": "tacz:45acp",
+   "magazine": 7,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:famas_f1",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "FAMAS F1",
+   "ammo": "tacz:556x45",
+   "magazine": 25,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:fh_scar18",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "FN SCAR-H",
+   "ammo": "tacz:308",
+   "magazine": 20,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:five_seven",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "FN Five-seveN",
+   "ammo": "elitex:five_seven_ammo",
+   "magazine": 20,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:fs_scar19",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "FN SCAR-L",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:golden_ak",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "Золотой АК Саддама Хусейна",
+   "ammo": "tacz:762x39",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:inter_m200",
+   "pack": "elitex_quality_guns",
+   "type": "sniper",
+   "name": "CheyTac M200 Intervention",
+   "ammo": "elitex:sp_ammo",
+   "magazine": 7,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:jrx",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "JRX Viper 2011",
+   "ammo": "tacz:9mm",
+   "magazine": 20,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:kar98k",
+   "pack": "elitex_quality_guns",
+   "type": "sniper",
+   "name": "Kar98k",
+   "ammo": "elitex:kar98k_ammo",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:lee",
+   "pack": "elitex_quality_guns",
+   "type": "sniper",
+   "name": "Lee-Enfield",
+   "ammo": "elitex:rifles_ammo",
+   "magazine": 10,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:m16",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "M16A4",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "BURST"
+  },
+  {
+   "id": "elitex:m1_garand",
+   "pack": "elitex_quality_guns",
+   "type": "sniper",
+   "name": "M1 Garand",
+   "ammo": "elitex:rifles_ammo",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:m249x",
+   "pack": "elitex_quality_guns",
+   "type": "mg",
+   "name": "M249 SAW",
+   "ammo": "tacz:556x45",
+   "magazine": 150,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:m4_sopmod",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "M4 SOPMOD Block II",
+   "ammo": "tacz:556x45",
+   "magazine": 35,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:m4a1_classic",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "M4A1 (классическая)",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:mcs_spear",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "SIG MCX Spear",
+   "ammo": "elitex:sig_fury_ammo",
+   "magazine": 20,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:mp5_classic",
+   "pack": "elitex_quality_guns",
+   "type": "smg",
+   "name": "HK MP5 (классическая)",
+   "ammo": "tacz:9mm",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:mp7r",
+   "pack": "elitex_quality_guns",
+   "type": "smg",
+   "name": "PXFR-40",
+   "ammo": "tacz:9mm",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:mustang_and_sally",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Mustang & Sally",
+   "ammo": "tacz:45acp",
+   "magazine": 12,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:op1911",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Springfield Operator 1911 (.45 ACP)",
+   "ammo": "tacz:45acp",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:origin_electric_staff",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "Электрический посох Origins",
+   "ammo": "elitex:origin_electric_staff_ammo",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:origin_fire_staff",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "Огненный посох Origins",
+   "ammo": "elitex:origin_fire_staff_ammo",
+   "magazine": 10,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:origin_ice_staff",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "Ледяной посох Origins",
+   "ammo": "elitex:origin_ice_staff_ammo",
+   "magazine": 10,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:origin_wind_staff",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "Ветряной посох Origins",
+   "ammo": "elitex:origin_wind_staff_ammo",
+   "magazine": 10,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:ray_gun_mk2",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Лучевая пушка Mk II",
+   "ammo": "elitex:ray_gun_mk2_ammo",
+   "magazine": 21,
+   "fire_mode": "BURST"
+  },
+  {
+   "id": "elitex:raygun_bo6",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Лучевая пушка",
+   "ammo": "elitex:raygun_ammo",
+   "magazine": 20,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:ro635v3",
+   "pack": "elitex_quality_guns",
+   "type": "smg",
+   "name": "RO635 v3",
+   "ammo": "tacz:9mm",
+   "magazine": 32,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:sassy_dmr",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "M100 DMR",
+   "ammo": "elitex:dmr_rifles_ammo",
+   "magazine": 20,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:sp_m1903",
+   "pack": "elitex_quality_guns",
+   "type": "sniper",
+   "name": "Springfield M1903",
+   "ammo": "elitex:sp_ammo",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:spaz12",
+   "pack": "elitex_quality_guns",
+   "type": "shotgun",
+   "name": "SPAS-12",
+   "ammo": "tacz:12g",
+   "magazine": 8,
+   "fire_mode": "BURST"
+  },
+  {
+   "id": "elitex:springfield_m1911",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Springfield M1911 (9 мм)",
+   "ammo": "tacz:9mm",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:srz_2011",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "SRZ 2011 (модернизированный)",
+   "ammo": "tacz:9mm",
+   "magazine": 16,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:trs_bull",
+   "pack": "elitex_quality_guns",
+   "type": "pistol",
+   "name": "Taurus Raging Bull",
+   "ammo": "elitex:trs_bull_ammo",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "elitex:vector45acp",
+   "pack": "elitex_quality_guns",
+   "type": "smg",
+   "name": "KRISS Vector (.45 ACP)",
+   "ammo": "tacz:9mm",
+   "magazine": 35,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "elitex:wonder_waffle",
+   "pack": "elitex_quality_guns",
+   "type": "rifle",
+   "name": "Wunderwaffe DG-2",
+   "ammo": "elitex:waffe_ammo",
+   "magazine": 3,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:aa12",
+   "pack": "tacz_default_gun",
+   "type": "shotgun",
+   "name": "AA-12",
+   "ammo": "tacz:12g",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:ai_awp",
+   "pack": "tacz_default_gun",
+   "type": "sniper",
+   "name": "AWM",
+   "ammo": "tacz:338",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:ak47",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "АКМ",
+   "ammo": "tacz:762x39",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:aug",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "AUG",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:b93r",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Beretta 93R",
+   "ammo": "tacz:9mm",
+   "magazine": 20,
+   "fire_mode": "BURST"
+  },
+  {
+   "id": "tacz:cz75",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "CZ-75",
+   "ammo": "tacz:9mm",
+   "magazine": 16,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:db_long",
+   "pack": "tacz_default_gun",
+   "type": "shotgun",
+   "name": "ДБ-4 \"Урсус\"",
+   "ammo": "tacz:12g",
+   "magazine": 2,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:db_short",
+   "pack": "tacz_default_gun",
+   "type": "shotgun",
+   "name": "ДБ-2 \"Дурин\"",
+   "ammo": "tacz:12g",
+   "magazine": 2,
+   "fire_mode": "BURST"
+  },
+  {
+   "id": "tacz:deagle",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Desert Eagle .50",
+   "ammo": "tacz:50ae",
+   "magazine": 7,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:deagle_golden",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Золотой Desert Eagle .357",
+   "ammo": "tacz:357mag",
+   "magazine": 9,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:fn_evolys",
+   "pack": "tacz_default_gun",
+   "type": "mg",
+   "name": "Пулемёт FN EVOLYS",
+   "ammo": "tacz:308",
+   "magazine": 75,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:fn_fal",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "Боевая винтовка FN FAL",
+   "ammo": "tacz:308",
+   "magazine": 20,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:g36k",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "HK G36K",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:glock_17",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Glock 17",
+   "ammo": "tacz:9mm",
+   "magazine": 17,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:hk416d",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "HK416A5",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:hk_g3",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "HK G3",
+   "ammo": "tacz:308",
+   "magazine": 20,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:hk_mk23",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "MK23 SOCOM",
+   "ammo": "tacz:45acp",
+   "magazine": 12,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:hk_mp5a5",
+   "pack": "tacz_default_gun",
+   "type": "smg",
+   "name": "HK-MP5A5",
+   "ammo": "tacz:9mm",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:kar98",
+   "pack": "tacz_default_gun",
+   "type": "sniper",
+   "name": "Karabiner 98 Kurz",
+   "ammo": "tacz:792x57",
+   "magazine": 4,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:lonetrail",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Lonetrail .30-06",
+   "ammo": "tacz:30_06",
+   "magazine": 1,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m1014",
+   "pack": "tacz_default_gun",
+   "type": "shotgun",
+   "name": "Боевой дробовик M1014",
+   "ammo": "tacz:12g",
+   "magazine": 6,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m107",
+   "pack": "tacz_default_gun",
+   "type": "sniper",
+   "name": "Barrett M82 (M107)",
+   "ammo": "tacz:50bmg",
+   "magazine": 10,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m16a1",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "M16A1",
+   "ammo": "tacz:556x45",
+   "magazine": 20,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:m16a4",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "M16A4",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "BURST"
+  },
+  {
+   "id": "tacz:m1911",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "M1911",
+   "ammo": "tacz:45acp",
+   "magazine": 7,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m249",
+   "pack": "tacz_default_gun",
+   "type": "mg",
+   "name": "М249",
+   "ammo": "tacz:556x45",
+   "magazine": 75,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:m320",
+   "pack": "tacz_default_gun",
+   "type": "rpg",
+   "name": "Гранатомет M320",
+   "ammo": "tacz:40mm",
+   "magazine": 1,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m4a1",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "М4А1",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:m700",
+   "pack": "tacz_default_gun",
+   "type": "sniper",
+   "name": "Remington M700",
+   "ammo": "tacz:30_06",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m870",
+   "pack": "tacz_default_gun",
+   "type": "shotgun",
+   "name": "Remington 870 (M870)",
+   "ammo": "tacz:12g",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m95",
+   "pack": "tacz_default_gun",
+   "type": "sniper",
+   "name": "Barrett M95",
+   "ammo": "tacz:50bmg",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:m9a4",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Beretta М9А4",
+   "ammo": "tacz:9mm",
+   "magazine": 17,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:minigun",
+   "pack": "tacz_default_gun",
+   "type": "mg",
+   "name": "Миниган M134",
+   "ammo": "tacz:308",
+   "magazine": 0,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:mk14",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "MK14",
+   "ammo": "tacz:308",
+   "magazine": 10,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:p320",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "P320",
+   "ammo": "tacz:45acp",
+   "magazine": 12,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:p90",
+   "pack": "tacz_default_gun",
+   "type": "smg",
+   "name": "P90",
+   "ammo": "tacz:57x28",
+   "magazine": 50,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:qbz_191",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "Штурмовая винтовка QBZ-191",
+   "ammo": "tacz:58x42",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:qbz_95",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "QBZ-95",
+   "ammo": "tacz:58x42",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:rhino357",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Chiappa Rhino .357",
+   "ammo": "tacz:357mag",
+   "magazine": 6,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:rpg7",
+   "pack": "tacz_default_gun",
+   "type": "rpg",
+   "name": "РПГ-7",
+   "ammo": "tacz:rpg_rocket",
+   "magazine": 1,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:rpk",
+   "pack": "tacz_default_gun",
+   "type": "mg",
+   "name": "РПК",
+   "ammo": "tacz:762x39",
+   "magazine": 40,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:scar_h",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "SCAR-H",
+   "ammo": "tacz:308",
+   "magazine": 20,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:scar_l",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "SCAR-L",
+   "ammo": "tacz:556x45",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:sks_tactical",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "СКС",
+   "ammo": "tacz:762x39",
+   "magazine": 10,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:spas_12",
+   "pack": "tacz_default_gun",
+   "type": "shotgun",
+   "name": "Многоцелевой дробовик SPAS-12",
+   "ammo": "tacz:12g",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:spr15hb",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "SPR-15 HB «Стрелец»",
+   "ammo": "tacz:556x45",
+   "magazine": 15,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:springfield1873",
+   "pack": "tacz_default_gun",
+   "type": "sniper",
+   "name": "Затворная винтовка Springfield 1873",
+   "ammo": "tacz:45_70",
+   "magazine": 1,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:taurus500",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Taurus Raging Hunter",
+   "ammo": "tacz:500mag",
+   "magazine": 5,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:taurus943",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "Taurus Model 943",
+   "ammo": "tacz:22wmr",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:timeless50",
+   "pack": "tacz_default_gun",
+   "type": "pistol",
+   "name": "§6Timeless .50 Z-Type",
+   "ammo": "tacz:50ae",
+   "magazine": 8,
+   "fire_mode": "SEMI"
+  },
+  {
+   "id": "tacz:type_81",
+   "pack": "tacz_default_gun",
+   "type": "rifle",
+   "name": "Type 81",
+   "ammo": "tacz:762x39",
+   "magazine": 30,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:ump45",
+   "pack": "tacz_default_gun",
+   "type": "smg",
+   "name": "UMP45",
+   "ammo": "tacz:45acp",
+   "magazine": 25,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:uzi",
+   "pack": "tacz_default_gun",
+   "type": "smg",
+   "name": "Uzi",
+   "ammo": "tacz:9mm",
+   "magazine": 20,
+   "fire_mode": "AUTO"
+  },
+  {
+   "id": "tacz:vector45",
+   "pack": "tacz_default_gun",
+   "type": "smg",
+   "name": "KRISS Vector",
+   "ammo": "tacz:45acp",
+   "magazine": 20,
+   "fire_mode": "AUTO"
+  }
+ ],
+ "ammo": [
+  {
+   "id": "elitex:dmr_rifles_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Патроны DMR",
+   "stack": 64
+  },
+  {
+   "id": "elitex:five_seven_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "5.7×28 мм",
+   "stack": 64
+  },
+  {
+   "id": "elitex:kar98k_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Патроны 7.92×57 мм",
+   "stack": 64
+  },
+  {
+   "id": "elitex:origin_electric_staff_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Заряды электрического посоха",
+   "stack": 64
+  },
+  {
+   "id": "elitex:origin_fire_staff_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Заряды огненного посоха",
+   "stack": 64
+  },
+  {
+   "id": "elitex:origin_ice_staff_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Заряды ледяного посоха",
+   "stack": 64
+  },
+  {
+   "id": "elitex:origin_wind_staff_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Заряды ветряного посоха",
+   "stack": 64
+  },
+  {
+   "id": "elitex:ray_gun_mk2_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Боеприпасы Ray Gun Mk II",
+   "stack": 64
+  },
+  {
+   "id": "elitex:raygun_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Энергозаряды Ray Gun",
+   "stack": 64
+  },
+  {
+   "id": "elitex:rifles_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Винтовочные патроны",
+   "stack": 64
+  },
+  {
+   "id": "elitex:sig_fury_ammo",
+   "pack": "elitex_quality_guns",
+   "name": ".277 SIG Fury",
+   "stack": 64
+  },
+  {
+   "id": "elitex:sp_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Патроны .30-06 Springfield",
+   "stack": 64
+  },
+  {
+   "id": "elitex:trs_bull_ammo",
+   "pack": "elitex_quality_guns",
+   "name": ".454 Casull",
+   "stack": 64
+  },
+  {
+   "id": "elitex:waffe_ammo",
+   "pack": "elitex_quality_guns",
+   "name": "Боеприпасы Wunderwaffe",
+   "stack": 64
+  },
+  {
+   "id": "tacz:12g",
+   "pack": "tacz_default_gun",
+   "name": "§9Дробь 12×70",
+   "stack": 36
+  },
+  {
+   "id": "tacz:22wmr",
+   "pack": "tacz_default_gun",
+   "name": "§aПатроны .22 Winchester Magnum",
+   "stack": 64
+  },
+  {
+   "id": "tacz:308",
+   "pack": "tacz_default_gun",
+   "name": "§bПатроны .308",
+   "stack": 48
+  },
+  {
+   "id": "tacz:30_06",
+   "pack": "tacz_default_gun",
+   "name": "§cПатрон .30-06 Springfield",
+   "stack": 36
+  },
+  {
+   "id": "tacz:338",
+   "pack": "tacz_default_gun",
+   "name": "§cПатроны .338",
+   "stack": 30
+  },
+  {
+   "id": "tacz:357mag",
+   "pack": "tacz_default_gun",
+   "name": "§cПатроны .357",
+   "stack": 48
+  },
+  {
+   "id": "tacz:40mm",
+   "pack": "tacz_default_gun",
+   "name": "§dГраната 40мм",
+   "stack": 6
+  },
+  {
+   "id": "tacz:45_70",
+   "pack": "tacz_default_gun",
+   "name": "§cПатроны .45-70",
+   "stack": 48
+  },
+  {
+   "id": "tacz:45acp",
+   "pack": "tacz_default_gun",
+   "name": "§aПатроны .45 ACP",
+   "stack": 60
+  },
+  {
+   "id": "tacz:46x30",
+   "pack": "tacz_default_gun",
+   "name": "§6Патроны 4.6 мм ББ",
+   "stack": 60
+  },
+  {
+   "id": "tacz:500mag",
+   "pack": "tacz_default_gun",
+   "name": "§cПатроны .500 Magnum",
+   "stack": 42
+  },
+  {
+   "id": "tacz:50ae",
+   "pack": "tacz_default_gun",
+   "name": "§cПатроны .50",
+   "stack": 48
+  },
+  {
+   "id": "tacz:50bmg",
+   "pack": "tacz_default_gun",
+   "name": "§cПатроны .50 BMG",
+   "stack": 30
+  },
+  {
+   "id": "tacz:545x39",
+   "pack": "tacz_default_gun",
+   "name": "§eПатроны 5.45×39 мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:556x45",
+   "pack": "tacz_default_gun",
+   "name": "§eПатроны 5.56×45мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:57x28",
+   "pack": "tacz_default_gun",
+   "name": "§6Патроны 5.7×28 мм ББ",
+   "stack": 60
+  },
+  {
+   "id": "tacz:58x42",
+   "pack": "tacz_default_gun",
+   "name": "§e5Патроны 5.8мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:68x51fury",
+   "pack": "tacz_default_gun",
+   "name": "§bПатроны 6.8×51мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:762x25",
+   "pack": "tacz_default_gun",
+   "name": "§aПатроны 7.62×25мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:762x39",
+   "pack": "tacz_default_gun",
+   "name": "§eПатроны 7.62×39мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:762x54",
+   "pack": "tacz_default_gun",
+   "name": "§bПатроны 7.62×54мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:792x57",
+   "pack": "tacz_default_gun",
+   "name": "§bПатроны 8мм Mauser",
+   "stack": 36
+  },
+  {
+   "id": "tacz:9mm",
+   "pack": "tacz_default_gun",
+   "name": "§aПатроны 9×19мм",
+   "stack": 60
+  },
+  {
+   "id": "tacz:rpg_rocket",
+   "pack": "tacz_default_gun",
+   "name": "§dРакета РПГ-7",
+   "stack": 6
+  }
+ ]
+}

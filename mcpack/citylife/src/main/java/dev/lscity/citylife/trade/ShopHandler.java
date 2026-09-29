@@ -52,8 +52,18 @@ public final class ShopHandler {
         player.displayClientMessage(speak(target, role), false);
     }
 
-    /** Роль жителя по тегам, или null — если это не наш NPC. */
+    /**
+     * Роль жителя по тегам, или null — если это не наш NPC.
+     *
+     * Сначала проверяем метку жителя citylife_npc: теги с тем же префиксом
+     * мод ставит и другим сущностям (машина получает citylife_first_fill,
+     * когда ей заливают первый бак), и без этой проверки клик по машине
+     * перехватывался как разговор с продавцом — сесть в неё было нельзя.
+     */
     public static String roleOf(Entity entity) {
+        if (!entity.getTags().contains(PREFIX + MARKER)) {
+            return null;
+        }
         for (String tag : entity.getTags()) {
             if (!tag.startsWith(PREFIX)) {
                 continue;

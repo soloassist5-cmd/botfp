@@ -1,4 +1,4 @@
-# NPC, пачка 2 из 7
+# NPC, пачка 2 из 8
 # КАФЕ — Повар
 summon easy_npc:humanoid -405.5 69 304.5 {CustomName:'{"text": "Повар"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cook"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[270.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
 # ПРОДУКТЫ — Продавец продуктов

@@ -255,7 +255,9 @@ NPC_ROLES = {
     "bank": [("banker", "Банкир")],
     "police": [("cop", "Полицейский"), ("cop", "Дежурный")],
     "hospital": [("medic", "Врач")],
-    "gun_shop": [("gunsmith", "Оружейник")],
+    # Оружейная: мастер с верстаками и сырьём, два продавца стволов и патроны.
+    "gun_shop": [("gunsmith", "Мастер-оружейник"), ("arms_dealer", "Пистолеты и ПП"),
+                 ("rifle_dealer", "Винтовки"), ("ammo_seller", "Патроны")],
     "phone_shop": [("phone_seller", "Продавец связи")],
     "dealership": [("car_dealer", "Автодилер")],
     "city_hall": [("clerk", "Чиновник"), ("realtor", "Риелтор")],

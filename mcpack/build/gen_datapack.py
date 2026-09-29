@@ -37,6 +37,9 @@ ROLE_SKIN = {
     "phone_seller": "clerk",
     "banker": "banker",
     "gunsmith": "gunsmith",
+    "arms_dealer": "gunsmith",
+    "rifle_dealer": "police",
+    "ammo_seller": "mechanic",
     "car_dealer": "dealer",
     "realtor": "realtor",
     "clerk": "clerk",
@@ -61,6 +64,9 @@ ROLE_PROFESSION = {
     "phone_seller": "minecraft:cartographer",
     "banker": "minecraft:librarian",
     "gunsmith": "minecraft:weaponsmith",
+    "arms_dealer": "minecraft:weaponsmith",
+    "rifle_dealer": "minecraft:weaponsmith",
+    "ammo_seller": "minecraft:armorer",
     "car_dealer": "minecraft:toolsmith",
     "realtor": "minecraft:cartographer",
     "clerk": "minecraft:librarian",
@@ -179,6 +185,98 @@ def offer(buy: dict, sell: dict, buy_b: dict | None = None) -> dict:
 
 
 # Ассортимент по ролям. Валюта — монеты Lightman's Currency.
+# Оружейная: стволы и патроны TaCZ и Elite X Quality Guns.
+#
+# В TaCZ оружие собирается на РАЗНЫХ верстаках: стволы — на оружейном,
+# патроны — на патронном, обвесы — на верстаке обвесов, а стволы Elite X —
+# только на своём Elite Bench. Раньше продавался один оружейный верстак,
+# и патроны с половиной оружия было не скрафтить. Теперь мастер продаёт все
+# четыре верстака и сырьё под рецепты, а готовые стволы и патроны лежат
+# на прилавках — кто не хочет возиться с крафтом, просто покупает.
+TACZ = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "tacz_catalog.json"), encoding="utf-8"))
+
+# «Чудо-оружие» из зомби-режима Elite X (посохи, лучемёты) в городе не
+# продаётся: его можно только собрать на Elite Bench.
+WONDER = ("staff", "ray_gun", "raygun", "wonder_waffle", "mustang_and_sally")
+
+GUN_PRICE = {"pistol": 6000, "smg": 12000, "shotgun": 12000, "rifle": 22000,
+             "sniper": 35000, "mg": 50000, "rpg": 80000}
+
+# Цена за патрон по калибру: пистолетные дешевле, снайперские дороже.
+AMMO_PISTOL = ("9mm", "45acp", "762x25", "22wmr", "357mag", "50ae", "500mag", "57x28",
+               "46x30", "five_seven_ammo")
+AMMO_SNIPER = ("338", "50bmg", "45_70", "sp_ammo", "trs_bull_ammo")
+
+
+def wonder(item_id: str) -> bool:
+    return any(key in item_id for key in WONDER)
+
+
+def gun_stack(gun: dict) -> dict:
+    return stack("tacz:modern_kinetic_gun", 1, {
+        "GunId": gun["id"], "GunFireMode": gun["fire_mode"],
+        "GunCurrentAmmoCount": 0, "HasBulletInBarrel": Byte(0)})
+
+
+def gun_price(gun: dict) -> int:
+    price = GUN_PRICE.get(gun["type"], 20000)
+    if "golden" in gun["id"]:
+        # Золотой ствол — втрое дороже, округляем до пятитысячной купюры.
+        price = round(price * 3 / 5000) * 5000
+    return price
+
+
+def ammo_offer(ammo: dict):
+    name = ammo["id"].split(":")[1]
+    if name in ("rpg_rocket", "40mm"):
+        count, each = 1, 2500 if name == "rpg_rocket" else 800
+    else:
+        count = min(ammo["stack"], 30)
+        each = 10 if name in AMMO_PISTOL else 60 if name in AMMO_SNIPER else \
+            25 if name == "12g" else 20
+    price = max(100, round(count * each / 100) * 100)
+    return offer(rubles(price), stack("tacz:ammo", count, {"AmmoId": ammo["id"]}))
+
+
+def workbench(item: str, block_id: str | None) -> dict:
+    return stack(item, 1, {"BlockId": block_id} if block_id else None)
+
+
+SIDEARMS = ("pistol", "smg", "shotgun")
+GUNSMITH_TRADES = [
+    offer(rubles(3000), workbench("tacz:gun_smith_table", None)),
+    offer(rubles(3000), workbench("tacz:workbench_a", "tacz:ammo_workbench")),
+    offer(rubles(3000), workbench("tacz:workbench_c", "tacz:attachment_workbench")),
+    offer(rubles(5000), workbench("tacz:workbench_b", "elitex:elitebench")),
+    offer(rubles(800), stack("minecraft:iron_ingot", 16)),
+    offer(rubles(1600), stack("minecraft:gold_ingot", 8)),
+    offer(rubles(500), stack("minecraft:copper_ingot", 16)),
+    offer(rubles(400), stack("minecraft:gunpowder", 8)),
+    offer(rubles(400), stack("minecraft:lapis_lazuli", 8)),
+    offer(rubles(300), stack("minecraft:redstone", 16)),
+    offer(rubles(400), stack("minecraft:leather", 8)),
+    offer(rubles(3000), stack("minecraft:diamond", 2)),
+    offer(rubles(200), stack("minecraft:oak_log", 16)),
+    offer(rubles(1000), stack("minecraft:blaze_rod", 2)),
+    offer(rubles(500), stack("minecraft:amethyst_shard", 8)),
+]
+# На прилавке стволы идут по классу, внутри класса — от дешёвых к дорогим.
+GUN_ORDER = ["pistol", "smg", "shotgun", "rifle", "sniper", "mg", "rpg"]
+
+
+def gun_offers(types) -> list[dict]:
+    guns = [g for g in TACZ["guns"] if g["type"] in types and not wonder(g["id"])]
+    guns.sort(key=lambda g: (GUN_ORDER.index(g["type"]) if g["type"] in GUN_ORDER else 99,
+                             gun_price(g), g["id"]))
+    return [offer(rubles(gun_price(g)), gun_stack(g)) for g in guns]
+
+
+ARMS_TRADES = gun_offers(SIDEARMS)
+RIFLE_TRADES = gun_offers([t for t in GUN_ORDER if t not in SIDEARMS])
+AMMO_TRADES = [ammo_offer(a) for a in TACZ["ammo"] if not wonder(a["id"])]
+
+
 ROLE_TRADES: dict[str, list[dict]] = {
     "trader_food": [
         offer(stack(coin("copper"), 3), stack("minecraft:bread", 4)),
@@ -217,13 +315,12 @@ ROLE_TRADES: dict[str, list[dict]] = {
         offer(stack(coin("iron"), 3), stack("minecraft:paper", 8)),
         offer(stack(coin("gold"), 1), stack("minecraft:iron_block", 2)),
     ],
-    "gunsmith": [
-        # Сами стволы собираются на верстаке TaCZ, поэтому продаём верстак и сырьё.
-        offer(stack(coin("gold"), 3), stack("tacz:gun_smith_table", 1)),
-        offer(stack(coin("iron"), 3), stack("minecraft:iron_ingot", 8)),
-        offer(stack(coin("iron"), 2), stack("minecraft:gunpowder", 8)),
+    "gunsmith": GUNSMITH_TRADES,
+    "arms_dealer": ARMS_TRADES,
+    "rifle_dealer": RIFLE_TRADES,
+    "ammo_seller": AMMO_TRADES + [
         # Патронный ящик — один предмет с уровнем в NBT: железный это Level 0.
-        offer(stack(coin("gold"), 1), stack("tacz:ammo_box", 1, {"Level": 0})),
+        offer(rubles(1000), stack("tacz:ammo_box", 1, {"Level": 0})),
     ],
     "car_dealer": [
         # Ключ нужен один раз и навсегда: им же вскрываются все ящики.
@@ -289,23 +386,29 @@ HOSTILE_MOBS = [
     "wither_skeleton", "creeper", "spider", "cave_spider", "witch", "enderman",
     "slime", "phantom", "pillager", "vindicator", "evoker", "silverfish",
     "zombified_piglin", "ravager",
+    # Животные и прочие мирные мобы: в городе их тоже не должно быть.
+    "cow", "pig", "sheep", "chicken", "horse", "donkey", "mule", "llama", "rabbit",
+    "wolf", "cat", "ocelot", "fox", "bee", "bat", "parrot", "goat", "frog", "axolotl",
+    "squid", "glow_squid", "cod", "salmon", "tropical_fish", "pufferfish", "dolphin",
+    "turtle", "villager", "wandering_trader", "iron_golem", "snow_golem",
 ]
 
 
 def mob_clean_function() -> str:
     """
-    Убирает враждебных мобов в черте города выше уровня земли.
+    Запасная уборка мобов по всей карте раз в 15 секунд.
 
-    Под землёй и за городом мобы остаются: там всё как в обычной игре.
+    Основную работу делает мод (city/CityRules.java): он не даёт мобу даже
+    появиться. Эта функция страхует на случай, если правило выключено
+    в конфиге или сервер запущен без мода.
     Отключить: /schedule clear citylife:city/mob_clean
     """
-    x0, z0, x1, z1 = P.CITY_BOUNDS
-    selector = f"x={x0},y=60,z={z0},dx={x1 - x0},dy=220,dz={z1 - z0}"
     lines = [
-        "# Город не зарастает мобами: чистим только надземную часть внутри границ.",
+        "# Мобов в городе нет: запасная уборка на случай, если правило мода выключено.",
         "# Отключить: /schedule clear citylife:city/mob_clean",
     ]
-    lines += [f"kill @e[type=minecraft:{mob},{selector}]" for mob in HOSTILE_MOBS]
+    lines += [f"kill @e[type={mob if ':' in mob else 'minecraft:' + mob}]"
+              for mob in HOSTILE_MOBS]
     lines.append("schedule function citylife:city/mob_clean 15s replace")
     return "\n".join(lines)
 
@@ -666,6 +769,8 @@ def main() -> int:
         "worldborder warning distance 8",
         "gamerule doFireTick false",
         "gamerule mobGriefing false",
+        "gamerule doMobSpawning false",
+        "gamerule doWardenSpawning false",
         "gamerule doInsomnia false",
         "gamerule doPatrolSpawning false",
         "gamerule doTraderSpawning false",
@@ -674,7 +779,7 @@ def main() -> int:
         f"setworldspawn {P.SPAWN[0]} {P.SPAWN[1]} {P.SPAWN[2]}",
         "scoreboard objectives add citylife_jobs dummy \"Выполненные работы\"",
         "scoreboard objectives add citylife_state dummy \"Состояние города\"",
-        "# Запускаем периодическую уборку мобов в черте города.",
+        "# Запасная уборка мобов (основное правило — в моде citylife).",
         "schedule function citylife:city/mob_clean 15s replace",
     ]
     write(os.path.join(functions, "init.mcfunction"), "\n".join(init_lines))

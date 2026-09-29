@@ -25,7 +25,9 @@ OUT = os.path.join(ROOT, "src", "main", "java", "dev", "lscity", "citylife", "tr
 
 TITLES = {
     "trader_food": "Продукты", "trader_clothes": "Одежда", "trader_tech": "Электроника",
-    "phone_seller": "Салон связи", "banker": "Городской банк", "gunsmith": "Оружейный магазин",
+    "phone_seller": "Салон связи", "banker": "Городской банк", "gunsmith": "Мастерская оружейника",
+    "arms_dealer": "Пистолеты, ПП, дробовики", "rifle_dealer": "Винтовки и пулемёты",
+    "ammo_seller": "Патроны",
     "car_dealer": "Автосалон", "realtor": "Агентство недвижимости", "clerk": "Мэрия",
     "cook": "Закусочная", "shopkeeper": "Магазин", "bartender": "Бар",
     "fuel_seller": "Заправка", "medic": "Аптека", "foreman": "Прораб", "builder": "Стройка",
