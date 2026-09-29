@@ -183,6 +183,49 @@ def block_at(chunks, cx, cz, x, y, z) -> str:
     return "minecraft:air"
 
 
+def area(args) -> int:
+    """Вид сверху на кусок города: удобно смотреть на один дом, а не на регион."""
+    x0, z0, x1, z1 = (int(v) for v in args.area.split(","))
+    scale = args.scale
+    canvas = Canvas((x1 - x0) * scale, (z1 - z0) * scale)
+    cache: dict[tuple[int, int], dict] = {}
+
+    def chunks_for(x: int, z: int) -> dict:
+        key = (x >> 9, z >> 9)
+        if key not in cache:
+            path = os.path.join(args.world, "region", f"r.{key[0]}.{key[1]}.mca")
+            cache[key] = read_region(path) if os.path.isfile(path) else {}
+        return cache[key]
+
+    tops: dict[tuple[int, int], tuple[str, int]] = {}
+    surfaces: dict[tuple[int, int, int, int], list] = {}
+    for z in range(z0 - 1, z1):
+        for x in range(x0, x1):
+            key = (x >> 9, z >> 9, (x >> 4) & 31, (z >> 4) & 31)
+            if key not in surfaces:
+                chunk = chunks_for(x, z).get(((x >> 4) & 31, (z >> 4) & 31))
+                surfaces[key] = surface(chunk) if chunk else None
+            data = surfaces[key]
+            tops[(x, z)] = data[z & 15][x & 15] if data else ("minecraft:air", 0)
+
+    for z in range(z0, z1):
+        for x in range(x0, x1):
+            name, y = tops[(x, z)]
+            # Тень по перепаду высоты с северным соседом — как в общем виде.
+            delta = y - tops[(x, z - 1)][1]
+            factor = 1.0 + max(-0.35, min(0.35, delta * 0.08))
+            r, g, b = colour_of(name)
+            shade = (min(255, int(r * factor)), min(255, int(g * factor)),
+                     min(255, int(b * factor)))
+            for dy in range(scale):
+                for dx in range(scale):
+                    canvas.set((x - x0) * scale + dx, (z - z0) * scale + dy,
+                               (*shade, 255))
+    canvas.write(args.out)
+    print(f"Участок: {args.out} ({canvas.w}x{canvas.h})")
+    return 0
+
+
 def elevation(args) -> int:
     """Вид сбоку: срез мира по фиксированному z. Видно фасады, а не крыши."""
     z_line, x0, x1, y0, y1 = (int(v) for v in args.elevation.split(","))
@@ -235,10 +278,13 @@ def main() -> int:
     parser.add_argument("--out", default="/tmp/city.png")
     parser.add_argument("--scale", type=int, default=1)
     parser.add_argument("--elevation", help="срез-фасад: 'z,x0,x1,y0,y1' в мировых координатах")
+    parser.add_argument("--area", help="сверху, но по координатам: 'x0,z0,x1,z1'")
     args = parser.parse_args()
 
     if args.elevation:
         return elevation(args)
+    if args.area:
+        return area(args)
 
     wanted = []
     for pair in args.regions.split(";"):
