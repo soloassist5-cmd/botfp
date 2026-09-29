@@ -31,6 +31,7 @@
 | Лаунчер | Инструкция |
 |---|---|
 | Просто прочитать, что это за сборка | [docs/overview.md](docs/overview.md) |
+| Официальный Minecraft Launcher | [docs/official-launcher.md](docs/official-launcher.md) |
 | Legacy Launcher, TLauncher и прочие «пиратки» | [docs/legacy-launcher.md](docs/legacy-launcher.md) |
 | CurseForge App | [docs/curseforge.md](docs/curseforge.md) |
 | Modrinth App, Prism Launcher, MultiMC, ATLauncher | [docs/modrinth-prism.md](docs/modrinth-prism.md) |
@@ -41,6 +42,11 @@
 и самописный мод; Forge и остальные моды лаунчер скачивает сам. Prism Launcher —
 **Add Instance → Import**, Modrinth App — **Create → From file**,
 ATLauncher — **Add Pack → Import**. Дальше Play, и всё.
+
+**Официальный лаунчер** сборки не импортирует вообще, поэтому для него есть
+`dist/ls-city-life-1.0.0-official.zip`: распаковать и запустить
+`УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat` — он сам поставит Forge, скачает моды в
+отдельную папку и добавит в лаунчер профиль «LS City Life».
 
 CurseForge App, Legacy Launcher и TLauncher `.mrpack` не понимают. Для них есть
 архив сборки: распаковать и запустить `УСТАНОВИТЬ.bat` (Linux и macOS —

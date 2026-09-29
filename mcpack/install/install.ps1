@@ -26,7 +26,9 @@ param(
     [string]$ModsDir,
     [switch]$NoWorld,
     [switch]$WithOptional,
-    [switch]$Clean
+    [switch]$Clean,
+    # Set by official.ps1: it installs Forge and the profile itself.
+    [switch]$NoLauncherHint
 )
 
 $ErrorActionPreference = 'Stop'
@@ -320,7 +322,7 @@ if ($Target -eq 'server') {
     }
     Write-Host ''
     Write-Host (T 'install.next_server')
-} else {
+} elseif (-not $NoLauncherHint) {
     Write-Host ('  ' + (T 'install.forge_client1'))
     Write-Host ('  ' + ((T 'install.forge_client2') -f "$McVersion-$ForgeVersion"))
     Write-Host ('  ' + (T 'install.forge_client3'))

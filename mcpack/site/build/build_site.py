@@ -34,6 +34,8 @@ import gen_datapack as G                 # noqa: E402
 SEED = 20260927
 ARCHIVE_NAME = "ls-city-life-1.0.0.zip"
 ARCHIVE_URL = f"/download/{ARCHIVE_NAME}"
+OFFICIAL_NAME = "ls-city-life-1.0.0-official.zip"
+OFFICIAL_URL = f"/download/{OFFICIAL_NAME}"
 # Пак в формате Modrinth: лаунчер разворачивает его сам, установщик не нужен.
 MRPACK_NAME = "ls-city-life-1.0.0.mrpack"
 MRPACK_URL = f"/download/{MRPACK_NAME}"
@@ -143,6 +145,9 @@ def main() -> int:
     archive_path = os.path.join(PACK, "dist", "ls-city-life-1.0.0-full.zip")
     archive_mb, archive_tag, archive_date = file_facts(archive_path)
     archive_href = f"{ARCHIVE_URL}?v={archive_tag}"
+    official_path = os.path.join(PACK, "dist", "ls-city-life-1.0.0-official.zip")
+    official_mb, official_tag, _ = file_facts(official_path)
+    official_href = f"{OFFICIAL_URL}?v={official_tag}"
     mrpack_path = os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}.mrpack")
     mrpack_mb, mrpack_tag, mrpack_date = file_facts(mrpack_path)
     mrpack_href = f"{MRPACK_URL}?v={mrpack_tag}"
@@ -523,6 +528,9 @@ def main() -> int:
     <p class="section-lead">Пак — один файл формата .mrpack. Лаунчер сам ставит Forge,
       качает моды, раскладывает конфиги и мир: ни команд, ни распаковки вручную.</p>
     <div class="start">{start_html}</div>
+    <p class="note">Официальный Minecraft Launcher сборки не импортирует — для него
+      <a href="{official_href}" download>zip с установщиком</a>: распаковать и запустить
+      УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat, он поставит Forge и добавит профиль сам.</p>
     <p class="note">CurseForge App, Legacy Launcher и TLauncher формат .mrpack не читают.
       Для них есть <a href="{archive_href}" download>архив с установщиком</a>: распаковать,
       запустить УСТАНОВИТЬ.bat, выбрать профиль — дальше он всё сделает сам.</p>
@@ -572,13 +580,27 @@ def main() -> int:
         <div class="dl-subtitle">примеры лаунчеров</div>
         <ul class="dl-list">
           <li>Prism Launcher</li><li>Modrinth App</li><li>ATLauncher</li>
-          <li>CurseForge App</li><li>Minecraft Launcher</li>
+          <li>CurseForge App</li>
         </ul>
         <p class="dl-hint">Prism, Modrinth App и ATLauncher ставят пак одним импортом.
-          CurseForge App и официальный лаунчер формат .mrpack не читают — им подойдёт
-          архив из соседней карточки, он ставится так же.</p>
+          CurseForge App формат .mrpack не читает — ему подойдёт архив с установщиком
+          из карточки «Пиратский лаунчер», он ставится так же.</p>
         <a class="btn btn-primary dl-go" href="{mrpack_href}" download>
           Пак .mrpack · {mrpack_mb} МБ<span class="dl-arrow">↓</span></a>
+      </article>
+      <article class="dl-card" style="--accent:#7be07b">
+        <div class="dl-badge">Mojang</div>
+        <h4>Официальный лаунчер</h4>
+        <div class="dl-subtitle">Minecraft Launcher, в том числе из Microsoft Store</div>
+        <ul class="dl-list">
+          <li>ставит Forge сам</li><li>моды в отдельной папке</li>
+          <li>готовый профиль «LS City Life»</li>
+        </ul>
+        <p class="dl-hint">Официальный лаунчер сборки не импортирует. Распаковать zip и
+          запустить УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat — дальше выбрать профиль
+          «LS City Life» и нажать «Играть».</p>
+        <a class="btn btn-primary dl-go" href="{official_href}" download>
+          Архив .zip · {official_mb} МБ<span class="dl-arrow">↓</span></a>
       </article>
       <article class="dl-card" style="--accent:#ff7a45">
         <div class="dl-badge">Pirate</div>
@@ -594,8 +616,8 @@ def main() -> int:
           Архив · {archive_mb} МБ<span class="dl-arrow">↓</span></a>
       </article>
     </div>
-    <p class="dl-note">Ни в один файл моды не входят: 26 модов из {lock["mod_count"]} запрещают
-      перевыкладывание. Их скачивает лаунчер или установщик с авторских страниц —
+    <p class="dl-note">Ни в один файл моды не входят: больше двадцати модов из
+      {lock["mod_count"]} запрещают перевыкладывание. Их скачивает лаунчер или установщик с авторских страниц —
       {download_mb} МБ с проверкой хэшей.</p>
   </div>
 </div>
@@ -618,7 +640,9 @@ def main() -> int:
     for src, name in ((os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}.mrpack"),
                        MRPACK_NAME),
                       (os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-full.zip"),
-                       ARCHIVE_NAME)):
+                       ARCHIVE_NAME),
+                      (os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-official.zip"),
+                       OFFICIAL_NAME)):
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(download_dir, name))
             print(f"  download/{name} ({os.path.getsize(src) / 1048576:.1f} МБ)")

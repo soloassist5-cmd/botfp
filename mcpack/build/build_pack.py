@@ -141,10 +141,10 @@ def check_messages() -> list[str]:
                 keys.add(line.split("=", 1)[0].strip())
     problems: list[str] = []
     used: set[str] = set()
-    for name in ("install/setup.ps1", "install/install.ps1"):
+    for name in ("install/setup.ps1", "install/install.ps1", "install/official.ps1"):
         text = open(os.path.join(ROOT, name), encoding="utf-8-sig").read()
         mine = set(re.findall(r"T '([a-z0-9_.]+)'", text))
-        fallback = set(re.findall(r"'((?:setup|install)\.[a-z0-9_]+)'\s*=", text))
+        fallback = set(re.findall(r"'((?:setup|install|official)\.[a-z0-9_]+)'\s*=", text))
         used |= mine
         problems += [f"{name}: ключа {k} нет в messages.ru.txt" for k in sorted(mine - keys)]
         problems += [f"{name}: у ключа {k} нет запасного текста" for k in sorted(mine - fallback)]
@@ -152,7 +152,8 @@ def check_messages() -> list[str]:
     return problems
 
 
-def build_full(pack: dict, lock: dict) -> str:
+def build_full(pack: dict, lock: dict, suffix: str = "-full.zip",
+               start: str | None = None) -> str:
     """
     Один архив со всей сборкой: установщики, конфиги, датапак, самописный мод,
     готовый мир и документация.
@@ -162,7 +163,7 @@ def build_full(pack: dict, lock: dict) -> str:
     поэтому в архив не попадает мусор сборки.
     """
     p = pack["pack"]
-    out = os.path.join(DIST, f"{p['id']}-{p['version']}-full.zip")
+    out = os.path.join(DIST, f"{p['id']}-{p['version']}{suffix}")
     os.makedirs(DIST, exist_ok=True)
 
     tracked = subprocess.run(["git", "ls-files", "-z", "."], cwd=ROOT,
@@ -171,7 +172,7 @@ def build_full(pack: dict, lock: dict) -> str:
     if not names:
         raise SystemExit("git ls-files ничего не вернул: запусти из рабочей копии")
 
-    skip_suffix = ("-full.zip",)
+    skip_suffix = ("-full.zip", "-official.zip")
     # Собранная страница сайта и готовые дистрибутивы в пак не нужны: архив
     # иначе попал бы внутрь самого себя (или утащил .mrpack) и удвоил вес.
     skip_prefix = ("site/dist/", "dist/")
@@ -186,9 +187,47 @@ def build_full(pack: dict, lock: dict) -> str:
                 continue
             z.write(source, f"{root_name}/{name}")
             written += 1
-        z.writestr(f"{root_name}/НАЧНИ_ОТСЮДА.txt", start_here(pack, lock))
-    print(f"  файлов в полном архиве: {written}")
+        z.writestr(f"{root_name}/НАЧНИ_ОТСЮДА.txt", start or start_here(pack, lock))
+    print(f"  файлов в архиве {suffix.strip('-')}: {written}")
     return out
+
+
+def build_official(pack: dict, lock: dict) -> str:
+    """
+    Архив для официального Minecraft Launcher.
+
+    Официальный лаунчер не импортирует сборки вообще — ни .mrpack, ни zip.
+    Поэтому внутри тот же полный набор, а главный файл — установщик
+    УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat: он ставит Forge в .minecraft,
+    сборку в отдельную папку и добавляет в лаунчер готовый профиль.
+    """
+    p = pack["pack"]
+    text = f"""{p['name']} {p['version']} — для официального Minecraft Launcher
+{'=' * 60}
+
+Minecraft {p['minecraft']} + Forge {p['loader_version']}, 6 ГБ ОЗУ.
+Модов: {lock['mod_count']} (скачиваются установщиком, {lock['total_size'] / 1048576:.0f} МБ).
+
+КАК ПОСТАВИТЬ (Windows)
+-----------------------
+1. Один раз запусти официальный Minecraft Launcher и войди в аккаунт,
+   потом закрой его.
+2. Распакуй этот архив целиком в любую папку.
+3. Запусти УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat двойным кликом. Он:
+     - поставит Forge {p['loader_version']} в лаунчер (Java берёт встроенную в лаунчер);
+     - скачает моды и разложит сборку в %APPDATA%\.minecraft-ls-city —
+       отдельно от твоих обычных миров;
+     - добавит в лаунчер профиль «LS City Life» с 6 ГБ памяти.
+4. Открой лаунчер, слева от кнопки «Играть» выбери «LS City Life» -> Играть.
+5. Мир Los Santos — в «Одиночной игре». Жители расставятся сами.
+
+Повторный запуск .bat ничего не ломает: докачает недостающее и обновит
+профиль. Копия старых профилей лаунчера сохраняется рядом с ними
+(launcher_profiles.json.ls-city-backup).
+
+Подробно и с решением проблем — docs/official-launcher.md.
+"""
+    return build_full(pack, lock, "-official.zip", text)
 
 
 def start_here(pack: dict, lock: dict) -> str:
@@ -203,6 +242,7 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 -------------
 1. Прочитай README.md — там общее описание и таблица модов.
 2. Выбери инструкцию под свой лаунчер в папке docs:
+     docs/official-launcher.md официальный Minecraft Launcher
      docs/legacy-launcher.md   Legacy Launcher, TLauncher и прочие
      docs/curseforge.md        CurseForge App (импорт профиля + установщик)
      docs/modrinth-prism.md    Modrinth App, Prism, MultiMC, ATLauncher
@@ -223,12 +263,13 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 
 ПОСЛЕ ПЕРВОГО ВХОДА
 -------------------
-Один раз выполни в чате, чтобы заселить город:
+Жители расставятся сами при первом входе. Расставить заново:
   /function citylife:npc/spawn_all
 
 ЧТО ГДЕ ЛЕЖИТ
 -------------
   УСТАНОВИТЬ.bat      установка в один клик (Windows)
+  УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat  то же для официального лаунчера
   install/            установщики клиента и сервера
   world/los-santos.zip готовый мир (установщик распакует сам)
   mods-local/         самописный мод: телефоны и умные замки
@@ -379,7 +420,7 @@ def ready_readme(pack: dict, lock: dict, mod_count: int) -> str:
 
 ПОСЛЕ ПЕРВОГО ВХОДА
 -------------------
-Один раз выполни в чате, чтобы заселить город жителями:
+Жители расставятся сами при первом входе. Расставить заново:
   /function citylife:npc/spawn_all
 
 Полезное:
@@ -632,7 +673,8 @@ def build_server(pack: dict, lock: dict) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--target", default="all",
-                    choices=["all", "mrpack", "curseforge", "server", "full", "bundle"])
+                    choices=["all", "mrpack", "curseforge", "server", "full", "official",
+                             "bundle"])
     ap.add_argument("--mods-dir", help="где взять уже скачанные jar-ы для --target bundle")
     args = ap.parse_args()
     pack, lock = load()
@@ -647,6 +689,8 @@ def main() -> int:
         built.append(build_server(pack, lock))
     if args.target in ("all", "full"):
         built.append(build_full(pack, lock))
+    if args.target in ("all", "official"):
+        built.append(build_official(pack, lock))
     if args.target == "bundle":
         built.append(build_bundle(pack, lock, args.mods_dir))
 
