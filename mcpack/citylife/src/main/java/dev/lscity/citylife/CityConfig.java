@@ -27,6 +27,8 @@ public final class CityConfig {
     public final ForgeConfigSpec.IntValue maxHomes;
     public final ForgeConfigSpec.IntValue homeSellPercent;
     public final ForgeConfigSpec.BooleanValue homeLocks;
+    public final ForgeConfigSpec.IntValue homeUpkeepPerMille;
+    public final ForgeConfigSpec.IntValue homeDebtDays;
     public final ForgeConfigSpec.IntValue responderDelay;
     public final ForgeConfigSpec.IntValue responderStay;
     public final ForgeConfigSpec.IntValue medicFee;
@@ -94,6 +96,12 @@ public final class CityConfig {
                 .comment("Чужой не войдёт в купленный дом, пока владелец в сети,",
                          "и никогда не сломает и не построит ничего на его участке.")
                 .define("homeLocks", true);
+        homeUpkeepPerMille = builder
+                .comment("Коммуналка за игровые сутки в промилле от цены дома (3 = 0,3%; 0 — без неё).")
+                .defineInRange("homeUpkeepPerMille", 3, 0, 100);
+        homeDebtDays = builder
+                .comment("Через сколько суток неоплаченной коммуналки дом отходит городу.")
+                .defineInRange("homeDebtDays", 7, 1, 365);
         builder.pop();
 
         builder.comment("Экстренные службы 112").push("emergency");

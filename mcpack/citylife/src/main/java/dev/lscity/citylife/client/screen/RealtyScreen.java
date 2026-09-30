@@ -41,7 +41,8 @@ public class RealtyScreen extends Screen {
     private static final int MINE = 0xFFF2C12E;
     private static final int ROW = 13;
 
-    private static final String[] FILTERS = {"all", "house", "villa", "rowhouse", "flat", "free", "mine"};
+    private static final String[] FILTERS = {"all", "house", "villa", "rowhouse", "flat", "free",
+            "rent", "mine"};
     private static final Map<String, String> DISTRICTS = Map.of(
             "downtown", "Даунтаун", "midtown", "Мидтаун", "suburbs", "Пригород",
             "hills", "Холмы", "beach", "Пляж", "eastside", "Истсайд", "industrial", "Промзона");
@@ -53,6 +54,8 @@ public class RealtyScreen extends Screen {
     private int scroll;
     private EditBox search;
     private EditBox keyBox;
+    private EditBox rentBox;
+    private String rentDraft = "";
     private String searchDraft;
     private String keyDraft = "";
     private List<Estate.Unit> shown = List.of();
@@ -107,7 +110,12 @@ public class RealtyScreen extends Screen {
     }
 
     private int listRows() {
-        return Math.max(1, (top() + h() - 8 - listTop()) / ROW);
+        return Math.max(1, (top() + h() - 30 - listTop()) / ROW);
+    }
+
+    /** Верх кнопок в карточке объекта. */
+    private int actionsTop() {
+        return top() + 118;
     }
 
     // --- данные -------------------------------------------------------------------
@@ -133,8 +141,12 @@ public class RealtyScreen extends Screen {
         for (Estate.Unit unit : Estate.all()) {
             boolean ok = switch (filter) {
                 case "free" -> !owners.containsKey(unit.id());
+                case "rent" -> owners.containsKey(unit.id()) && owners.get(unit.id()).getLong("r") > 0
+                        && !owners.get(unit.id()).contains("tn")
+                        && !owners.get(unit.id()).getBoolean("m");
                 case "mine" -> mine(unit.id()) || owners.containsKey(unit.id())
-                        && owners.get(unit.id()).getBoolean("k");
+                        && (owners.get(unit.id()).getBoolean("k")
+                        || owners.get(unit.id()).getBoolean("tm"));
                 case "all" -> true;
                 default -> filter.equals(unit.kind());
             };
@@ -188,28 +200,36 @@ public class RealtyScreen extends Screen {
         search.setValue(searchDraft);
         addRenderableWidget(search);
 
+        if (rentBox != null) {
+            rentDraft = rentBox.getValue();
+        }
+        // Товары агентства (замки, камеры) — под списком, всегда видны.
+        addRenderableWidget(Button.builder(Component.translatable("citylife.realty.shop"),
+                b -> act("realty_shop", null, null))
+                .bounds(left() + 8, top() + h() - 24, listW() - 8, 16).build());
+
         int px = left() + listW() + 8;
         int pw = w() - listW() - 16;
-        int by = top() + h() - 26;
-        addRenderableWidget(Button.builder(Component.translatable("citylife.realty.shop"),
-                b -> act("realty_shop", null, null)).bounds(px, by, pw, 18).build());
-
         Estate.Unit unit = selected == null ? null : Estate.get(selected);
         if (unit == null) {
             return;
         }
-        int ay = top() + 124;
+        int ay = actionsTop();
         CompoundTag owner = owners.get(unit.id());
+        Button route = Button.builder(Component.translatable("citylife.realty.route"),
+                b -> act("realty_route", unit, null)).bounds(px, ay + 20, pw, 18).build();
         if (owner == null) {
             addRenderableWidget(Button.builder(Component.translatable("citylife.realty.buy",
                     Money.format(unit.price())), b -> act("realty_buy", unit, null))
                     .bounds(px, ay, pw, 18).build());
+            addRenderableWidget(route);
         } else if (owner.getBoolean("m")) {
             long back = unit.price() * snapshot.getInt("sellPercent") / 100L;
             addRenderableWidget(Button.builder(Component.translatable("citylife.realty.sell",
                     Money.format(back)), b -> act("realty_sell", unit, null))
                     .bounds(px, ay, pw, 18).build());
-            keyBox = new EditBox(font, px, ay + 44, pw - 50, 14,
+            addRenderableWidget(route);
+            keyBox = new EditBox(font, px, ay + 42, pw - 50, 14,
                     Component.translatable("citylife.realty.key_hint"));
             keyBox.setHint(Component.translatable("citylife.realty.key_hint"));
             keyBox.setMaxLength(16);
@@ -222,10 +242,35 @@ public class RealtyScreen extends Screen {
                         keyDraft = "";
                         keyBox.setValue("");
                         act("realty_trust", unit, args);
-                    }).bounds(px + pw - 46, ay + 44, 46, 14).build());
+                    }).bounds(px + pw - 46, ay + 42, 46, 14).build());
+            // Аренда: цена за игровые сутки, 0 — не сдавать.
+            rentBox = new EditBox(font, px, ay + 80, pw - 64, 14,
+                    Component.translatable("citylife.rent.price_hint"));
+            rentBox.setHint(Component.translatable("citylife.rent.price_hint"));
+            rentBox.setMaxLength(7);
+            rentBox.setValue(rentDraft.isEmpty() && owner.getLong("r") > 0
+                    ? Long.toString(owner.getLong("r")) : rentDraft);
+            addRenderableWidget(rentBox);
+            addRenderableWidget(Button.builder(Component.translatable("citylife.rent.set"),
+                    b -> {
+                        CompoundTag args = new CompoundTag();
+                        String raw = rentBox.getValue().replaceAll("[^0-9]", "");
+                        args.putLong("price", raw.isEmpty() ? 0 : Long.parseLong(raw));
+                        rentDraft = "";
+                        act("realty_rent_set", unit, args);
+                    }).bounds(px + pw - 60, ay + 80, 60, 14).build());
+        } else {
+            route.setY(ay);
+            addRenderableWidget(route);
+            if (owner.getBoolean("tm")) {
+                addRenderableWidget(Button.builder(Component.translatable("citylife.rent.end"),
+                        b -> act("realty_rent_end", unit, null)).bounds(px, ay + 20, pw, 18).build());
+            } else if (owner.getLong("r") > 0 && !owner.contains("tn")) {
+                addRenderableWidget(Button.builder(Component.translatable("citylife.rent.take",
+                        Money.format(owner.getLong("r"))), b -> act("realty_rent_take", unit, null))
+                        .bounds(px, ay + 20, pw, 18).build());
+            }
         }
-        addRenderableWidget(Button.builder(Component.translatable("citylife.realty.route"),
-                b -> act("realty_route", unit, null)).bounds(px, ay + 22, pw, 18).build());
     }
 
     // --- отрисовка ----------------------------------------------------------------
@@ -277,7 +322,7 @@ public class RealtyScreen extends Screen {
         // Карточка.
         int px = x + listW() + 8;
         int pw = w() - listW() - 16;
-        g.fill(px - 2, y + 22, px + pw + 2, y + h() - 30, PANEL);
+        g.fill(px - 2, y + 22, px + pw + 2, y + h() - 6, PANEL);
         Estate.Unit unit = selected == null ? null : Estate.get(selected);
         if (unit == null) {
             drawWrapped(g, Component.translatable("citylife.realty.pick").getString(),
@@ -289,7 +334,10 @@ public class RealtyScreen extends Screen {
             g.drawString(font, unit.rooms(), px + 2, cy + 2, DIM, false);
             g.drawString(font, DISTRICTS.getOrDefault(unit.district(), unit.district()),
                     px + 2, cy + 13, DIM, false);
-            g.drawString(font, Money.format(unit.price()), px + 2, cy + 26, MINE, false);
+            long upkeep = Math.max(10, unit.price() * snapshot.getInt("upkeep") / 1000);
+            g.drawString(font, font.plainSubstrByWidth(Money.format(unit.price()) + "  · "
+                    + Component.translatable("citylife.rent.upkeep", Money.format(upkeep))
+                    .getString(), pw - 4), px + 2, cy + 26, MINE, false);
             CompoundTag owner = owners.get(unit.id());
             String status;
             int colour;
@@ -306,8 +354,25 @@ public class RealtyScreen extends Screen {
             }
             g.drawString(font, font.plainSubstrByWidth(status, pw - 4), px + 2, cy + 38,
                     colour, false);
+            if (owner != null) {
+                String rent = "";
+                if (owner.contains("tn")) {
+                    rent = Component.translatable("citylife.rent.tenant", owner.getString("tn")).getString();
+                } else if (owner.getLong("r") > 0) {
+                    rent = Component.translatable("citylife.rent.for_rent",
+                            Money.format(owner.getLong("r"))).getString();
+                }
+                if (owner.getLong("d") > 0) {
+                    rent = Component.translatable("citylife.rent.debt", Money.format(owner.getLong("d")))
+                            .getString() + (rent.isEmpty() ? "" : " · " + rent);
+                }
+                if (!rent.isEmpty()) {
+                    int ry = owner.getBoolean("m") ? actionsTop() + 98 : actionsTop() + 42;
+                    drawWrapped(g, rent, px + 2, ry, pw - 4, owner.getLong("d") > 0 ? TAKEN : DIM);
+                }
+            }
             if (owner != null && owner.getBoolean("m")) {
-                int ky = top() + 124 + 62;
+                int ky = actionsTop() + 60;
                 List<String> keys = new ArrayList<>();
                 for (Tag item : owner.getList("keys", Tag.TAG_COMPOUND)) {
                     keys.add(((CompoundTag) item).getString("name"));
@@ -350,7 +415,7 @@ public class RealtyScreen extends Screen {
         Estate.Unit unit = selected == null ? null : Estate.get(selected);
         CompoundTag owner = unit == null ? null : owners.get(unit.id());
         int px = left() + listW() + 8;
-        int ky = top() + 124 + 62;
+        int ky = actionsTop() + 60;
         if (owner != null && owner.getBoolean("m") && mx >= px && my >= ky && my < ky + 20) {
             var keys = owner.getList("keys", Tag.TAG_COMPOUND);
             if (!keys.isEmpty()) {

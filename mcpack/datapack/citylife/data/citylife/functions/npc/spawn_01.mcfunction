@@ -1,4 +1,4 @@
-# NPC, пачка 1 из 8
+# NPC, пачка 1 из 9
 # АПТЕКА — Аптекарь
 summon easy_npc:humanoid -465.5 69 -405.5 {CustomName:'{"text": "Аптекарь"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_medic","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/medic.png",Name:"",URL:""}}
 # ЭЛЕКТРОНИКА — Продавец техники

@@ -192,8 +192,8 @@ public final class EstateGuard {
         }
         VISITS.put(key, now);
         CityData.get(player.server).deliverMail(owner.id(), new Mail(player.getUUID(),
-                "Охрана дома", Component.translatable("citylife.home.visit_mail",
-                player.getGameProfile().getName(), unit.address()).getString(), now, false));
+                "Охрана дома", dev.lscity.citylife.data.Texts.ru("citylife.home.visit_mail",
+                player.getGameProfile().getName(), unit.address()), now, false));
     }
 
     private static void theft(ServerPlayer player, Estate.Unit unit) {

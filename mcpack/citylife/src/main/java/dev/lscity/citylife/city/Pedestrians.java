@@ -70,8 +70,11 @@ public final class Pedestrians {
         BlockPos target;
         net.minecraft.world.level.pathfinder.Path path;
         int stuck;
-        /** Не убирать вдали от игроков (для самотестов). */
+        /** Не убирать вдали от игроков (наряды 112, самотесты). */
         boolean pinned;
+        /** Сам выбирает новую цель, когда дошёл (прохожие), или ждёт команды. */
+        boolean wander = true;
+        double speed = STEP;
 
         Walker(UUID id) {
             this.id = id;
@@ -178,6 +181,9 @@ public final class Pedestrians {
                     continue;
                 }
             }
+            if (!w.wander) {
+                continue;
+            }
             if (w.path == null || w.path.isDone() || w.stuck > 40) {
                 BlockPos next = w.pinned && w.target != null && w.path == null ? w.target
                         : pointNear(mob.getRandom(), entity.position(), 10, 40);
@@ -210,7 +216,7 @@ public final class Pedestrians {
                 w.path.advance();
                 continue;
             }
-            double k = Math.min(1.0D, STEP / Math.max(flat, 1.0E-4D));
+            double k = Math.min(1.0D, w.speed / Math.max(flat, 1.0E-4D));
             // По высоте — сразу на уровень узла: ступеньки и бордюры.
             double y = Math.abs(delta.y) > 0.01D ? node.y : pos.y;
             float yaw = (float) (Math.atan2(delta.z, delta.x) * 180.0D / Math.PI) - 90.0F;
@@ -220,6 +226,36 @@ public final class Pedestrians {
                 mob.setYBodyRot(yaw);
             }
             w.stuck = flat > 0.15D && k < 1.0D ? 0 : w.stuck + 1;
+        }
+    }
+
+    /**
+     * Вести любого жителя (сотрудника 112) к точке: мод шагает его по пути,
+     * как прохожего, но сам он цель не меняет и вдали от игроков не пропадает.
+     * speed — блоков за тик (0.12 — шаг, 0.22 — бег).
+     */
+    public static void lead(Entity entity, BlockPos to, double speed) {
+        if (!(entity instanceof Mob mob)) {
+            return;
+        }
+        Walker w = WALKERS.computeIfAbsent(entity.getUUID(), id -> {
+            makeWalker(entity);
+            Walker fresh = new Walker(id);
+            fresh.pinned = true;
+            fresh.wander = false;
+            return fresh;
+        });
+        w.speed = speed;
+        if (w.target == null || !w.target.equals(to) || w.path == null || w.path.isDone()) {
+            route(mob, w, to);
+        }
+    }
+
+    /** Остановить ведомого жителя. */
+    public static void halt(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w != null) {
+            w.path = null;
         }
     }
 

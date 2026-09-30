@@ -76,7 +76,12 @@ public final class Emergency {
         final UUID caller;
         final List<UUID> people = new ArrayList<>();
         UUID vehicle;
+        /** Где стоит машина (сирена, пожарные тушат вокруг неё). */
         BlockPos pos;
+        /** Где вызов: сюда идут сотрудники, пока звонивший рядом. */
+        BlockPos scene;
+        /** Когда началась погоня за каждым нарушителем. */
+        final Map<UUID, Long> chaseStart = new LinkedHashMap<>();
         long arrived;
         long leaveAt;
         /** Кому полиция крикнула «стоять» и когда задержит. */
@@ -97,7 +102,7 @@ public final class Emergency {
     }
 
     private static String service(String kind) {
-        return Component.translatable("citylife.sos." + kind).getString();
+        return dev.lscity.citylife.data.Texts.ru("citylife.sos." + kind);
     }
 
     // --- вызов --------------------------------------------------------------------
@@ -179,12 +184,18 @@ public final class Emergency {
                 && caller.position().distanceToSqr(call.where()) < 150 * 150) {
             target = caller.position();
         }
-        BlockPos spot = findSpot(level, BlockPos.containing(target));
+        // Машина встаёт поодаль, сотрудники идут к звонившему пешком:
+        // видно, что приехали, а не появились из воздуха.
+        BlockPos spot = findSpot(level, BlockPos.containing(target), 18, 30);
+        if (spot == null) {
+            spot = findSpot(level, BlockPos.containing(target), 4, 12);
+        }
         if (spot == null) {
             spot = BlockPos.containing(target);
         }
         Crew crew = new Crew(nextCrew++, call.kind(), call.caller());
         crew.pos = spot;
+        crew.scene = BlockPos.containing(target);
         crew.arrived = level.getGameTime();
         crew.leaveAt = crew.arrived + CityConfig.CONFIG.responderStay.get() * 20L;
         // Регистрируем наряд до спавна: onJoin пропускает только живые наряды.
@@ -207,6 +218,7 @@ public final class Emergency {
                     new Vec3(x, groundY(level, x, spot.getY(), z), z), yaw);
             if (npc != null) {
                 crew.people.add(npc.getUUID());
+                Pedestrians.lead(npc, near(crew.scene, i), 0.2D);
             }
         }
         if (caller != null) {
@@ -221,9 +233,14 @@ public final class Emergency {
         return crew.id;
     }
 
-    /** Ровное место под машину в 4–12 блоках от точки вызова. */
-    private static BlockPos findSpot(ServerLevel level, BlockPos near) {
-        for (int r = 4; r <= 12; r += 2) {
+    /** Точка рядом с местом вызова: сотрудники встают по бокам, а не друг в друге. */
+    private static BlockPos near(BlockPos scene, int index) {
+        return scene.offset(index == 0 ? -1 : 1, 0, index == 0 ? 1 : -1);
+    }
+
+    /** Ровное место под машину в min–max блоках от точки вызова. */
+    private static BlockPos findSpot(ServerLevel level, BlockPos near, int min, int max) {
+        for (int r = min; r <= max; r += 2) {
             for (int step = 0; step < 16; step++) {
                 double a = step * Math.PI / 8;
                 int x = near.getX() + (int) Math.round(Math.cos(a) * r);
@@ -419,8 +436,15 @@ public final class Emergency {
             }
             if ("police".equals(crew.kind)) {
                 patrol(server, crew, now);
-            } else if ("fire".equals(crew.kind) && age % 100 == 0) {
-                extinguish(level, crew.pos, 24);
+            }
+            if (crew.stop.isEmpty()) {
+                approach(server, crew);
+            }
+            if ("fire".equals(crew.kind)) {
+                fight(level, crew);
+                if (age % 100 == 0) {
+                    extinguish(level, crew.pos, 24);
+                }
             }
         }
     }
@@ -432,35 +456,127 @@ public final class Emergency {
         level.playSound(null, crew.pos, sound.value(), SoundSource.NEUTRAL, 2.0F, pitch);
     }
 
-    /** Полиция на месте: «стоять!» разыскиваемым рядом, через 5 секунд — задержание. */
-    private static void patrol(MinecraftServer server, Crew crew, long now) {
-        LifeData life = LifeData.get(server);
-        Vec3 centre = Vec3.atCenterOf(crew.pos);
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player.level() != server.overworld() || life.jailUntil(player.getUUID()) > 0) {
-                continue;
+    private static List<Entity> people(ServerLevel level, Crew crew) {
+        List<Entity> out = new ArrayList<>();
+        for (UUID id : crew.people) {
+            Entity e = level.getEntity(id);
+            if (e != null && e.isAlive()) {
+                out.add(e);
             }
-            double dist = player.position().distanceTo(centre);
-            Long deadline = crew.stop.get(player.getUUID());
-            if (deadline == null) {
-                if (life.wanted(player.getUUID()) > 0 && dist < 24) {
-                    crew.stop.put(player.getUUID(), now + 100);
-                    player.sendSystemMessage(Component.translatable("citylife.police.freeze",
-                            player.getGameProfile().getName()).withStyle(ChatFormatting.BLUE));
-                    player.sendSystemMessage(options(crew, "surrender"));
-                }
-            } else if (now >= deadline) {
-                crew.stop.remove(player.getUUID());
-                if (life.wanted(player.getUUID()) == 0) {
-                    continue;
-                }
-                if (dist < 16) {
-                    Wanted.arrest(player, false);
-                } else {
-                    Wanted.crime(player, 1, "citylife.wanted.fled");
+        }
+        return out;
+    }
+
+    /** Ближайший к точке сотрудник наряда: расстояние в блоках. */
+    private static double nearestOfficer(ServerLevel level, Crew crew, Vec3 to) {
+        double best = Double.MAX_VALUE;
+        for (Entity e : people(level, crew)) {
+            best = Math.min(best, e.position().distanceTo(to));
+        }
+        return best;
+    }
+
+    /** Сотрудники подходят к звонившему, пока он рядом, и смотрят на него. */
+    private static void approach(MinecraftServer server, Crew crew) {
+        ServerLevel level = server.overworld();
+        ServerPlayer caller = server.getPlayerList().getPlayer(crew.caller);
+        if (caller != null && caller.level() == level
+                && caller.position().distanceToSqr(Vec3.atCenterOf(crew.scene)) < 40 * 40) {
+            crew.scene = caller.blockPosition();
+        }
+        List<Entity> staff = people(level, crew);
+        for (int i = 0; i < staff.size(); i++) {
+            Entity e = staff.get(i);
+            BlockPos spot = near(crew.scene, i);
+            if (e.position().distanceToSqr(Vec3.atBottomCenterOf(spot)) > 2.5D * 2.5D) {
+                Pedestrians.lead(e, spot, 0.2D);
+            } else {
+                Pedestrians.halt(e);
+                if (caller != null && e instanceof net.minecraft.world.entity.Mob mob) {
+                    mob.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
+                            caller.getEyePosition());
+                    mob.setYHeadRot(mob.getYRot());
                 }
             }
         }
+    }
+
+    /** Пожарные идут к ближайшему огню и тушат вокруг себя. */
+    private static void fight(ServerLevel level, Crew crew) {
+        BlockPos fire = null;
+        double best = Double.MAX_VALUE;
+        for (BlockPos pos : BlockPos.betweenClosed(crew.scene.offset(-24, -6, -24),
+                crew.scene.offset(24, 12, 24))) {
+            if (level.getBlockState(pos).getBlock() instanceof BaseFireBlock) {
+                double d = pos.distSqr(crew.scene);
+                if (d < best) {
+                    best = d;
+                    fire = pos.immutable();
+                }
+            }
+        }
+        for (Entity e : people(level, crew)) {
+            if (fire != null) {
+                Pedestrians.lead(e, fire, 0.2D);
+            }
+            int out = extinguish(level, e.blockPosition(), 5);
+            if (out > 0) {
+                level.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH,
+                        e.getX(), e.getY() + 1.2D, e.getZ(), 40, 2.0D, 0.6D, 2.0D, 0.2D);
+            }
+        }
+    }
+
+    /**
+     * Полиция на месте: разыскиваемому рядом кричат «стоять!» и бегут за
+     * ним. Задержание — когда полицейский догнал (ближе 4 блоков) после
+     * 5-секундного предупреждения. Убежал дальше 48 блоков или погоня
+     * длится больше 40 секунд — ушёл, плюс звезда за побег.
+     */
+    private static void patrol(MinecraftServer server, Crew crew, long now) {
+        LifeData life = LifeData.get(server);
+        ServerLevel level = server.overworld();
+        Vec3 centre = Vec3.atCenterOf(crew.scene);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.level() != level || life.jailUntil(player.getUUID()) > 0) {
+                continue;
+            }
+            Long deadline = crew.stop.get(player.getUUID());
+            if (deadline == null) {
+                if (life.wanted(player.getUUID()) > 0 && player.position().distanceTo(centre) < 24) {
+                    warn(crew, player, now);
+                }
+                continue;
+            }
+            if (life.wanted(player.getUUID()) == 0) {
+                crew.stop.remove(player.getUUID());
+                crew.chaseStart.remove(player.getUUID());
+                continue;
+            }
+            for (Entity officer : people(level, crew)) {
+                Pedestrians.lead(officer, player.blockPosition(), 0.24D);
+            }
+            double gap = nearestOfficer(level, crew, player.position());
+            long chasing = now - crew.chaseStart.getOrDefault(player.getUUID(), now);
+            if (now >= deadline && gap < 4.0D) {
+                crew.stop.remove(player.getUUID());
+                crew.chaseStart.remove(player.getUUID());
+                Wanted.arrest(player, false);
+            } else if (gap > 48.0D || chasing > 800) {
+                crew.stop.remove(player.getUUID());
+                crew.chaseStart.remove(player.getUUID());
+                Wanted.crime(player, 1, "citylife.wanted.fled");
+            }
+        }
+    }
+
+    /** «Стоять!»: 5 секунд, чтобы сдаться, дальше — погоня. */
+    private static void warn(Crew crew, ServerPlayer player, long now) {
+        crew.stop.put(player.getUUID(), now + 100);
+        crew.chaseStart.put(player.getUUID(), now);
+        player.sendSystemMessage(Component.translatable("citylife.police.freeze",
+                player.getGameProfile().getName()).withStyle(ChatFormatting.BLUE));
+        player.sendSystemMessage(options(crew, "surrender"));
     }
 
     private static int extinguish(ServerLevel level, BlockPos centre, int radius) {
@@ -561,7 +677,8 @@ public final class Emergency {
                     .withStyle(ChatFormatting.GRAY), true);
             return 0;
         }
-        if (player.position().distanceTo(Vec3.atCenterOf(crew.pos)) > 16) {
+        if (player.position().distanceTo(Vec3.atCenterOf(crew.pos)) > 16
+                && nearestOfficer(player.serverLevel(), crew, player.position()) > 8) {
             player.displayClientMessage(Component.translatable("citylife.crew.too_far")
                     .withStyle(ChatFormatting.RED), true);
             return 0;
@@ -573,7 +690,9 @@ public final class Emergency {
                     return 0;
                 }
                 long fee = CityConfig.CONFIG.medicFee.get();
-                boolean paid = fee == 0 || CityData.get(player.server).withdraw(player.getUUID(), fee);
+                boolean paid = fee == 0 || CityData.get(player.server).withdraw(player.getUUID(), fee,
+                        dev.lscity.citylife.data.Texts.ru("citylife.statement.medic"),
+                        player.level().getGameTime());
                 player.setHealth(player.getMaxHealth());
                 player.getFoodData().eat(20, 1.0F);
                 player.clearFire();
@@ -612,12 +731,8 @@ public final class Emergency {
                     player.sendSystemMessage(Component.translatable("citylife.crew.no_suspect")
                             .withStyle(ChatFormatting.GRAY));
                 } else {
-                    // Наряд едет к подозреваемому: он получает «стоять!» и 5 секунд.
-                    crew.pos = suspect.blockPosition();
-                    crew.stop.put(suspect.getUUID(), player.level().getGameTime() + 100);
-                    suspect.sendSystemMessage(Component.translatable("citylife.police.freeze",
-                            suspect.getGameProfile().getName()).withStyle(ChatFormatting.BLUE));
-                    suspect.sendSystemMessage(options(crew, "surrender"));
+                    // Наряд бежит к подозреваемому: у него 5 секунд, чтобы сдаться.
+                    warn(crew, suspect, player.level().getGameTime());
                     player.sendSystemMessage(Component.translatable("citylife.crew.reported",
                             suspect.getGameProfile().getName()).withStyle(ChatFormatting.GREEN));
                 }
@@ -627,6 +742,7 @@ public final class Emergency {
                     return 0;
                 }
                 crew.stop.remove(player.getUUID());
+                crew.chaseStart.remove(player.getUUID());
                 Wanted.arrest(player, true);
             }
             case "dismiss" -> {

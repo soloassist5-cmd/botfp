@@ -95,7 +95,8 @@ public final class AtmServer {
                 if (data.balance(id) < amount) {
                     return fail(player, "citylife.atm.no_funds");
                 }
-                data.withdraw(id, amount);
+                data.withdraw(id, amount, dev.lscity.citylife.data.Texts.ru("citylife.statement.atm_out"),
+                        player.level().getGameTime());
                 Money.give(player, amount);
                 sound(player, pos);
                 player.displayClientMessage(Component.translatable("citylife.atm.withdrawn",
@@ -109,7 +110,8 @@ public final class AtmServer {
                 if (!Money.take(player, take)) {
                     return fail(player, "citylife.atm.no_cash");
                 }
-                data.deposit(id, take);
+                data.deposit(id, take, dev.lscity.citylife.data.Texts.ru("citylife.statement.atm_in"),
+                        player.level().getGameTime());
                 sound(player, pos);
                 player.displayClientMessage(Component.translatable("citylife.atm.deposited",
                         Money.format(take)).withStyle(ChatFormatting.GREEN), true);
@@ -123,7 +125,8 @@ public final class AtmServer {
                     return fail(player, "citylife.atm.no_funds");
                 }
                 boolean mastercard = "mastercard".equals(args.getString("kind"));
-                data.withdraw(id, price);
+                data.withdraw(id, price, dev.lscity.citylife.data.Texts.ru("citylife.statement.card"),
+                        player.level().getGameTime());
                 ItemStack card = BankCardItem.issue(mastercard
                         ? Registration.CARD_MASTERCARD.get() : Registration.CARD_MIR.get(), player);
                 if (!player.getInventory().add(card)) {
@@ -142,8 +145,11 @@ public final class AtmServer {
                 if (amount <= 0 || data.balance(id) < amount) {
                     return fail(player, "citylife.atm.no_funds");
                 }
-                data.withdraw(id, amount);
-                data.deposit(other.getUUID(), amount);
+                long when = player.level().getGameTime();
+                data.withdraw(id, amount, dev.lscity.citylife.data.Texts.ru("citylife.statement.sent",
+                        other.getGameProfile().getName()), when);
+                data.deposit(other.getUUID(), amount, dev.lscity.citylife.data.Texts.ru("citylife.statement.received",
+                        player.getGameProfile().getName()), when);
                 sound(player, pos);
                 player.displayClientMessage(Component.translatable("citylife.atm.sent",
                         Money.format(amount), other.getGameProfile().getName())

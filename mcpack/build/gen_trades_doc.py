@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 import sys
 from collections import Counter
@@ -73,7 +74,8 @@ def title(sell: dict) -> str:
         name = ("Взрывное зелье " if "splash" in item else "Зелье ") + POTIONS.get(kind, kind)
     if "display" in tag and "color" in tag["display"]:
         name += f" ({COLOURS.get(tag['display']['color'], 'цвет')})"
-    return name.replace("§", "").lstrip("0123456789abcdefr")
+    # Цветовые коды Minecraft (§a, §l…) в названиях не нужны.
+    return re.sub(r"§[0-9a-fk-or]", "", name)
 
 
 def main() -> int:

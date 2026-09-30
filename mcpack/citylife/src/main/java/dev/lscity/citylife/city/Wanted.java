@@ -87,7 +87,8 @@ public final class Wanted {
         }
         CityData bank = CityData.get(player.server);
         long paid = Math.min(fine, bank.balance(player.getUUID()));
-        bank.withdraw(player.getUUID(), paid);
+        bank.withdraw(player.getUUID(), paid, dev.lscity.citylife.data.Texts.ru(
+                "citylife.statement.fine"), player.level().getGameTime());
         life.setWanted(player.getUUID(), 0, 0);
         if (player.isPassenger()) {
             player.stopRiding();

@@ -187,6 +187,12 @@ public final class CityCommands {
                                                 Component.translatable("citylife.bank.no_money"));
                                         return 0;
                                     }
+                                    long when = from.level().getGameTime();
+                                    data.record(from.getUUID(), -amount, dev.lscity.citylife.data.Texts
+                                            .ru("citylife.statement.sent", to.getGameProfile().getName()), when);
+                                    data.record(to.getUUID(), amount, dev.lscity.citylife.data.Texts
+                                            .ru("citylife.statement.received", from.getGameProfile().getName()),
+                                            when);
                                     from.sendSystemMessage(Component.translatable("citylife.bank.sent",
                                             amount, to.getGameProfile().getName()));
                                     to.sendSystemMessage(Component.translatable("citylife.bank.received",
@@ -307,8 +313,12 @@ public final class CityCommands {
                                     CityData data = CityData.get(ctx.getSource().getServer());
                                     for (ServerPlayer target : targets) {
                                         switch (verb) {
-                                            case "give" -> data.deposit(target.getUUID(), amount);
-                                            case "take" -> data.withdraw(target.getUUID(), amount);
+                                            case "give" -> data.deposit(target.getUUID(), amount,
+                                                    dev.lscity.citylife.data.Texts.ru("citylife.statement.admin_give"),
+                                                    target.level().getGameTime());
+                                            case "take" -> data.withdraw(target.getUUID(), amount,
+                                                    dev.lscity.citylife.data.Texts.ru("citylife.statement.admin_take"),
+                                                    target.level().getGameTime());
                                             default -> data.setBalance(target.getUUID(), amount);
                                         }
                                     }

@@ -1,4 +1,14 @@
-# NPC, пачка 3 из 8
+# NPC, пачка 3 из 9
+# apartment — Управдом
+summon easy_npc:humanoid -219.5 70 -175.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
+# ПРОДУКТЫ — Продавец продуктов
+summon easy_npc:humanoid -216.5 69 -146.5 {CustomName:'{"text": "Продавец продуктов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_food","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
+# apartment — Управдом
+summon easy_npc:humanoid -242.5 70 -105.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[90.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
+# ПРОДУКТЫ — Продавец продуктов
+summon easy_npc:humanoid -213.5 69 -95.5 {CustomName:'{"text": "Продавец продуктов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_food","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[270.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
+# ЭЛЕКТРОНИКА — Продавец техники
+summon easy_npc:humanoid -238.5 69 -46.5 {CustomName:'{"text": "Продавец техники"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_tech","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
 # ЭЛЕКТРОНИКА — Продавец техники
 summon easy_npc:humanoid -210.5 69 46.5 {CustomName:'{"text": "Продавец техники"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_tech","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
 # МАГАЗИН — Продавец
@@ -39,13 +49,3 @@ summon easy_npc:humanoid -111.5 69 -146.5 {CustomName:'{"text": "Продаве�
 summon easy_npc:humanoid -84.5 69 -82.5 {CustomName:'{"text": "Повар"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cook","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
 # ЗАКУСОЧНАЯ — Повар
 summon easy_npc:humanoid -95.5 69 -22.5 {CustomName:'{"text": "Повар"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cook","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
-# САЛОН СВЯЗИ — Продавец связи
-summon easy_npc:humanoid -97.5 69 22.5 {CustomName:'{"text": "Продавец связи"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_phone_seller","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
-# ОРУЖЕЙНЫЙ МАГАЗИН — Мастер-оружейник
-summon easy_npc:humanoid -91.5 69 109.5 {CustomName:'{"text": "Мастер-оружейник"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_gunsmith","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/gunsmith.png",Name:"",URL:""}}
-# ОРУЖЕЙНЫЙ МАГАЗИН — Пистолеты и ПП
-summon easy_npc:humanoid -94.5 69 109.5 {CustomName:'{"text": "Пистолеты и ПП"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_arms_dealer","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/gunsmith.png",Name:"",URL:""}}
-# ОРУЖЕЙНЫЙ МАГАЗИН — Винтовки
-summon easy_npc:humanoid -96.5 69 109.5 {CustomName:'{"text": "Винтовки"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_rifle_dealer","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/police.png",Name:"",URL:""}}
-# ОРУЖЕЙНЫЙ МАГАЗИН — Патроны
-summon easy_npc:humanoid -99.5 69 109.5 {CustomName:'{"text": "Патроны"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_ammo_seller","lsgen_2"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/mechanic.png",Name:"",URL:""}}

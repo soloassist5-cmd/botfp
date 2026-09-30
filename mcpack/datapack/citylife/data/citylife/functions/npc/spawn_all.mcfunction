@@ -8,4 +8,5 @@ function citylife:npc/spawn_05
 function citylife:npc/spawn_06
 function citylife:npc/spawn_07
 function citylife:npc/spawn_08
-tellraw @a {"text":"Город заселён: NPC 177","color":"green"}
+function citylife:npc/spawn_09
+tellraw @a {"text":"Город заселён: NPC 210","color":"green"}

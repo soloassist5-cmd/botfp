@@ -80,6 +80,7 @@ public final class EstateServer {
         tag.putLong("balance", CityData.get(player.server).balance(player.getUUID()));
         tag.putInt("limit", CityConfig.CONFIG.maxHomes.get());
         tag.putInt("sellPercent", CityConfig.CONFIG.homeSellPercent.get());
+        tag.putInt("upkeep", CityConfig.CONFIG.homeUpkeepPerMille.get());
         ListTag owners = new ListTag();
         life.owners().forEach((unit, owner) -> {
             CompoundTag entry = new CompoundTag();
@@ -87,6 +88,13 @@ public final class EstateServer {
             entry.putString("n", owner.name());
             boolean mine = owner.id().equals(player.getUUID());
             entry.putBoolean("m", mine);
+            entry.putLong("r", life.rent(unit));
+            entry.putLong("d", mine ? life.debt(unit) : 0);
+            LifeData.Owner tenant = life.tenant(unit);
+            if (tenant != null) {
+                entry.putString("tn", tenant.name());
+                entry.putBoolean("tm", tenant.id().equals(player.getUUID()));
+            }
             if (mine) {
                 ListTag keys = new ListTag();
                 for (UUID id : life.trusted(unit)) {
@@ -129,6 +137,9 @@ public final class EstateServer {
             case "realty_sell" -> sell(player, unit);
             case "realty_route" -> route(player, unit);
             case "realty_trust" -> trust(player, unit, args.getString("name").trim());
+            case "realty_rent_set" -> rentSet(player, unit, args.getLong("price"));
+            case "realty_rent_take" -> rentTake(player, unit);
+            case "realty_rent_end" -> rentEnd(player, unit);
             case "realty_untrust" -> {
                 if (unit != null && owns(player, unit) && args.hasUUID("who")) {
                     LifeData.get(player.server).untrust(unit.id(), args.getUUID("who"));
@@ -176,7 +187,8 @@ public final class EstateServer {
             return;
         }
         CityData bank = CityData.get(player.server);
-        if (!bank.withdraw(player.getUUID(), unit.price())) {
+        if (!bank.withdraw(player.getUUID(), unit.price(), dev.lscity.citylife.data.Texts.ru(
+                "citylife.statement.home_bought", unit.address()), player.level().getGameTime())) {
             say(player, Component.translatable("citylife.realty.no_money",
                     Money.format(unit.price())), ChatFormatting.RED);
             return;
@@ -201,9 +213,89 @@ public final class EstateServer {
         }
         long back = unit.price() * CityConfig.CONFIG.homeSellPercent.get() / 100L;
         LifeData.get(player.server).clearOwner(unit.id());
-        CityData.get(player.server).deposit(player.getUUID(), back);
+        CityData.get(player.server).deposit(player.getUUID(), back, dev.lscity.citylife.data.Texts.ru(
+                "citylife.statement.home_sold", unit.address()), player.level().getGameTime());
         say(player, Component.translatable("citylife.realty.sold", unit.label(),
                 Money.format(back)), ChatFormatting.GOLD);
+    }
+
+    /** Хозяин назначает цену аренды за сутки; 0 — не сдаёт и выселяет арендатора. */
+    private static void rentSet(ServerPlayer player, Estate.Unit unit, long price) {
+        if (unit == null || !owns(player, unit)) {
+            return;
+        }
+        LifeData life = LifeData.get(player.server);
+        price = Math.max(0, Math.min(price, 1_000_000L));
+        life.setRent(unit.id(), price);
+        if (price == 0 && life.tenant(unit.id()) != null) {
+            LifeData.Owner tenant = life.tenant(unit.id());
+            life.setTenant(unit.id(), null, "", 0);
+            CityData.get(player.server).deliverMail(tenant.id(), new dev.lscity.citylife.data.Mail(
+                    player.getUUID(), player.getGameProfile().getName(),
+                    dev.lscity.citylife.data.Texts.ru("citylife.bills.lease_ended_tenant", unit.label()),
+                    player.level().getGameTime(), false));
+        }
+        say(player, price > 0
+                ? Component.translatable("citylife.rent.offered", unit.address(), Money.format(price))
+                : Component.translatable("citylife.rent.stopped", unit.address()), ChatFormatting.GREEN);
+    }
+
+    /** Снять жильё: только у риелтора, первые сутки оплачиваются сразу. */
+    private static void rentTake(ServerPlayer player, Estate.Unit unit) {
+        if (unit == null) {
+            return;
+        }
+        if (agent(player) == null) {
+            say(player, Component.translatable("citylife.realty.need_agent"), ChatFormatting.RED);
+            return;
+        }
+        LifeData life = LifeData.get(player.server);
+        LifeData.Owner owner = life.owner(unit.id());
+        long price = life.rent(unit.id());
+        if (owner == null || price <= 0 || life.tenant(unit.id()) != null
+                || owner.id().equals(player.getUUID())) {
+            say(player, Component.translatable("citylife.rent.unavailable"), ChatFormatting.RED);
+            return;
+        }
+        if (life.rentedBy(player.getUUID()).size() >= CityConfig.CONFIG.maxHomes.get()) {
+            say(player, Component.translatable("citylife.realty.limit",
+                    CityConfig.CONFIG.maxHomes.get()), ChatFormatting.RED);
+            return;
+        }
+        CityData bank = CityData.get(player.server);
+        if (!bank.transfer(player.getUUID(), owner.id(), price)) {
+            say(player, Component.translatable("citylife.realty.no_money", Money.format(price)),
+                    ChatFormatting.RED);
+            return;
+        }
+        long now = player.level().getGameTime();
+        bank.record(player.getUUID(), -price, dev.lscity.citylife.data.Texts.ru(
+                "citylife.statement.rent_paid", unit.address()), now);
+        bank.record(owner.id(), price, dev.lscity.citylife.data.Texts.ru(
+                "citylife.statement.rent_got", unit.address()), now);
+        life.setTenant(unit.id(), player.getUUID(), player.getGameProfile().getName(), now);
+        say(player, Component.translatable("citylife.rent.taken", unit.label(), Money.format(price)),
+                ChatFormatting.GREEN);
+        ServerPlayer live = player.server.getPlayerList().getPlayer(owner.id());
+        if (live != null) {
+            say(live, Component.translatable("citylife.rent.owner_news",
+                    player.getGameProfile().getName(), unit.address()), ChatFormatting.AQUA);
+        }
+        route(player, unit);
+    }
+
+    /** Арендатор съезжает. */
+    private static void rentEnd(ServerPlayer player, Estate.Unit unit) {
+        if (unit == null) {
+            return;
+        }
+        LifeData life = LifeData.get(player.server);
+        LifeData.Owner tenant = life.tenant(unit.id());
+        if (tenant == null || !tenant.id().equals(player.getUUID())) {
+            return;
+        }
+        life.setTenant(unit.id(), null, "", 0);
+        say(player, Component.translatable("citylife.rent.left", unit.address()), ChatFormatting.GRAY);
     }
 
     private static void route(ServerPlayer player, Estate.Unit unit) {

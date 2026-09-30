@@ -71,6 +71,17 @@ public final class Jobs {
 
     private static final Map<UUID, Job> ACTIVE = new HashMap<>();
     private static final Map<UUID, Long> COOLDOWN = new HashMap<>();
+    /**
+     * Оплата. Настроена так, чтобы час работы давал 5–7 тысяч: квартира —
+     * это 3–4 часа, дом — вечер-два, вилла — неделя игры. Таблица с
+     * расчётом — docs/economy.md (build/gen_economy_doc.py, те же числа).
+     */
+    public static final double COURIER_BASE = 60;
+    public static final double COURIER_PER_BLOCK = 0.35;
+    public static final double TAXI_BASE = 80;
+    public static final double TAXI_PER_BLOCK = 0.3;
+    public static final long SHIFT_PAY = 280;
+
     /** Сколько секунд длится смена. */
     private static final int SHIFT = 180;
     private static final double ARRIVE = 4.0D;
@@ -132,8 +143,9 @@ public final class Jobs {
                     return;
                 }
                 double d = dist(here, target);
-                job = new Job(kind, Component.translatable("citylife.job.courier.title").getString(),
-                        target, null, pay(150 + d * 0.8D), now + (long) (120 + d / 3) * 20L);
+                job = new Job(kind, dev.lscity.citylife.data.Texts.ru("citylife.job.courier.title"),
+                        target, null, pay(COURIER_BASE + d * COURIER_PER_BLOCK),
+                        now + (long) (120 + d / 3) * 20L);
             }
             case "taxi" -> {
                 if (!player.isPassenger()) {
@@ -147,8 +159,8 @@ public final class Jobs {
                 Vec3 pick = new Vec3(from.x(), from.y(), from.z());
                 Waypoint to = randomDoor(random, pick, 300, 900);
                 double d = dist(pick, to);
-                job = new Job(kind, Component.translatable("citylife.job.taxi.title").getString(),
-                        from, to, pay(120 + d * 1.6D),
+                job = new Job(kind, dev.lscity.citylife.data.Texts.ru("citylife.job.taxi.title"),
+                        from, to, pay(TAXI_BASE + d * TAXI_PER_BLOCK),
                         now + (long) (180 + (dist(here, from) + d) / 4) * 20L);
             }
             case "shift" -> {
@@ -163,8 +175,8 @@ public final class Jobs {
                     places.addAll(CityLandmarks.ALL);
                 }
                 Waypoint target = places.get(random.nextInt(places.size()));
-                job = new Job(kind, Component.translatable("citylife.job.shift.title").getString(),
-                        target, null, pay(650), now + (long) (SHIFT + 600) * 20L);
+                job = new Job(kind, dev.lscity.citylife.data.Texts.ru("citylife.job.shift.title"),
+                        target, null, pay(SHIFT_PAY), now + (long) (SHIFT + 600) * 20L);
             }
             default -> {
                 return;
@@ -199,7 +211,8 @@ public final class Jobs {
 
     private static void finish(ServerPlayer player, Job job) {
         ACTIVE.remove(player.getUUID());
-        CityData.get(player.server).deposit(player.getUUID(), job.pay);
+        CityData.get(player.server).deposit(player.getUUID(), job.pay, dev.lscity.citylife.data.Texts.ru(
+                "citylife.statement.job", job.title), player.level().getGameTime());
         LifeData.get(player.server).recordJob(player.getUUID(), job.pay);
         CityData.get(player.server).setRoute(player.getUUID(), null);
         Net.sendRoute(player, null);

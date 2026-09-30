@@ -37,6 +37,24 @@ public class CityData extends SavedData {
     private final Map<UUID, List<BlockPos>> pairedCameras = new LinkedHashMap<>();
     private final Map<UUID, List<Mail>> mail = new LinkedHashMap<>();
     private final List<Ad> ads = new ArrayList<>();
+    /** Выписка по счёту: последние операции с суммой и назначением. */
+    private final Map<UUID, List<Statement>> statements = new LinkedHashMap<>();
+    public static final int MAX_STATEMENT = 60;
+
+    /** Строка выписки: когда (игровое время), сколько (+/-) и за что. */
+    public record Statement(long time, long amount, String text) {
+        public CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putLong("time", time);
+            tag.putLong("amount", amount);
+            tag.putString("text", text);
+            return tag;
+        }
+
+        public static Statement load(CompoundTag tag) {
+            return new Statement(tag.getLong("time"), tag.getLong("amount"), tag.getString("text"));
+        }
+    }
     private int nextAd = 1;
     private final Map<UUID, Waypoint> routes = new LinkedHashMap<>();
     private final Map<UUID, List<Order>> orders = new LinkedHashMap<>();
@@ -85,6 +103,38 @@ public class CityData extends SavedData {
         }
         setBalance(player, current - amount);
         return true;
+    }
+
+    /** Положить на счёт и записать в выписку. */
+    public void deposit(UUID player, long amount, String reason, long time) {
+        if (amount <= 0) {
+            return;
+        }
+        deposit(player, amount);
+        record(player, amount, reason, time);
+    }
+
+    /** Списать со счёта с записью в выписку. */
+    public boolean withdraw(UUID player, long amount, String reason, long time) {
+        if (!withdraw(player, amount)) {
+            return false;
+        }
+        record(player, -amount, reason, time);
+        return true;
+    }
+
+    /** Запись в выписку без движения денег (когда деньги уже переведены). */
+    public void record(UUID player, long amount, String reason, long time) {
+        List<Statement> list = statements.computeIfAbsent(player, k -> new ArrayList<>());
+        list.add(0, new Statement(time, amount, reason));
+        while (list.size() > MAX_STATEMENT) {
+            list.remove(list.size() - 1);
+        }
+        setDirty();
+    }
+
+    public List<Statement> statement(UUID player) {
+        return statements.getOrDefault(player, List.of());
     }
 
     public boolean transfer(UUID from, UUID to, long amount) {
@@ -357,6 +407,13 @@ public class CityData extends SavedData {
             data.ads.add(Ad.load(entry));
         }
         data.nextAd = Math.max(1, tag.getInt("nextAd"));
+        for (CompoundTag entry : compounds(tag, "statements")) {
+            List<Statement> list = new ArrayList<>();
+            for (Tag item : entry.getList("items", Tag.TAG_COMPOUND)) {
+                list.add(Statement.load((CompoundTag) item));
+            }
+            data.statements.put(entry.getUUID("id"), list);
+        }
         return data;
     }
 
@@ -473,6 +530,16 @@ public class CityData extends SavedData {
         ListTag board = new ListTag();
         ads.forEach(ad -> board.add(ad.save()));
         tag.put("ads", board);
+        ListTag books = new ListTag();
+        statements.forEach((id, list) -> {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID("id", id);
+            ListTag items = new ListTag();
+            list.forEach(line -> items.add(line.save()));
+            entry.put("items", items);
+            books.add(entry);
+        });
+        tag.put("statements", books);
         tag.putInt("nextAd", nextAd);
         return tag;
     }

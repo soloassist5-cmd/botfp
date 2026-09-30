@@ -32,6 +32,13 @@ public class LifeData extends SavedData {
 
     private final Map<String, Owner> owners = new LinkedHashMap<>();
     private final Map<String, Set<UUID>> trusted = new LinkedHashMap<>();
+    /** Долг по коммуналке: копится, когда на счёте не хватило денег. */
+    private final Map<String, Long> debt = new LinkedHashMap<>();
+    /** Цена аренды за игровые сутки (0 — не сдаётся) и кто снимает. */
+    private final Map<String, Long> rent = new LinkedHashMap<>();
+    private final Map<String, Owner> tenants = new LinkedHashMap<>();
+    /** Последние игровые сутки, за которые уже взяли плату. */
+    private long billedDay = -1;
     private final Map<UUID, String> trustedNames = new LinkedHashMap<>();
     /** Звёзды розыска и момент, когда снимется следующая. */
     private final Map<UUID, Integer> wanted = new LinkedHashMap<>();
@@ -73,12 +80,79 @@ public class LifeData extends SavedData {
     public void setOwner(String unit, UUID id, String name, long since) {
         owners.put(unit, new Owner(id, name, since));
         trusted.remove(unit);
+        debt.remove(unit);
+        rent.remove(unit);
+        tenants.remove(unit);
         setDirty();
     }
 
     public void clearOwner(String unit) {
         owners.remove(unit);
         trusted.remove(unit);
+        debt.remove(unit);
+        rent.remove(unit);
+        tenants.remove(unit);
+        setDirty();
+    }
+
+    // --- коммуналка и аренда --------------------------------------------------------
+
+    public long debt(String unit) {
+        return debt.getOrDefault(unit, 0L);
+    }
+
+    public void setDebt(String unit, long amount) {
+        if (amount <= 0) {
+            debt.remove(unit);
+        } else {
+            debt.put(unit, amount);
+        }
+        setDirty();
+    }
+
+    public long rent(String unit) {
+        return rent.getOrDefault(unit, 0L);
+    }
+
+    public void setRent(String unit, long perDay) {
+        if (perDay <= 0) {
+            rent.remove(unit);
+        } else {
+            rent.put(unit, perDay);
+        }
+        setDirty();
+    }
+
+    public Owner tenant(String unit) {
+        return tenants.get(unit);
+    }
+
+    public void setTenant(String unit, UUID id, String name, long since) {
+        if (id == null) {
+            tenants.remove(unit);
+        } else {
+            tenants.put(unit, new Owner(id, name, since));
+        }
+        setDirty();
+    }
+
+    /** Что снимает игрок. */
+    public List<String> rentedBy(UUID player) {
+        List<String> out = new ArrayList<>();
+        tenants.forEach((unit, t) -> {
+            if (t.id().equals(player)) {
+                out.add(unit);
+            }
+        });
+        return out;
+    }
+
+    public long billedDay() {
+        return billedDay;
+    }
+
+    public void setBilledDay(long day) {
+        billedDay = day;
         setDirty();
     }
 
@@ -107,7 +181,11 @@ public class LifeData extends SavedData {
     /** Свой ли дом для игрока: владелец или ему дали ключи. */
     public boolean mayUse(String unit, UUID player) {
         Owner owner = owners.get(unit);
-        return owner == null || owner.id().equals(player) || trusted(unit).contains(player);
+        if (owner == null || owner.id().equals(player) || trusted(unit).contains(player)) {
+            return true;
+        }
+        Owner tenant = tenants.get(unit);
+        return tenant != null && tenant.id().equals(player);
     }
 
     // --- розыск и тюрьма ------------------------------------------------------------
@@ -173,6 +251,16 @@ public class LifeData extends SavedData {
             String unit = entry.getString("unit");
             data.owners.put(unit, new Owner(entry.getUUID("id"), entry.getString("name"),
                     entry.getLong("since")));
+            if (entry.getLong("debt") > 0) {
+                data.debt.put(unit, entry.getLong("debt"));
+            }
+            if (entry.getLong("rent") > 0) {
+                data.rent.put(unit, entry.getLong("rent"));
+            }
+            if (entry.hasUUID("tenant")) {
+                data.tenants.put(unit, new Owner(entry.getUUID("tenant"),
+                        entry.getString("tenantName"), entry.getLong("tenantSince")));
+            }
             Set<UUID> keys = new LinkedHashSet<>();
             for (Tag key : entry.getList("trusted", Tag.TAG_INT_ARRAY)) {
                 keys.add(NbtUtils.loadUUID(key));
@@ -181,6 +269,7 @@ public class LifeData extends SavedData {
                 data.trusted.put(unit, keys);
             }
         }
+        data.billedDay = tag.contains("billedDay") ? tag.getLong("billedDay") : -1;
         for (Tag item : tag.getList("names", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) item;
             data.trustedNames.put(entry.getUUID("id"), entry.getString("name"));
@@ -212,12 +301,21 @@ public class LifeData extends SavedData {
             entry.putUUID("id", owner.id());
             entry.putString("name", owner.name());
             entry.putLong("since", owner.since());
+            entry.putLong("debt", debt(unit));
+            entry.putLong("rent", rent(unit));
+            Owner tenant = tenants.get(unit);
+            if (tenant != null) {
+                entry.putUUID("tenant", tenant.id());
+                entry.putString("tenantName", tenant.name());
+                entry.putLong("tenantSince", tenant.since());
+            }
             ListTag keys = new ListTag();
             trusted(unit).forEach(id -> keys.add(NbtUtils.createUUID(id)));
             entry.put("trusted", keys);
             list.add(entry);
         });
         tag.put("owners", list);
+        tag.putLong("billedDay", billedDay);
         ListTag names = new ListTag();
         trustedNames.forEach((id, name) -> {
             CompoundTag entry = new CompoundTag();

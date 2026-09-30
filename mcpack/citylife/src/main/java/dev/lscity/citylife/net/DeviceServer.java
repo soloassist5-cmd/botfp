@@ -143,6 +143,16 @@ public final class DeviceServer {
         tag.putBoolean("simSlot", device.model().simSlot());
         tag.putBoolean("online", device.online());
         tag.putLong("balance", data.balance(id));
+        ListTag lines = new ListTag();
+        long nowTime = player.level().getGameTime();
+        for (CityData.Statement line : data.statement(id)) {
+            CompoundTag entry = new CompoundTag();
+            entry.putLong("amount", line.amount());
+            entry.putString("text", line.text());
+            entry.putLong("ago", Math.max(0, (nowTime - line.time()) / 20));
+            lines.add(entry);
+        }
+        tag.put("statement", lines);
         tag.putLong("cash", Money.cash(player));
         tag.putString("owner", player.getGameProfile().getName());
         tag.putLong("daytime", player.level().getDayTime() % 24000L);
@@ -244,7 +254,9 @@ public final class DeviceServer {
         for (var unit : dev.lscity.citylife.estate.Estate.all()) {
             var owner = life.owner(unit.id());
             boolean mine = owner != null && owner.id().equals(id);
-            if (!mine && (owner == null || !life.trusted(unit.id()).contains(id))) {
+            var tenant = life.tenant(unit.id());
+            boolean renting = tenant != null && tenant.id().equals(id);
+            if (!mine && !renting && (owner == null || !life.trusted(unit.id()).contains(id))) {
                 continue;
             }
             CompoundTag entry = new CompoundTag();
@@ -253,7 +265,10 @@ public final class DeviceServer {
             entry.putString("address", unit.address());
             entry.putString("rooms", unit.rooms());
             entry.putBoolean("mine", mine);
+            entry.putBoolean("renting", renting);
             entry.putString("owner", owner.name());
+            entry.putLong("upkeep", mine ? dev.lscity.citylife.estate.EstateBills.upkeep(unit) : 0);
+            entry.putLong("debt", mine ? life.debt(unit.id()) : 0);
             ListTag keys = new ListTag();
             for (UUID key : life.trusted(unit.id())) {
                 keys.add(net.minecraft.nbt.StringTag.valueOf(life.trustedName(key)));
@@ -433,7 +448,8 @@ public final class DeviceServer {
         if (text.isEmpty()) {
             return;
         }
-        if (!data.withdraw(player.getUUID(), AD_PRICE)) {
+        if (!data.withdraw(player.getUUID(), AD_PRICE, dev.lscity.citylife.data.Texts.ru("citylife.statement.ad"),
+                player.level().getGameTime())) {
             player.displayClientMessage(Component.translatable("citylife.bank.no_money")
                     .withStyle(net.minecraft.ChatFormatting.RED), true);
             return;
@@ -645,6 +661,11 @@ public final class DeviceServer {
                     .withStyle(ChatFormatting.RED));
             return;
         }
+        long when = player.level().getGameTime();
+        data.record(player.getUUID(), -amount, dev.lscity.citylife.data.Texts.ru("citylife.statement.sent",
+                target.getGameProfile().getName()), when);
+        data.record(target.getUUID(), amount, dev.lscity.citylife.data.Texts.ru("citylife.statement.received",
+                player.getGameProfile().getName()), when);
         player.sendSystemMessage(Component.translatable("citylife.bank.sent", amount,
                 target.getGameProfile().getName()).withStyle(ChatFormatting.GREEN));
         target.sendSystemMessage(Component.translatable("citylife.bank.received", amount,
@@ -656,7 +677,8 @@ public final class DeviceServer {
         if (offer == null) {
             return;
         }
-        if (!data.withdraw(player.getUUID(), offer.price())) {
+        if (!data.withdraw(player.getUUID(), offer.price(), dev.lscity.citylife.data.Texts.ru("citylife.statement.market"),
+                player.level().getGameTime())) {
             player.displayClientMessage(Component.translatable("citylife.market.no_money",
                     Money.format(offer.price())).withStyle(ChatFormatting.RED), false);
             return;

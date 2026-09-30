@@ -19,6 +19,9 @@ class BankApp extends DeviceApp {
 
     private UUID target;
     private String targetName = "";
+    /** Показывать выписку вместо перевода: переключается нажатием на карту. */
+    private boolean statement;
+    private int offset;
 
     BankApp(DeviceScreen screen) {
         super(screen);
@@ -60,6 +63,14 @@ class BankApp extends DeviceApp {
                 area[1] + 20, 0xFFFFFFFF);
         screen.text(g, screen.data().getString("owner"), area[0] + 10, area[1] + 36, 0x99FFFFFF);
         PhoneUi.roundedRect(g, area[0] + area[2] - 30, area[1] + 32, 20, 12, 3, 0x55FFFFFF);
+        String toggle = Component.translatable(statement ? "citylife.bank.back_to_pay"
+                : "citylife.bank.statement").getString();
+        screen.text(g, toggle, area[0] + area[2] - 34 - screen.font().width(toggle), area[1] + 7,
+                0xCCFFFFFF);
+        if (statement) {
+            renderStatement(g, area, h, t);
+            return;
+        }
 
         screen.text(g, Component.translatable("citylife.phone.cash").getString() + ": "
                 + Money.format(screen.data().getLong("cash")), area[0], area[1] + h + 6, t.dim());
@@ -92,8 +103,50 @@ class BankApp extends DeviceApp {
         }
     }
 
+    private void renderStatement(GuiGraphics g, int[] area, int top, DeviceScreen.Theme t) {
+        ListTag lines = screen.list("statement");
+        if (lines.isEmpty()) {
+            screen.empty(g, new int[]{area[0], area[1] + top, area[2], area[3] - top},
+                    "citylife.bank.statement_empty");
+            return;
+        }
+        int y = area[1] + top + 6;
+        for (int i = offset; i < lines.size(); i++) {
+            if (y + 20 > area[1] + area[3]) {
+                break;
+            }
+            CompoundTag line = lines.getCompound(i);
+            long amount = line.getLong("amount");
+            String sum = (amount > 0 ? "+" : "−") + Money.format(Math.abs(amount));
+            int sw = screen.font().width(sum);
+            screen.text(g, screen.trim(line.getString("text"), area[2] - sw - 8), area[0] + 2, y,
+                    t.text());
+            screen.text(g, sum, area[0] + area[2] - sw - 2, y, amount > 0 ? t.green() : t.red());
+            screen.text(g, BrowserApp.ago(line.getLong("ago")), area[0] + 2, y + 10, t.dim());
+            y += 22;
+        }
+    }
+
+    @Override
+    public boolean scroll(double delta) {
+        if (!statement) {
+            return false;
+        }
+        offset = Math.max(0, Math.min(screen.list("statement").size() - 1,
+                offset - (int) Math.signum(delta)));
+        return true;
+    }
+
     @Override
     public boolean click(double mx, double my, int[] area) {
+        if (screen.inside(mx, my, new int[]{area[0], area[1], area[2], 52})) {
+            statement = !statement;
+            offset = 0;
+            return true;
+        }
+        if (statement) {
+            return false;
+        }
         ListTag payees = screen.list("payees");
         for (int i = 0; i < payees.size() && i < 8; i++) {
             if (screen.inside(mx, my, chip(area, i))) {

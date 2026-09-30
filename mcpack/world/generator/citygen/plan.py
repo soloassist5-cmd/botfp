@@ -506,9 +506,10 @@ def _add_npc_spots(plan: Plan) -> None:
         roles = NPC_ROLES.get(lot.kind)
         if not roles:
             continue
-        # Управдом и кладовщик стоят только в именных домах и складах:
-        # в каждом из сорока подъездов одинаковый NPC — лишняя нагрузка.
-        if lot.kind in ("apartment", "warehouse") and not lot.label:
+        # Кладовщик стоит только на именных складах. Управдом — в каждом жилом
+        # доме: он продаёт квартиры своего подъезда, и без него квартиры
+        # безымянных домов покупались бы только в мэрии.
+        if lot.kind == "warehouse" and not lot.label:
             continue
         rng = random.Random(lot.seed ^ 0x5F5F)
         if lot.kind == "shop" and lot.shop_role:

@@ -125,6 +125,10 @@ public final class CityTests {
             if (e.getValue().build().isEmpty()) {
                 bad.append(role).append(" без товаров ");
             }
+            String missing = e.getValue().missing();
+            if (!missing.isEmpty()) {
+                bad.append(role).append(" нет предметов: ").append(missing).append(' ');
+            }
             npc.discard();
             checked++;
         }
@@ -281,6 +285,59 @@ public final class CityTests {
         h.succeed();
     }
 
+    /** Сутки: коммуналка списывается, аренда идёт хозяину; долг — дом отходит городу. */
+    @SelfTest
+    public static void upkeepAndRent(TestKit h) {
+        FakePlayer owner = player(h, "Landlord");
+        FakePlayer tenant = player(h, "Tenant");
+        var server = h.getLevel().getServer();
+        LifeData life = LifeData.get(server);
+        CityData bank = CityData.get(server);
+        Estate.Unit unit = testHouse(h, "test_house_rent");
+        Estate.addTestUnit(unit);
+        try {
+            long upkeep = dev.lscity.citylife.estate.EstateBills.upkeep(unit);
+            life.setOwner(unit.id(), owner.getUUID(), "Landlord", 0L);
+            life.setRent(unit.id(), 50);
+            life.setTenant(unit.id(), tenant.getUUID(), "Tenant", 0L);
+            bank.setBalance(owner.getUUID(), 1000);
+            bank.setBalance(tenant.getUUID(), 500);
+            dev.lscity.citylife.estate.EstateBills.bill(server, life);
+            if (bank.balance(owner.getUUID()) != 1000 - upkeep + 50) {
+                h.fail("хозяин: ждали " + (1000 - upkeep + 50) + ", на счёте "
+                        + bank.balance(owner.getUUID()));
+            }
+            if (bank.balance(tenant.getUUID()) != 450) {
+                h.fail("арендатор не заплатил: " + bank.balance(tenant.getUUID()));
+            }
+            if (!life.mayUse(unit.id(), tenant.getUUID())) {
+                h.fail("у арендатора нет доступа в дом");
+            }
+            bank.setBalance(owner.getUUID(), 0);
+            bank.setBalance(tenant.getUUID(), 0);
+            dev.lscity.citylife.estate.EstateBills.bill(server, life);
+            if (life.tenant(unit.id()) != null) {
+                h.fail("аренда без денег не закончилась");
+            }
+            if (life.debt(unit.id()) != upkeep) {
+                h.fail("долг не записан: " + life.debt(unit.id()));
+            }
+            for (int day = 0; day < 10 && life.owner(unit.id()) != null; day++) {
+                dev.lscity.citylife.estate.EstateBills.bill(server, life);
+            }
+            if (life.owner(unit.id()) != null) {
+                h.fail("дом с долгом не отошёл городу");
+            }
+            if (bank.statement(owner.getUUID()).isEmpty()) {
+                h.fail("в выписке хозяина нет операций");
+            }
+        } finally {
+            life.clearOwner(unit.id());
+            Estate.removeTestUnit(unit.id());
+        }
+        h.succeed();
+    }
+
     /** Каталог жилья целый: у каждого объекта цена, адрес и дверь на стене дома. */
     @SelfTest
     public static void estateCatalog(TestKit h) {
@@ -333,6 +390,27 @@ public final class CityTests {
             }
         }
         h.succeed();
+    }
+
+    /** Машина встаёт поодаль, а сотрудники сами доходят до места вызова. */
+    @SelfTest(timeout = 300)
+    public static void crewWalksToScene(TestKit h) {
+        ServerLevel level = h.getLevel();
+        BlockPos scene = h.absolutePos(new BlockPos(2, 1, 2));
+        int id = Emergency.dispatch(level.getServer(), "medic", Vec3.atBottomCenterOf(scene));
+        h.succeedWhen(() -> {
+            double best = Double.MAX_VALUE;
+            for (UUID uuid : Emergency.crewEntities(id)) {
+                Entity e = level.getEntity(uuid);
+                if (e != null && e.getTags().contains("citylife_resp_medic")) {
+                    best = Math.min(best, Math.sqrt(e.distanceToSqr(Vec3.atBottomCenterOf(scene))));
+                }
+            }
+            if (best > 3.0D) {
+                h.fail("медики не дошли: ближайший в " + Math.round(best) + " блоках");
+            }
+            Emergency.recall(level.getServer(), id);
+        });
     }
 
     /** Кража даёт звезду, задержание снимает розыск, штрафует и сажает в камеру. */
