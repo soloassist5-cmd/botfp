@@ -4,6 +4,8 @@
 
   Client:  .\install.ps1 -Target client -Path "$env:APPDATA\.minecraft-ls-city"
   Server:  .\install.ps1 -Target server -Path "C:\ls-city-server"
+  Weak PC: add -Quality low (normal and high also exist). The choice is
+           remembered in .lscity-quality.txt and reused on the next update.
 
   Downloads the mods from Modrinth using install\mods.list and checks sha512.
   Running it again only fetches what is missing.
@@ -27,6 +29,9 @@ param(
     [switch]$NoWorld,
     [switch]$WithOptional,
     [switch]$Clean,
+    # Graphics and city load profile: low, normal or high. Empty = keep the
+    # previous choice (or normal on a fresh install).
+    [string]$Quality = '',
     # Set by official.ps1: it installs Forge and the profile itself.
     [switch]$NoLauncherHint
 )
@@ -77,6 +82,12 @@ $Fallback = @{
     'install.forge_client3'  = 'and point it at this folder as the game folder:'
     'install.head_done'      = 'Done'
     'install.done_note'      = 'Give the game 6 GB of RAM (-Xmx6G) and use Java 17.'
+    'install.bad_quality'    = 'unknown -Quality {0}: use low, normal or high'
+    'install.head_quality'   = 'Performance profile'
+    'install.quality_low'    = 'weak PC: short view distance, simple graphics, fewer pedestrians, no Distant Horizons and shaders'
+    'install.quality_normal' = 'normal PC: settings as the pack ships them'
+    'install.quality_high'   = 'strong PC: long view distance, fancy graphics, more pedestrians'
+    'install.quality_kept'   = 'your game settings are kept (options.txt); profile applied to the city only'
 }
 
 $Msg = @{}
@@ -101,6 +112,17 @@ function Write-Warn($text) { Write-Host " !  $text" -ForegroundColor Yellow }
 function Die      ($text) { Write-Host ((T 'install.error') + ": $text") -ForegroundColor Red; exit 1 }
 
 if (-not (Test-Path $ModsList)) { Die ((T 'install.no_modslist') -f $ModsList) }
+
+# The performance profile: an explicit -Quality wins, otherwise the one
+# picked last time in this folder, otherwise normal.
+$QualityFile = Join-Path $Path '.lscity-quality.txt'
+$QualityGiven = [bool]$Quality
+if (-not $Quality -and (Test-Path -LiteralPath $QualityFile)) {
+    $Quality = (Get-Content -LiteralPath $QualityFile -TotalCount 1).Trim()
+}
+if (-not $Quality) { $Quality = 'normal' }
+$Quality = $Quality.ToLowerInvariant()
+if (@('low', 'normal', 'high') -notcontains $Quality) { Die ((T 'install.bad_quality') -f $Quality) }
 
 # A folder of already downloaded jars: when present, no network is needed.
 if (-not $ModsDir) {
@@ -137,6 +159,10 @@ foreach ($line in $lines) {
 }
 if ($Target -eq 'server')  { $entries = $entries | Where-Object { $_.Side -ne 'client' } }
 if (-not $WithOptional)    { $entries = $entries | Where-Object { -not $_.Optional } }
+# A weak PC does without far terrain and shaders: both cost a lot of FPS.
+if ($Quality -eq 'low') {
+    $entries = $entries | Where-Object { $_.FileName -notmatch '^(DistantHorizons|oculus)' }
+}
 
 $expected = New-Object System.Collections.Generic.List[string]
 $failed   = New-Object System.Collections.Generic.List[string]
@@ -247,8 +273,10 @@ Write-Ok ((T 'install.mods_count') -f (Get-ChildItem -LiteralPath $TargetMods -F
 
 # --- 2. Configs --------------------------------------------------------------
 Write-Head (T 'install.head_configs')
-function Copy-Tree($src, $dst) {
+function Copy-Tree($src, $dst, [string[]]$Keep = @()) {
     # File by file: Copy-Item -Recurse fails when the folder already exists.
+    # Files named in -Keep are only written when missing: they hold the
+    # player's own settings (options.txt) or the admin's (server.properties).
     if (-not (Test-Path -LiteralPath $src)) { return }
     $srcFull = (Resolve-Path -LiteralPath $src).Path
     New-Item -ItemType Directory -Force -Path $dst | Out-Null
@@ -256,6 +284,7 @@ function Copy-Tree($src, $dst) {
         $rel = $file.FullName.Substring($srcFull.Length).TrimStart('\', '/')
         # The name must not clash with the -Target parameter: case is ignored.
         $destFile = Join-Path $dst $rel
+        if (($Keep -contains $rel) -and (Test-Path -LiteralPath $destFile)) { continue }
         $destDir = Split-Path -Parent $destFile
         if ($destDir -and -not (Test-Path -LiteralPath $destDir)) {
             New-Item -ItemType Directory -Force -Path $destDir | Out-Null
@@ -265,13 +294,71 @@ function Copy-Tree($src, $dst) {
     Write-Host ("  + " + (Split-Path -Leaf $srcFull) + "\")
 }
 if ($Target -eq 'client') {
-    Copy-Tree (Join-Path $PackDir 'overrides') $Dest
+    # options.txt is only replaced when a profile was picked explicitly.
+    $keep = if ($QualityGiven) { @() } else { @('options.txt') }
+    Copy-Tree (Join-Path $PackDir 'overrides') $Dest -Keep $keep
 } else {
     foreach ($sub in @('config', 'kubejs', 'defaultconfigs')) {
         Copy-Tree (Join-Path $PackDir "overrides\$sub") (Join-Path $Dest $sub)
     }
-    Copy-Tree (Join-Path $PackDir 'server') $Dest
+    # An update must not reset the accepted EULA or the admin's properties.
+    Copy-Tree (Join-Path $PackDir 'server') $Dest -Keep @('eula.txt', 'server.properties')
 }
+
+# --- 2b. Performance profile ---------------------------------------------------
+# Rewrite "key<sep>value" lines in a settings file, keeping everything else.
+function Set-Settings([string]$File, [hashtable]$Values, [string]$Sep) {
+    if (-not (Test-Path -LiteralPath $File)) { return }
+    $lines = New-Object System.Collections.Generic.List[string]
+    foreach ($line in Get-Content -LiteralPath $File -Encoding UTF8) { $lines.Add($line) }
+    foreach ($key in $Values.Keys) {
+        $pattern = '^(\s*)' + [regex]::Escape($key) + '\s*' + [regex]::Escape($Sep.Trim()) + '.*$'
+        $found = $false
+        for ($n = 0; $n -lt $lines.Count; $n++) {
+            if ($lines[$n] -match $pattern) {
+                $lines[$n] = $Matches[1] + $key + $Sep + $Values[$key]
+                $found = $true
+            }
+        }
+        # TOML keys live in sections, so a missing one is not appended there.
+        if (-not $found -and $Sep -ne ' = ') { $lines.Add($key + $Sep + $Values[$key]) }
+    }
+    [System.IO.File]::WriteAllLines($File, $lines, (New-Object System.Text.UTF8Encoding $false))
+}
+$Profiles = @{
+    low = @{
+        options = @{ renderDistance = '6'; simulationDistance = '5'; maxFps = '60'; graphicsMode = '0'
+                     ao = 'false'; entityShadows = 'false'; entityDistanceScaling = '0.5'
+                     particles = '2'; mipmapLevels = '0'; biomeBlendRadius = '0' }
+        city    = @{ pedestrians = '2'; pedestriansMax = '16' }
+        server  = @{ 'view-distance' = '6'; 'simulation-distance' = '5' }
+    }
+    normal = @{
+        options = @{ renderDistance = '12'; simulationDistance = '8'; maxFps = '120'; graphicsMode = '1'
+                     ao = 'true'; entityShadows = 'true'; entityDistanceScaling = '0.75'
+                     particles = '1'; mipmapLevels = '4'; biomeBlendRadius = '2' }
+        city    = @{ pedestrians = '6'; pedestriansMax = '48' }
+        server  = @{ 'view-distance' = '8'; 'simulation-distance' = '6' }
+    }
+    high = @{
+        options = @{ renderDistance = '16'; simulationDistance = '10'; maxFps = '260'; graphicsMode = '1'
+                     ao = 'true'; entityShadows = 'true'; entityDistanceScaling = '1.0'
+                     particles = '0'; mipmapLevels = '4'; biomeBlendRadius = '3' }
+        city    = @{ pedestrians = '10'; pedestriansMax = '80' }
+        server  = @{ 'view-distance' = '12'; 'simulation-distance' = '8' }
+    }
+}
+Write-Head (T 'install.head_quality')
+$chosen = $Profiles[$Quality]
+Set-Settings (Join-Path $Dest 'config\citylife-common.toml') $chosen.city ' = '
+if ($Target -eq 'client') {
+    if ($QualityGiven) { Set-Settings (Join-Path $Dest 'options.txt') $chosen.options ':' }
+    else { Write-Host ('  ' + (T 'install.quality_kept')) }
+} elseif ($QualityGiven) {
+    Set-Settings (Join-Path $Dest 'server.properties') $chosen.server '='
+}
+Set-Content -LiteralPath $QualityFile -Value $Quality -Encoding ASCII
+Write-Ok ("$Quality - " + (T "install.quality_$Quality"))
 
 # --- 3. World ----------------------------------------------------------------
 

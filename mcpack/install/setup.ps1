@@ -40,6 +40,11 @@ $Fallback = @{
     'setup.missing'      = 'No such folder: {0}'
     'setup.installing'   = 'Installing into: {0}'
     'setup.size_note'    = 'About 342 MB will be downloaded, this can take a few minutes.'
+    'setup.quality_head'   = 'What kind of computer is this?'
+    'setup.quality_low'    = '[1] weak (laptop, built-in graphics, 8 GB RAM)'
+    'setup.quality_normal' = '[2] normal'
+    'setup.quality_high'   = '[3] strong (gaming graphics card, 16+ GB RAM)'
+    'setup.quality_ask'    = 'Number, Enter = [2]'
 }
 
 $Msg = @{}
@@ -137,9 +142,18 @@ if (-not (Test-Path -LiteralPath $target)) {
     return
 }
 
+
+# Performance profile: graphics, view distance and pedestrians for this PC.
+Say (T 'setup.quality_head') 'White'
+Say ('  ' + (T 'setup.quality_low')) 'Cyan'
+Say ('  ' + (T 'setup.quality_normal')) 'Cyan'
+Say ('  ' + (T 'setup.quality_high')) 'Cyan'
+$pick = Read-Host (T 'setup.quality_ask')
+$quality = switch (("$pick").Trim()) { '1' { 'low' } '3' { 'high' } default { 'normal' } }
+
 Say ''
 Say ((T 'setup.installing') -f $target) 'Green'
 Say (T 'setup.size_note') 'DarkGray'
 Say ''
 
-& $installer -Target client -Path $target
+& $installer -Target client -Path $target -Quality $quality

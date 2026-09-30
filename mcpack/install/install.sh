@@ -4,6 +4,8 @@
 #
 #  Клиент:  ./install.sh --target client --path ~/.minecraft-ls-city
 #  Сервер:  ./install.sh --target server --path ~/ls-city-server
+#  Слабый ПК: добавь --quality low (есть ещё normal и high). Выбор
+#  запоминается в .lscity-quality.txt и повторяется при обновлении.
 #
 #  Скачивает моды с Modrinth по install/mods.list и проверяет sha512.
 #  Повторный запуск докачивает только недостающее.
@@ -22,6 +24,7 @@ WITH_WORLD=1
 INCLUDE_OPTIONAL=0
 CLEAN=0
 JOBS=4
+QUALITY=""
 
 RED=$'\033[31m'; GRN=$'\033[32m'; YEL=$'\033[33m'; BLD=$'\033[1m'; RST=$'\033[0m'
 say()  { printf '%s\n' "$*"; }
@@ -42,6 +45,8 @@ usage() {
   --mods-dir DIR           брать моды из этой папки вместо загрузки
                            (по умолчанию mods-bundle рядом с паком, если есть)
   --jobs N                 параллельных загрузок (по умолчанию 4)
+  --quality low|normal|high  профиль под ПК: графика, дальность, прохожие
+                           (слабый — без Distant Horizons и шейдеров)
   -h, --help               эта справка
 TXT
 }
@@ -55,6 +60,7 @@ while [[ $# -gt 0 ]]; do
     --clean)  CLEAN=1; shift ;;
     --mods-dir) MODS_SOURCE="${2:?}"; shift 2 ;;
     --jobs)   JOBS="${2:?}"; shift 2 ;;
+    --quality) QUALITY="${2:?}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) die "неизвестный параметр: $1 (--help для справки)" ;;
   esac
@@ -79,6 +85,15 @@ FORGE_VERSION="$(sed -n 's/^# MC .*forge \([0-9.]*\)$/\1/p' "$MODS_LIST" | head 
 
 mkdir -p "$DEST"
 DEST="$(cd "$DEST" && pwd)"
+
+# Профиль производительности: явный --quality, иначе прошлый выбор, иначе normal.
+QUALITY_FILE="$DEST/.lscity-quality.txt"
+QUALITY_GIVEN=0
+if [[ -n "$QUALITY" ]]; then QUALITY_GIVEN=1
+elif [[ -f "$QUALITY_FILE" ]]; then QUALITY="$(head -n 1 "$QUALITY_FILE" | tr -d '[:space:]')"; fi
+QUALITY="${QUALITY:-normal}"
+[[ "$QUALITY" == "low" || "$QUALITY" == "normal" || "$QUALITY" == "high" ]] \
+  || die "--quality: low, normal или high"
 MODS_DIR="$DEST/mods"
 mkdir -p "$MODS_DIR"
 
@@ -123,6 +138,8 @@ while IFS=$'\t' read -r side group optional filename sha size url; do
   [[ "$side" == \#* || -z "${side:-}" ]] && continue
   [[ "$TARGET" == "server" && "$side" == "client" ]] && continue
   [[ "$optional" == "1" && "$INCLUDE_OPTIONAL" == "0" ]] && continue
+  # Слабому ПК не нужны дальняя прорисовка и шейдеры: они съедают FPS.
+  [[ "$QUALITY" == "low" && "$filename" =~ ^(DistantHorizons|oculus) ]] && continue
   expected_files+=("$filename")
   ( download_one "$filename" "$sha" "$url" || echo "$filename" >> "$fail_list" ) &
   running=$((running+1))
@@ -188,23 +205,87 @@ ok "Модов в mods/: $(find "$MODS_DIR" -maxdepth 1 -name '*.jar' | wc -l | 
 
 # --- 2. Конфиги и скрипты ----------------------------------------------------
 head1 "Конфиги"
-copy_tree() { # src dst
+copy_tree() { # src dst [файлы, которые не перезаписывать, если уже есть]
   [[ -d "$1" ]] || return 0
-  mkdir -p "$2"
-  ( cd "$1" && tar cf - . ) | ( cd "$2" && tar xf - )
-  printf '  + %s/\n' "$(basename "$1")"
+  local src="$1" dst="$2" keep_dir; shift 2
+  mkdir -p "$dst"
+  keep_dir="$(mktemp -d)"
+  for f in "$@"; do [[ -f "$dst/$f" ]] && cp -p "$dst/$f" "$keep_dir/$f"; done
+  ( cd "$src" && tar cf - . ) | ( cd "$dst" && tar xf - )
+  for f in "$@"; do [[ -f "$keep_dir/$f" ]] && cp -p "$keep_dir/$f" "$dst/$f"; done
+  rm -rf "$keep_dir"
+  printf '  + %s/\n' "$(basename "$src")"
 }
 if [[ "$TARGET" == "client" ]]; then
-  copy_tree "$PACK_DIR/overrides" "$DEST"
+  # options.txt игрока меняем, только если профиль выбран явно.
+  if (( QUALITY_GIVEN )); then copy_tree "$PACK_DIR/overrides" "$DEST"
+  else copy_tree "$PACK_DIR/overrides" "$DEST" options.txt; fi
 else
   for sub in config kubejs defaultconfigs; do
     copy_tree "$PACK_DIR/overrides/$sub" "$DEST/$sub"
   done
-  copy_tree "$PACK_DIR/server" "$DEST"
+  # Обновление не должно сбрасывать принятую EULA и настройки админа.
+  copy_tree "$PACK_DIR/server" "$DEST" eula.txt server.properties
   chmod +x "$DEST"/*.sh 2>/dev/null || true
 fi
 
+# --- 2б. Профиль производительности ------------------------------------------
+head1 "Профиль производительности"
+# set_settings файл разделитель ключ=значение... — меняет строки «ключ<разд>…».
+set_settings() {
+  local file="$1" sep="$2"; shift 2
+  [[ -f "$file" ]] || return 0
+  local pair key value tmp
+  for pair in "$@"; do
+    key="${pair%%=*}"; value="${pair#*=}"; tmp="$(mktemp)"
+    awk -v k="$key" -v v="$value" -v s="$sep" '
+      BEGIN { t = s; gsub(/ /, "", t); found = 0 }
+      {
+        line = $0; lead = line; sub(/[^ \t].*$/, "", lead); rest = substr(line, length(lead) + 1)
+        if (index(rest, k) == 1) {
+          after = substr(rest, length(k) + 1); sub(/^[ \t]*/, "", after)
+          if (index(after, t) == 1) { print lead k s v; found = 1; next }
+        }
+        print line
+      }
+      END { if (!found && s != " = ") print k s v }' "$file" > "$tmp" && cat "$tmp" > "$file"
+    rm -f "$tmp"
+  done
+}
+case "$QUALITY" in
+  low)    OPTS=(renderDistance=6 simulationDistance=5 maxFps=60 graphicsMode=0 ao=false
+                entityShadows=false entityDistanceScaling=0.5 particles=2 mipmapLevels=0 biomeBlendRadius=0)
+          CITY=(pedestrians=2 pedestriansMax=16); PROPS=(view-distance=6 simulation-distance=5)
+          NOTE="слабый ПК: короткая дальность, простая графика, меньше прохожих, без Distant Horizons и шейдеров" ;;
+  high)   OPTS=(renderDistance=16 simulationDistance=10 maxFps=260 graphicsMode=1 ao=true
+                entityShadows=true entityDistanceScaling=1.0 particles=0 mipmapLevels=4 biomeBlendRadius=3)
+          CITY=(pedestrians=10 pedestriansMax=80); PROPS=(view-distance=12 simulation-distance=8)
+          NOTE="мощный ПК: большая дальность, красивая графика, больше прохожих" ;;
+  *)      OPTS=(renderDistance=12 simulationDistance=8 maxFps=120 graphicsMode=1 ao=true
+                entityShadows=true entityDistanceScaling=0.75 particles=1 mipmapLevels=4 biomeBlendRadius=2)
+          CITY=(pedestrians=6 pedestriansMax=48); PROPS=(view-distance=8 simulation-distance=6)
+          NOTE="обычный ПК: настройки сборки как есть" ;;
+esac
+set_settings "$DEST/config/citylife-common.toml" " = " "${CITY[@]}"
+if [[ "$TARGET" == "client" ]]; then
+  if (( QUALITY_GIVEN )); then set_settings "$DEST/options.txt" ":" "${OPTS[@]}"
+  else say "  ваши настройки игры (options.txt) сохранены, профиль применён только к городу"; fi
+elif (( QUALITY_GIVEN )); then
+  set_settings "$DEST/server.properties" "=" "${PROPS[@]}"
+fi
+echo "$QUALITY" > "$QUALITY_FILE"
+ok "$QUALITY — $NOTE"
+
 # --- 3. Мир ------------------------------------------------------------------
+# Заменить datapacks/citylife в уже созданном мире на свежий из архива:
+# регионы, игроки, дома и счета остаются как были.
+update_datapack() { # zip мир
+  local tmp; tmp="$(mktemp -d)"
+  unzip -q -o "$1" 'los-santos/datapacks/citylife/*' -d "$tmp"
+  rm -rf "$2/datapacks/citylife"; mkdir -p "$2/datapacks"
+  mv "$tmp/los-santos/datapacks/citylife" "$2/datapacks/citylife"
+  rm -rf "$tmp"
+}
 if (( WITH_WORLD )); then
   head1 "Мир Los Santos"
   world_zip="$(find "$PACK_DIR/world" -maxdepth 1 -name 'los-santos*.zip' 2>/dev/null | sort | head -1)"
@@ -215,13 +296,15 @@ if (( WITH_WORLD )); then
   elif [[ "$TARGET" == "client" ]]; then
     mkdir -p "$DEST/saves"
     if [[ -d "$DEST/saves/los-santos" ]]; then
-      warn "мир уже есть: $DEST/saves/los-santos (не перезаписываю)"
+      update_datapack "$world_zip" "$DEST/saves/los-santos"
+      ok "мир сохранён, датапак города обновлён (жители, справка, правила)"
     else
       unzip -q "$world_zip" -d "$DEST/saves"; ok "мир распакован в saves/los-santos"
     fi
   else
     if [[ -d "$DEST/world" ]]; then
-      warn "мир сервера уже есть: $DEST/world (не перезаписываю)"
+      update_datapack "$world_zip" "$DEST/world"
+      ok "мир сохранён, датапак города обновлён (жители, справка, правила)"
     else
       tmp="$(mktemp -d)"; unzip -q "$world_zip" -d "$tmp"
       mv "$tmp/los-santos" "$DEST/world"; rm -rf "$tmp"

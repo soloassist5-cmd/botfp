@@ -84,3 +84,16 @@ official.backup = копия старых профилей: {0}
 official.head_done = Готово
 official.done1 = Открой официальный лаунчер -> слева от кнопки «Играть» выбери «LS City Life» -> Играть.
 official.done2 = Мир Los Santos — в «Одиночной игре».
+
+# Профиль производительности
+install.bad_quality = неизвестный профиль -Quality {0}: бывает low, normal или high
+install.head_quality = Профиль производительности
+install.quality_low = слабый ПК: короткая дальность, простая графика, меньше прохожих, без Distant Horizons и шейдеров
+install.quality_normal = обычный ПК: настройки сборки как есть
+install.quality_high = мощный ПК: большая дальность, красивая графика, больше прохожих
+install.quality_kept = ваши настройки игры (options.txt) сохранены, профиль применён только к городу
+setup.quality_head = Какой у вас компьютер?
+setup.quality_low = [1] слабый (ноутбук, встроенная видеокарта, 8 ГБ памяти)
+setup.quality_normal = [2] обычный
+setup.quality_high = [3] мощный (игровая видеокарта, 16+ ГБ памяти)
+setup.quality_ask = Номер, Enter = [2]

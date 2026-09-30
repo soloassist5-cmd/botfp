@@ -52,6 +52,11 @@ $Fallback = @{
     'official.head_done'    = 'Done'
     'official.done1'        = 'Open the official launcher -> Play -> pick "LS City Life" next to the Play button.'
     'official.done2'        = 'The Los Santos world is in Singleplayer.'
+    'setup.quality_head'   = 'What kind of computer is this?'
+    'setup.quality_low'    = '[1] weak (laptop, built-in graphics, 8 GB RAM)'
+    'setup.quality_normal' = '[2] normal'
+    'setup.quality_high'   = '[3] strong (gaming graphics card, 16+ GB RAM)'
+    'setup.quality_ask'    = 'Number, Enter = [2]'
 }
 
 $Msg = @{}
@@ -144,8 +149,17 @@ if (Test-Path -LiteralPath $versionJson) {
 
 # --- 2. The pack itself --------------------------------------------------------------
 Head (T 'official.head_pack')
-if ($ModsDir) { & $installer -Target client -Path $GameDir -ModsDir $ModsDir -NoLauncherHint }
-else { & $installer -Target client -Path $GameDir -NoLauncherHint }
+# Performance profile: graphics, view distance and pedestrians for this PC.
+Say (T 'setup.quality_head') 'White'
+Say ('  ' + (T 'setup.quality_low')) 'Cyan'
+Say ('  ' + (T 'setup.quality_normal')) 'Cyan'
+Say ('  ' + (T 'setup.quality_high')) 'Cyan'
+$pick = Read-Host (T 'setup.quality_ask')
+$quality = switch (("$pick").Trim()) { '1' { 'low' } '3' { 'high' } default { 'normal' } }
+# A weak PC rarely has 6 GB to spare: 4 GB is enough without Distant Horizons.
+if ($quality -eq 'low' -and -not $PSBoundParameters.ContainsKey('Memory')) { $Memory = '4G' }
+if ($ModsDir) { & $installer -Target client -Path $GameDir -ModsDir $ModsDir -NoLauncherHint -Quality $quality }
+else { & $installer -Target client -Path $GameDir -NoLauncherHint -Quality $quality }
 
 # --- 3. Profile in the official launcher ---------------------------------------------
 Head (T 'official.head_profile')
