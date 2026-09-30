@@ -36,10 +36,20 @@ public final class CityRules {
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onJoin(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() || !CityConfig.CONFIG.noMobs.get()) {
+        if (event.getLevel().isClientSide()) {
             return;
         }
         Entity entity = event.getEntity();
+        // Житель прошлого поколения: датапак уже расставил замену, этот уходит,
+        // как только его чанк загрузился. Наряды 112 живут своей жизнью.
+        if (entity.getTags().contains("citylife_npc") && !entity.getTags().contains("citylife_crew")
+                && !entity.getTags().contains(dev.lscity.citylife.trade.ShopCatalog.GEN_TAG)) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!CityConfig.CONFIG.noMobs.get()) {
+            return;
+        }
         if (entity instanceof Mob && !allowed(entity)) {
             event.setCanceled(true);
         }

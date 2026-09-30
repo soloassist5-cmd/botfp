@@ -423,7 +423,7 @@
   "citylife.job.taxi.pickup": "Пассажир сел. Едем: %s",
   "citylife.job.need_car": "Для такси нужно сидеть в машине.",
   "citylife.job.shift.progress": "Смена: %s / %s с",
-  "citylife.job.info": "%s м · осталось %s:%02d",
+  "citylife.job.info": "%s м · осталось %s",
   "citylife.job.shift.info": "%s/%s с · %s м",
   "citylife.job.paid": "%s: работа сделана, на счёт %s.",
   "citylife.job.busy": "Сначала закончите или бросьте текущее задание.",
@@ -436,5 +436,7 @@
   "citylife.laptop.place_hint": "Shift+ПКМ по столу — поставить. На столе: ПКМ — открыть крышку и включить, Shift+ПКМ — закрыть и забрать.",
   "citylife.market.desc.jobs": "Курьер, такси, смены — заработок на счёт",
   "citylife.market.desc.homes": "Своё жильё: маршрут домой и ключи друзьям",
-  "citylife.shop.empty": "Прилавок «%s» пуст: в сборке нет предметов %s. Переустановите сборку или сообщите администратору."
+  "citylife.shop.empty": "Прилавок «%s» пуст: в сборке нет предметов %s. Переустановите сборку или сообщите администратору.",
+  "citylife.hud.wanted": "Розыск",
+  "citylife.hud.jail": "Камера: %s"
 }

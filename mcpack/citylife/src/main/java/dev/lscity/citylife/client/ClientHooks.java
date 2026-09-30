@@ -43,6 +43,10 @@ public final class ClientHooks {
 
     public static void handlePanel(dev.lscity.citylife.net.PanelPacket packet) {
         Minecraft minecraft = Minecraft.getInstance();
+        if ("hud".equals(packet.kind())) {
+            HudOverlay.update(packet.snapshot());
+            return;
+        }
         if ("realty".equals(packet.kind())) {
             if (minecraft.screen instanceof dev.lscity.citylife.client.screen.RealtyScreen screen) {
                 screen.update(packet.snapshot());

@@ -27,6 +27,9 @@ public final class ShopHandler {
     /** Тег «это городской житель» роли не задаёт. */
     private static final String MARKER = "npc";
 
+    /** Чем закончился последний клик по жителю — для автотестов. */
+    public static volatile String lastOutcome = "";
+
     private ShopHandler() {
     }
 
@@ -62,11 +65,13 @@ public final class ShopHandler {
         // Риелтор и управдом ведут агентство недвижимости: каталог жилья,
         // а товары для дома — кнопкой в том же окне.
         if ("realtor".equals(role)) {
+            lastOutcome = "realty";
             dev.lscity.citylife.estate.EstateServer.open(player, target);
             return;
         }
         // Приехавший по вызову 112 наряд: у каждого свой разговор.
         if (role.startsWith("resp_")) {
+            lastOutcome = "crew:" + role.substring(5);
             dev.lscity.citylife.city.Emergency.talk(player, target, role.substring(5));
             return;
         }
@@ -74,6 +79,7 @@ public final class ShopHandler {
         if (shop != null) {
             CityTrader trader = new CityTrader(target, shop);
             if (trader.hasGoods()) {
+                lastOutcome = "shop:" + role;
                 trader.open(player);
                 dev.lscity.citylife.cmd.CityCommands.note("shop=" + shop.title());
                 return;
@@ -82,6 +88,7 @@ public final class ShopHandler {
                 // Товар есть в каталоге, но предметов нет в игре: говорим прямо,
                 // чего не хватает, а не отмахиваемся репликой.
                 String missing = shop.missing();
+                lastOutcome = "empty:" + role;
                 CityLife.LOG.warn("City Life: прилавок {} ({}) пуст, нет предметов: {}",
                         role, shop.title(), missing);
                 player.displayClientMessage(Component.translatable("citylife.shop.empty",
@@ -89,6 +96,7 @@ public final class ShopHandler {
                 return;
             }
         }
+        lastOutcome = "line:" + role;
         player.displayClientMessage(speak(target, role), false);
     }
 

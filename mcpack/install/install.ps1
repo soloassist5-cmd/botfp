@@ -61,6 +61,7 @@ $Fallback = @{
     'install.head_world'     = 'Los Santos world'
     'install.no_world'       = 'world archive not found - skipping'
     'install.world_exists'   = 'world is already there - keeping it'
+    'install.world_datapack' = 'world kept, city datapack updated (NPCs, guide, rules)'
     'install.world_ok'       = 'world unpacked into saves\los-santos'
     'install.server_world_exists' = 'server world is already there - keeping it'
     'install.server_world_ok' = 'world unpacked into world\'
@@ -273,6 +274,30 @@ if ($Target -eq 'client') {
 }
 
 # --- 3. World ----------------------------------------------------------------
+
+# Replace datapacks\citylife inside an existing world with the one from the
+# world archive. Only that folder is touched: regions, player data, homes and
+# bank accounts stay as they are.
+function Update-WorldDatapack([string]$ZipPath, [string]$WorldDir) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $prefix = 'los-santos/datapacks/citylife/'
+    $target = Join-Path $WorldDir 'datapacks\citylife'
+    if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+    try {
+        foreach ($entry in $archive.Entries) {
+            $name = $entry.FullName.Replace('\', '/')
+            if (-not $name.StartsWith($prefix) -or $name.EndsWith('/')) { continue }
+            $rel = $name.Substring($prefix.Length).Replace('/', '\')
+            $out = Join-Path $target $rel
+            $dir = Split-Path -Parent $out
+            if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $out, $true)
+        }
+    } finally {
+        $archive.Dispose()
+    }
+}
 if (-not $NoWorld) {
     Write-Head (T 'install.head_world')
     $zip = Get-ChildItem -Path (Join-Path $PackDir 'world') -Filter 'los-santos*.zip' `
@@ -283,14 +308,18 @@ if (-not $NoWorld) {
         $saves = Join-Path $Dest 'saves'
         New-Item -ItemType Directory -Force -Path $saves | Out-Null
         if (Test-Path (Join-Path $saves 'los-santos')) {
-            Write-Warn (T 'install.world_exists')
+            # Keep the player's world, but refresh the city datapack inside it:
+            # new NPCs, guide and rules arrive without losing homes and money.
+            Update-WorldDatapack $zip.FullName (Join-Path $saves 'los-santos')
+            Write-Ok (T 'install.world_datapack')
         } else {
             Expand-Archive -LiteralPath $zip.FullName -DestinationPath $saves -Force
             Write-Ok (T 'install.world_ok')
         }
     } else {
         if (Test-Path (Join-Path $Dest 'world')) {
-            Write-Warn (T 'install.server_world_exists')
+            Update-WorldDatapack $zip.FullName (Join-Path $Dest 'world')
+            Write-Ok (T 'install.world_datapack')
         } else {
             # GetTempPath is safer than $env:TEMP: the variable is not always set.
             $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('ls-city-' + [guid]::NewGuid())

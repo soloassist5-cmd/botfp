@@ -145,7 +145,33 @@ public final class Emergency {
     private static final Map<String, Integer> COLOUR = Map.of(
             "police", 0x1C2B5A, "medic", 0xF4F4F4, "fire", 0xC8201E);
 
-    private static void arrive(MinecraftServer server, Call call) {
+    /** Прислать наряд сразу, без ожидания: для /sos dispatch и автотестов. */
+    public static int dispatch(MinecraftServer server, String kind, Vec3 where) {
+        return arrive(server, new Call(kind, new UUID(0L, 0L), where, 0L));
+    }
+
+    /** Сущности наряда (люди и машина), пока он на месте. */
+    public static List<UUID> crewEntities(int id) {
+        Crew crew = CREWS.get(id);
+        List<UUID> out = new ArrayList<>();
+        if (crew != null) {
+            out.addAll(crew.people);
+            if (crew.vehicle != null) {
+                out.add(crew.vehicle);
+            }
+        }
+        return out;
+    }
+
+    /** Отпустить наряд немедленно. */
+    public static void recall(MinecraftServer server, int id) {
+        Crew crew = CREWS.remove(id);
+        if (crew != null) {
+            leave(server, crew);
+        }
+    }
+
+    private static int arrive(MinecraftServer server, Call call) {
         ServerPlayer caller = server.getPlayerList().getPlayer(call.caller());
         ServerLevel level = server.overworld();
         Vec3 target = call.where();
@@ -192,6 +218,7 @@ public final class Emergency {
         if ("fire".equals(crew.kind)) {
             extinguish(level, crew.pos, 24);
         }
+        return crew.id;
     }
 
     /** Ровное место под машину в 4–12 блоках от точки вызова. */
@@ -638,8 +665,8 @@ public final class Emergency {
                                     if (!List.of("police", "medic", "fire").contains(kind)) {
                                         return 0;
                                     }
-                                    arrive(ctx.getSource().getServer(), new Call(kind,
-                                            new UUID(0L, 0L), Vec3.atBottomCenterOf(pos), 0L));
+                                    dispatch(ctx.getSource().getServer(), kind,
+                                            Vec3.atBottomCenterOf(pos));
                                     ctx.getSource().sendSuccess(() -> Component.literal(
                                             "Наряд " + kind + " на месте: " + pos.toShortString()
                                                     + ", нарядов всего " + CREWS.size()), true);

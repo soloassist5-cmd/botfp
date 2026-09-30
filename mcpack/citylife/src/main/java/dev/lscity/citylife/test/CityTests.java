@@ -1,0 +1,422 @@
+package dev.lscity.citylife.test;
+
+import com.mojang.authlib.GameProfile;
+import dev.lscity.citylife.CityLife;
+import dev.lscity.citylife.Registration;
+import dev.lscity.citylife.city.Emergency;
+import dev.lscity.citylife.city.Wanted;
+import dev.lscity.citylife.data.CityData;
+import dev.lscity.citylife.data.LifeData;
+import dev.lscity.citylife.data.Waypoint;
+import dev.lscity.citylife.estate.Estate;
+import dev.lscity.citylife.estate.EstateGuard;
+import dev.lscity.citylife.jobs.Jobs;
+import dev.lscity.citylife.pc.LaptopBlock;
+import dev.lscity.citylife.pc.LaptopBlockEntity;
+import dev.lscity.citylife.trade.ShopCatalog;
+import dev.lscity.citylife.trade.ShopHandler;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.level.BlockEvent;
+
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Автотесты мода: то, что раньше проверялось только руками в игре.
+ *
+ * Запуск — командой /citylife selftest (нужны права администратора): каждый
+ * тест разворачивается на своей площадке высоко над городом, отчёт идёт в
+ * чат и в лог. Скрипт citylife/tools/run_gametests.py гоняет их на сервере
+ * со всей сборкой перед выкладкой.
+ *
+ * Живого клиента тут нет, поэтому игрока изображает FakePlayer: клик,
+ * поломка блока и открытие двери идут через те же события Forge, что
+ * и у настоящего игрока.
+ */
+public final class CityTests {
+
+    /** Метка теста: такие методы запускает /citylife selftest. */
+    @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+    @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD)
+    public @interface SelfTest {
+        /** Сколько тиков ждать отложенную проверку. */
+        int timeout() default 100;
+    }
+
+    private CityTests() {
+    }
+
+    private static FakePlayer player(TestKit h, String name) {
+        UUID id = UUID.nameUUIDFromBytes(("citylife-test-" + name).getBytes());
+        FakePlayer fake = FakePlayerFactory.get(h.getLevel(), new GameProfile(id, name));
+        BlockPos at = h.absolutePos(new BlockPos(8, 1, 8));
+        fake.moveTo(at.getX() + 0.5D, at.getY(), at.getZ() + 0.5D, 0F, 0F);
+        return fake;
+    }
+
+    private static Entity npc(TestKit h, BlockPos rel, String name, String... tags) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", "easy_npc:humanoid");
+        tag.putString("CustomName", Component.Serializer.toJson(Component.literal(name)));
+        tag.putBoolean("NoAI", true);
+        tag.putBoolean("Invulnerable", true);
+        ListTag list = new ListTag();
+        for (String t : tags) {
+            list.add(StringTag.valueOf(t));
+        }
+        tag.put("Tags", list);
+        BlockPos at = h.absolutePos(rel);
+        Entity entity = EntityType.loadEntityRecursive(tag, h.getLevel(), e -> {
+            e.moveTo(at.getX() + 0.5D, at.getY(), at.getZ() + 0.5D, 0F, 0F);
+            return e;
+        });
+        if (entity == null) {
+            throw new IllegalStateException("easy_npc:humanoid не создаётся — нет Easy NPC?");
+        }
+        h.getLevel().addFreshEntity(entity);
+        return entity;
+    }
+
+    private static String click(FakePlayer who, Entity target) {
+        ShopHandler.lastOutcome = "";
+        who.interactOn(target, InteractionHand.MAIN_HAND);
+        return ShopHandler.lastOutcome;
+    }
+
+    // --- жители -----------------------------------------------------------------
+
+    /** У каждой роли с товаром клик открывает именно её прилавок. */
+    @SelfTest
+    public static void everyShopOpens(TestKit h) {
+        FakePlayer buyer = player(h, "Buyer");
+        StringBuilder bad = new StringBuilder();
+        int checked = 0;
+        for (Map.Entry<String, dev.lscity.citylife.trade.Shop> e : ShopCatalog.BY_ROLE.entrySet()) {
+            String role = e.getKey();
+            if (e.getValue().offers().isEmpty()) {
+                continue;
+            }
+            Entity npc = npc(h, new BlockPos(3, 1, 3), "Тест " + role, "citylife_npc",
+                    "citylife_" + role, ShopCatalog.GEN_TAG);
+            String outcome = click(buyer, npc);
+            String want = "realtor".equals(role) ? "realty" : "shop:" + role;
+            if (!want.equals(outcome)) {
+                bad.append(role).append("->").append(outcome).append(' ');
+            }
+            if (e.getValue().build().isEmpty()) {
+                bad.append(role).append(" без товаров ");
+            }
+            npc.discard();
+            checked++;
+        }
+        if (bad.length() > 0) {
+            h.fail("прилавки не открылись: " + bad);
+        }
+        CityLife.LOG.info("City Life тест: проверено прилавков {}", checked);
+        h.succeed();
+    }
+
+    /** Житель без тегов узнаётся по имени, а машина с тем же именем — нет. */
+    @SelfTest
+    public static void roleByName(TestKit h) {
+        FakePlayer buyer = player(h, "Buyer");
+        Entity npc = npc(h, new BlockPos(3, 1, 3), "Продавец техники");
+        String outcome = click(buyer, npc);
+        if (!"shop:trader_tech".equals(outcome)) {
+            h.fail("житель без тегов: " + outcome);
+        }
+        CompoundTag car = new CompoundTag();
+        car.putString("id", "vehicle:smart_car");
+        car.putString("CustomName", Component.Serializer.toJson(Component.literal("Банкир")));
+        BlockPos at = h.absolutePos(new BlockPos(10, 1, 10));
+        Entity vehicle = EntityType.loadEntityRecursive(car, h.getLevel(), e -> {
+            e.moveTo(at.getX() + 0.5D, at.getY(), at.getZ() + 0.5D, 0F, 0F);
+            return e;
+        });
+        if (vehicle != null) {
+            h.getLevel().addFreshEntity(vehicle);
+            if (!click(buyer, vehicle).isEmpty()) {
+                h.fail("клик по машине перехвачен как разговор");
+            }
+        }
+        h.succeed();
+    }
+
+    /** Житель прошлого поколения в мир не попадает, нынешнего — попадает. */
+    @SelfTest
+    public static void oldGenerationRemoved(TestKit h) {
+        Entity fresh = npc(h, new BlockPos(3, 1, 3), "Банкир", "citylife_npc",
+                "citylife_banker", ShopCatalog.GEN_TAG);
+        Entity old = npc(h, new BlockPos(5, 1, 5), "Банкир", "citylife_npc", "citylife_banker");
+        if (!fresh.isAddedToWorld() || h.getLevel().getEntity(fresh.getUUID()) == null) {
+            h.fail("житель нового поколения не появился");
+        }
+        if (h.getLevel().getEntity(old.getUUID()) != null) {
+            h.fail("житель старого поколения остался в мире");
+        }
+        h.succeed();
+    }
+
+    /** Прохожий появляется и идёт к цели сам. */
+    @SelfTest(timeout = 200)
+    public static void walkerWalks(TestKit h) {
+        BlockPos from = h.absolutePos(new BlockPos(2, 1, 2));
+        Entity walker = dev.lscity.citylife.city.Pedestrians.spawnWalker(h.getLevel(), from,
+                h.getLevel().getRandom());
+        if (!(walker instanceof net.minecraft.world.entity.Mob mob)) {
+            h.fail("прохожий не создался");
+            return;
+        }
+        BlockPos to = h.absolutePos(new BlockPos(13, 1, 13));
+        dev.lscity.citylife.city.Pedestrians.sendTo(walker, to);
+        h.succeedWhen(() -> {
+            if (walker.distanceToSqr(Vec3.atBottomCenterOf(to)) > 4.0D) {
+                h.fail("прохожий не дошёл: до цели "
+                        + Math.round(Math.sqrt(walker.distanceToSqr(Vec3.atBottomCenterOf(to))))
+                        + " блоков, от старта "
+                        + Math.round(Math.sqrt(walker.distanceToSqr(Vec3.atBottomCenterOf(from)))));
+            }
+            walker.discard();
+        });
+    }
+
+    // --- жильё ------------------------------------------------------------------
+
+    private static Estate.Unit testHouse(TestKit h, String id) {
+        BlockPos a = h.absolutePos(new BlockPos(0, 0, 0));
+        BlockPos b = h.absolutePos(new BlockPos(15, 5, 15));
+        int[] box = {Math.min(a.getX(), b.getX()), a.getY(), Math.min(a.getZ(), b.getZ()),
+                Math.max(a.getX(), b.getX()), b.getY(), Math.max(a.getZ(), b.getZ())};
+        BlockPos door = h.absolutePos(new BlockPos(5, 1, 0));
+        return new Estate.Unit(id, "house", "Дом", "Тестовая, 1", "suburbs", 1000, "тест",
+                box, box, door);
+    }
+
+    private static boolean rightClickCanceled(FakePlayer who, BlockPos pos) {
+        var event = new PlayerInteractEvent.RightClickBlock(who, InteractionHand.MAIN_HAND, pos,
+                new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
+        MinecraftForge.EVENT_BUS.post(event);
+        return event.isCanceled();
+    }
+
+    private static boolean breakCanceled(FakePlayer who, ServerLevel level, BlockPos pos) {
+        var event = new BlockEvent.BreakEvent(level, pos, level.getBlockState(pos), who);
+        MinecraftForge.EVENT_BUS.post(event);
+        return event.isCanceled();
+    }
+
+    /** Хозяин в сети — чужой не откроет дверь; нет хозяина — откроет; ломать нельзя всегда. */
+    @SelfTest
+    public static void houseLocks(TestKit h) {
+        ServerLevel level = h.getLevel();
+        FakePlayer owner = player(h, "Owner");
+        FakePlayer guest = player(h, "Guest");
+        FakePlayer friend = player(h, "Friend");
+        Estate.Unit unit = testHouse(h, "test_house_locks");
+        Estate.addTestUnit(unit);
+        LifeData life = LifeData.get(level.getServer());
+        try {
+            h.setBlock(new BlockPos(5, 1, 0), Blocks.OAK_DOOR.defaultBlockState()
+                    .setValue(DoorBlock.FACING, Direction.SOUTH));
+            h.setBlock(new BlockPos(8, 1, 8), Blocks.CHEST);
+            BlockPos door = h.absolutePos(new BlockPos(5, 1, 0));
+            BlockPos chest = h.absolutePos(new BlockPos(8, 1, 8));
+
+            if (rightClickCanceled(guest, door)) {
+                h.fail("некупленный дом заперт");
+            }
+            life.setOwner(unit.id(), owner.getUUID(), "Owner", 0L);
+            life.trust(unit.id(), friend.getUUID(), "Friend");
+
+            EstateGuard.TEST_ONLINE.add(owner.getUUID());
+            if (!rightClickCanceled(guest, door)) {
+                h.fail("хозяин в сети, а чужой открыл дверь");
+            }
+            if (!rightClickCanceled(guest, chest)) {
+                h.fail("хозяин в сети, а чужой открыл сундук");
+            }
+            if (rightClickCanceled(owner, door) || rightClickCanceled(friend, door)) {
+                h.fail("хозяин или друг с ключом не открыл свою дверь");
+            }
+            EstateGuard.TEST_ONLINE.remove(owner.getUUID());
+            if (rightClickCanceled(guest, door)) {
+                h.fail("хозяина нет, а дверь заперта");
+            }
+            int before = life.wanted(guest.getUUID());
+            rightClickCanceled(guest, chest);
+            if (life.wanted(guest.getUUID()) <= before) {
+                h.fail("сундук в чужом доме без хозяина — не кража");
+            }
+            if (!breakCanceled(guest, level, chest)) {
+                h.fail("чужой ломает блоки на участке");
+            }
+            if (breakCanceled(owner, level, chest)) {
+                h.fail("хозяин не может ломать у себя");
+            }
+        } finally {
+            EstateGuard.TEST_ONLINE.remove(owner.getUUID());
+            life.clearOwner(unit.id());
+            life.setWanted(guest.getUUID(), 0, 0);
+            Estate.removeTestUnit(unit.id());
+        }
+        h.succeed();
+    }
+
+    /** Каталог жилья целый: у каждого объекта цена, адрес и дверь на стене дома. */
+    @SelfTest
+    public static void estateCatalog(TestKit h) {
+        int n = 0;
+        StringBuilder bad = new StringBuilder();
+        for (Estate.Unit unit : Estate.all()) {
+            n++;
+            int[] b = unit.box();
+            BlockPos d = unit.door();
+            boolean inside = d.getX() >= b[0] && d.getX() <= b[3] && d.getZ() >= b[2]
+                    && d.getZ() <= b[5] && d.getY() >= b[1] && d.getY() <= b[4];
+            boolean onEdge = d.getX() == b[0] || d.getX() == b[3] || d.getZ() == b[2]
+                    || d.getZ() == b[5];
+            if (unit.price() <= 0 || unit.address().isBlank() || !inside || !onEdge) {
+                bad.append(unit.id()).append(' ');
+            }
+            if (Estate.boxAt(unit.outside()) == unit) {
+                bad.append(unit.id()).append("(выход внутри) ");
+            }
+        }
+        if (n < 1000) {
+            h.fail("в каталоге только " + n + " объектов");
+        }
+        if (bad.length() > 0) {
+            h.fail("кривые объекты: " + bad.substring(0, Math.min(400, bad.length())));
+        }
+        h.succeed();
+    }
+
+    // --- 112 и розыск -------------------------------------------------------------
+
+    /** Наряд приезжает с машиной и двумя людьми и уезжает по «отбою». */
+    @SelfTest
+    public static void crewArrivesAndLeaves(TestKit h) {
+        ServerLevel level = h.getLevel();
+        for (String kind : new String[]{"police", "medic", "fire"}) {
+            BlockPos at = h.absolutePos(new BlockPos(8, 1, 8));
+            int id = Emergency.dispatch(level.getServer(), kind, Vec3.atBottomCenterOf(at));
+            var ids = Emergency.crewEntities(id);
+            long alive = ids.stream().map(level::getEntity).filter(e -> e != null).count();
+            if (alive < 3) {
+                Emergency.recall(level.getServer(), id);
+                h.fail(kind + ": на месте " + alive + " из 3 (машина и двое)");
+            }
+            Emergency.recall(level.getServer(), id);
+            long left = ids.stream().map(level::getEntity).filter(e -> e != null && e.isAlive())
+                    .count();
+            if (left > 0) {
+                h.fail(kind + ": после отбоя остались " + left);
+            }
+        }
+        h.succeed();
+    }
+
+    /** Кража даёт звезду, задержание снимает розыск, штрафует и сажает в камеру. */
+    @SelfTest
+    public static void wantedAndArrest(TestKit h) {
+        FakePlayer thief = player(h, "Thief");
+        LifeData life = LifeData.get(h.getLevel().getServer());
+        CityData bank = CityData.get(h.getLevel().getServer());
+        try {
+            bank.setBalance(thief.getUUID(), 5000);
+            Wanted.crime(thief, 2, "citylife.wanted.theft");
+            if (life.wanted(thief.getUUID()) != 2) {
+                h.fail("звёзды не начислены");
+            }
+            Wanted.arrest(thief, false);
+            if (life.wanted(thief.getUUID()) != 0) {
+                h.fail("после ареста остался розыск");
+            }
+            if (life.jailUntil(thief.getUUID()) <= h.getLevel().getGameTime()) {
+                h.fail("после ареста не в камере");
+            }
+            if (bank.balance(thief.getUUID()) >= 5000) {
+                h.fail("штраф не списан");
+            }
+        } finally {
+            life.setWanted(thief.getUUID(), 0, 0);
+            life.setJail(thief.getUUID(), 0);
+        }
+        h.succeed();
+    }
+
+    // --- работа -------------------------------------------------------------------
+
+    /** Курьер: задание выдаётся, у двери засчитывается и платит. */
+    @SelfTest
+    public static void courierPays(TestKit h) {
+        FakePlayer courier = player(h, "Courier");
+        CityData bank = CityData.get(h.getLevel().getServer());
+        long before = bank.balance(courier.getUUID());
+        Jobs.take(courier, "courier");
+        Waypoint target = Jobs.target(courier);
+        if (target == null) {
+            h.fail("задание курьера не выдано");
+            return;
+        }
+        courier.moveTo(target.x() + 0.5D, target.y(), target.z() + 0.5D);
+        Jobs.check(courier);
+        if (Jobs.active(courier)) {
+            Jobs.quit(courier, false);
+            h.fail("у двери задание не засчитано");
+        }
+        if (bank.balance(courier.getUUID()) <= before) {
+            h.fail("за доставку не заплатили");
+        }
+        h.succeed();
+    }
+
+    // --- ноутбук ------------------------------------------------------------------
+
+    /** Сломанный ноутбук выпадает целым, с данными. */
+    @SelfTest
+    public static void laptopDropsWithData(TestKit h) {
+        BlockPos rel = new BlockPos(4, 1, 4);
+        h.setBlock(rel, Registration.LAPTOP_BLOCK.get().defaultBlockState()
+                .setValue(LaptopBlock.OPEN, true));
+        ItemStack laptop = new ItemStack(Registration.DEVICES.get("laptop").get());
+        laptop.getOrCreateTag().putString("notes", "проверка");
+        if (!(h.getBlockEntity(rel) instanceof LaptopBlockEntity be)) {
+            h.fail("нет блок-сущности ноутбука");
+            return;
+        }
+        var laptopItem = laptop.getItem();
+        be.setStack(laptop);
+        h.destroyBlock(rel);
+        BlockPos at = h.absolutePos(rel);
+        var drops = h.getLevel().getEntitiesOfClass(ItemEntity.class,
+                new net.minecraft.world.phys.AABB(at).inflate(2));
+        boolean ok = drops.stream().anyMatch(item -> item.getItem().is(laptopItem)
+                && "проверка".equals(item.getItem().getOrCreateTag().getString("notes")));
+        if (!ok) {
+            h.fail("ноутбук не выпал или потерял данные: блок="
+                    + h.getLevel().getBlockState(at) + " выпало=" + drops.stream()
+                    .map(item -> item.getItem() + String.valueOf(item.getItem().getTag())).toList());
+        }
+        h.succeed();
+    }
+}

@@ -423,7 +423,7 @@
   "citylife.job.taxi.pickup": "Passenger is in. Drive to: %s",
   "citylife.job.need_car": "You must sit in a vehicle to drive a taxi.",
   "citylife.job.shift.progress": "Shift: %s / %s s",
-  "citylife.job.info": "%s m · %s:%02d left",
+  "citylife.job.info": "%s m · %s left",
   "citylife.job.shift.info": "%s/%s s · %s m",
   "citylife.job.paid": "%s: done, %s credited.",
   "citylife.job.busy": "Finish or quit the current job first.",
@@ -436,5 +436,7 @@
   "citylife.laptop.place_hint": "Shift+right-click a desk to place. On the desk: right-click opens the lid and turns it on, Shift+right-click closes and picks it up.",
   "citylife.market.desc.jobs": "Courier, taxi, shifts — pay to your account",
   "citylife.market.desc.homes": "Your homes: route home and keys for friends",
-  "citylife.shop.empty": "Shop \"%s\" is empty: these items are missing from the pack: %s. Reinstall the pack or tell the admin."
+  "citylife.shop.empty": "Shop \"%s\" is empty: these items are missing from the pack: %s. Reinstall the pack or tell the admin.",
+  "citylife.hud.wanted": "Wanted",
+  "citylife.hud.jail": "Jail: %s"
 }

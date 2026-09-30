@@ -61,7 +61,7 @@ public final class Estate {
             return new BlockPos(x + dx * 2, door.getY(), z + dz * 2);
         }
 
-        /** Сколько «площадь × этажи» — для сортировки в списке. */
+        /** «Дом — улица, номер»: так объект называют в сообщениях и списках. */
         public String label() {
             return title + " — " + address;
         }
@@ -73,6 +73,9 @@ public final class Estate {
     }
 
     private static List<Unit> units;
+    /** Камера в участке и выход из него (из того же файла каталога). */
+    private static BlockPos jailCell;
+    private static BlockPos jailExit;
     private static Map<String, Unit> byId;
     /** Индекс по чанкам: какие объекты задевают чанк (по plot). */
     private static Map<Long, List<Unit>> byChunk;
@@ -90,6 +93,18 @@ public final class Estate {
     public static Unit get(String id) {
         all();
         return byId.get(id);
+    }
+
+    /** Камера в полицейском участке, или null, если в каталоге её нет. */
+    public static BlockPos jailCell() {
+        all();
+        return jailCell;
+    }
+
+    /** Куда выпускают из камеры: тротуар у входа в участок. */
+    public static BlockPos jailExit() {
+        all();
+        return jailExit;
     }
 
     /** Объект, в собственности которого лежит блок (двор, стены, крыша). */
@@ -120,6 +135,26 @@ public final class Estate {
         return boxAt(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
     }
 
+    /** Добавить объект вне каталога — для автотестов на своей площадке. */
+    public static synchronized void addTestUnit(Unit unit) {
+        all();
+        byId.put(unit.id(), unit);
+        int[] p = unit.plot();
+        for (int cx = p[0] >> 4; cx <= p[3] >> 4; cx++) {
+            for (int cz = p[2] >> 4; cz <= p[5] >> 4; cz++) {
+                byChunk.computeIfAbsent(key(cx, cz), k -> new ArrayList<>()).add(0, unit);
+            }
+        }
+    }
+
+    public static synchronized void removeTestUnit(String id) {
+        all();
+        Unit unit = byId.remove(id);
+        if (unit != null) {
+            byChunk.values().forEach(list -> list.remove(unit));
+        }
+    }
+
     private static long key(int cx, int cz) {
         return ((long) cx << 32) ^ (cz & 0xFFFFFFFFL);
     }
@@ -130,6 +165,13 @@ public final class Estate {
             if (in != null) {
                 JsonObject root = JsonParser.parseReader(
                         new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+                if (root.has("jail")) {
+                    JsonObject jail = root.getAsJsonObject("jail");
+                    int[] c = ints(jail.getAsJsonArray("cell"));
+                    int[] e = ints(jail.getAsJsonArray("exit"));
+                    jailCell = new BlockPos(c[0], c[1], c[2]);
+                    jailExit = new BlockPos(e[0], e[1], e[2]);
+                }
                 for (JsonElement element : root.getAsJsonArray("units")) {
                     JsonObject o = element.getAsJsonObject();
                     int[] door = ints(o.getAsJsonArray("door"));

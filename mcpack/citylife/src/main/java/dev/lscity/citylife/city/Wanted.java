@@ -8,6 +8,7 @@ import dev.lscity.citylife.data.LifeData;
 import dev.lscity.citylife.data.Waypoint;
 import dev.lscity.citylife.economy.Money;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -35,8 +36,8 @@ public final class Wanted {
 
     /** Сколько тиков держится звезда розыска (5 минут). */
     private static final long DECAY = 20L * 60 * 5;
-    /** Радиус «камеры» вокруг точки участка: дальше отойти нельзя. */
-    private static final double CELL = 4.0D;
+    /** Насколько можно отойти от центра камеры (она 4x3 блока). */
+    private static final double CELL = 3.0D;
     /** Кого и когда уже отмечали за драку, чтобы не копить звёзды за каждый удар. */
     private static final Map<UUID, Long> FIGHTS = new HashMap<>();
 
@@ -54,6 +55,13 @@ public final class Wanted {
         life.setWanted(player.getUUID(), now, player.level().getGameTime() + DECAY);
         player.displayClientMessage(Component.translatable("citylife.wanted.gained",
                 Component.translatable(reasonKey), stars(now)).withStyle(ChatFormatting.RED), false);
+    }
+
+    /** Камера: центр клетки из решёток в участке, иначе вход в участок. */
+    public static Waypoint cell() {
+        BlockPos pos = dev.lscity.citylife.estate.Estate.jailCell();
+        return pos == null ? station() : new Waypoint("Камера", pos.getX(), pos.getY(), pos.getZ(),
+                "police", true);
     }
 
     /** Точка участка полиции: вход в здание из плана города. */
@@ -84,7 +92,7 @@ public final class Wanted {
         if (player.isPassenger()) {
             player.stopRiding();
         }
-        Waypoint cell = station();
+        Waypoint cell = cell();
         player.teleportTo(player.server.overworld(), cell.x() + 0.5D, cell.y(), cell.z() + 0.5D,
                 player.getYRot(), player.getXRot());
         life.setJail(player.getUUID(), player.level().getGameTime() + seconds * 20L);
@@ -121,6 +129,31 @@ public final class Wanted {
         }
     }
 
+    /** Что последним ушло в строку состояния игрока. */
+    private static final Map<UUID, String> HUD = new HashMap<>();
+
+    /** Строка состояния: розыск, камера, задание. Шлём, только если изменилась. */
+    private static void hud(ServerPlayer player, LifeData life, long now) {
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        int stars = life.wanted(player.getUUID());
+        if (stars > 0) {
+            tag.putInt("wanted", stars);
+        }
+        long jail = life.jailUntil(player.getUUID());
+        if (jail > now) {
+            tag.putInt("jail", (int) ((jail - now) / 20));
+        }
+        String job = dev.lscity.citylife.jobs.Jobs.hudLine(player);
+        if (!job.isEmpty()) {
+            tag.putString("job", job);
+        }
+        String key = tag.toString();
+        if (!key.equals(HUD.get(player.getUUID()))) {
+            HUD.put(player.getUUID(), key);
+            dev.lscity.citylife.net.Net.sendPanel(player, "hud", tag, false);
+        }
+    }
+
     /** Раз в секунду: звёзды тают, заключённые сидят в камере. */
     @SubscribeEvent
     public static void onTick(TickEvent.PlayerTickEvent event) {
@@ -131,6 +164,9 @@ public final class Wanted {
         LifeData life = LifeData.get(player.server);
         long now = player.level().getGameTime();
         UUID id = player.getUUID();
+        if (!(player instanceof net.minecraftforge.common.util.FakePlayer)) {
+            hud(player, life, now);
+        }
         int stars = life.wanted(id);
         if (stars > 0 && now >= life.wantedDecay(id)) {
             life.setWanted(id, stars - 1, now + DECAY);
@@ -143,11 +179,16 @@ public final class Wanted {
         }
         if (now >= until) {
             life.setJail(id, 0);
+            BlockPos exit = dev.lscity.citylife.estate.Estate.jailExit();
+            if (exit != null) {
+                player.teleportTo(player.server.overworld(), exit.getX() + 0.5D, exit.getY(),
+                        exit.getZ() + 0.5D, player.getYRot(), player.getXRot());
+            }
             player.sendSystemMessage(Component.translatable("citylife.wanted.released")
                     .withStyle(ChatFormatting.GREEN));
             return;
         }
-        Waypoint cell = station();
+        Waypoint cell = cell();
         if (player.level() != player.server.overworld()
                 || player.distanceToSqr(cell.x() + 0.5D, cell.y(), cell.z() + 0.5D) > CELL * CELL) {
             if (player.isPassenger()) {

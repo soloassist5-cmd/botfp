@@ -52,6 +52,10 @@ public final class EstateGuard {
     /** Кто и когда заходил в дом без хозяина: чтобы не слать письмо на каждый шаг. */
     private static final Map<String, Long> VISITS = new HashMap<>();
 
+    /** Кого автотесты считают «в сети» (FakePlayer в списке игроков не числится). */
+    public static final java.util.Set<UUID> TEST_ONLINE =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     private EstateGuard() {
     }
 
@@ -63,7 +67,8 @@ public final class EstateGuard {
     }
 
     private static boolean ownerOnline(ServerPlayer player, LifeData.Owner owner) {
-        return player.server.getPlayerList().getPlayer(owner.id()) != null;
+        return TEST_ONLINE.contains(owner.id())
+                || player.server.getPlayerList().getPlayer(owner.id()) != null;
     }
 
     private static void warn(ServerPlayer player, Component text) {

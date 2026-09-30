@@ -66,7 +66,8 @@ class JobsApp extends DeviceApp {
                     ? Component.translatable("citylife.job.shift.info", a.getInt("worked"),
                     a.getInt("shift"), a.getInt("distance")).getString()
                     : Component.translatable("citylife.job.info", a.getInt("distance"),
-                    a.getLong("left") / 60, a.getLong("left") % 60).getString();
+                    a.getLong("left") / 60 + ":" + String.format("%02d", a.getLong("left") % 60))
+                    .getString();
             screen.text(g, screen.trim(info, area[2] - 80), area[0] + 5, y + 26, t.dim());
             int[] q = quitRect(area);
             screen.button(g, q[0], q[1], q[2],

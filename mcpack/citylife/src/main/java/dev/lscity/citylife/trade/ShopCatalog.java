@@ -14,6 +14,9 @@ import java.util.Map;
  */
 public final class ShopCatalog {
 
+    /** Поколение городских жителей: тег, без которого житель считается устаревшим. */
+    public static final String GEN_TAG = "lsgen_2";
+
     public static final Map<String, Shop> BY_ROLE = Map.ofEntries(
             Map.entry("ammo_seller", new Shop("Патроны", List.of(
                     new ShopOffer(new ShopItem("citylife:banknote_100", 6, null), new ShopItem("tacz:ammo", 30, "{AmmoId:\"elitex:dmr_rifles_ammo\"}")),
@@ -402,6 +405,7 @@ public final class ShopCatalog {
 
     /** Что говорят те, у кого нет прилавка. */
     public static final Map<String, List<String>> LINES = Map.ofEntries(
+            Map.entry("citizen", List.of("Хорошая погода сегодня, правда?", "Если ищешь работу — открой «Работу» в телефоне.", "Говорят, в мэрии продают квартиры. Недёшево.", "На пляже вечером красиво, сходи.", "Банкомат есть у банка и на заправке.", "Спешу, извини.", "Метро ходит, три станции. Удобно.", "Полицию вызывают по 112 — приезжают быстро.")),
             Map.entry("cop", List.of("Порядок в городе — моя работа. Проезжай, не задерживайся.", "Оружие носи в кобуре. Увижу в руках — разговор будет другой.", "Потерял машину? Смотри на стоянке у мэрии, туда всё свозят.")),
             Map.entry("firefighter", List.of("Огонь в жилом квартале — сразу к нам, не тушите сами.", "Каска на голове, вода в баке. Живём.", "Без учений скучно, с учениями тяжело.")),
             Map.entry("security", List.of("Вход свободный, но за витрины отвечаешь ты.", "Сумки на входе не проверяем. Пока.", "Драку начнёшь — вынесу на улицу сам.")),

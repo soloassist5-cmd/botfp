@@ -22,9 +22,26 @@ sys.path.insert(0, os.path.join(PACK, "world", "generator"))
 
 from citygen import plan as P  # noqa: E402
 from citygen import homes as H  # noqa: E402
+from citygen import buildings as B  # noqa: E402
+from citygen import commercial as C  # noqa: E402
+from citygen.frame import Frame  # noqa: E402
 
 OUT = os.path.join(ROOT, "src", "main", "resources", "data", "citylife", "estate.json")
 SEED = 20260927
+
+
+def jail(city) -> dict:
+    """
+    Камера в полицейском участке: генератор ставит её из решёток в дальнем
+    углу здания (buildings.build_civic). Сюда сажают задержанных, а выпускают
+    на тротуар у входа.
+    """
+    lot = next(l for l in city.lots if l.kind == "police")
+    lay = C.layout(lot)
+    frame = Frame(None, *lay.frame_rect, lay.facing)
+    x, z = frame.world(lay.u1 - 2, lay.v1 - 2)
+    ex, ey, ez = B.entrance_point(lot)
+    return {"cell": [x, P.CITY_Y + 1, z], "exit": [ex, ey, ez]}
 
 
 def main() -> int:
@@ -40,7 +57,7 @@ def main() -> int:
     units.sort(key=lambda u: (u["kind"], u["address"]))
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:
-        json.dump({"seed": SEED, "units": units}, fh, ensure_ascii=False,
+        json.dump({"seed": SEED, "jail": jail(city), "units": units}, fh, ensure_ascii=False,
                   separators=(",", ":"))
         fh.write("\n")
     kinds = Counter(unit["kind"] for unit in units)

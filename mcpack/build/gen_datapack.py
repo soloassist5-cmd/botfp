@@ -29,6 +29,13 @@ from citygen import plan as P  # noqa: E402
 # TradingDataSet с типом CUSTOM — без него Easy NPC игнорирует готовые Offers.
 NPC_ENTITY = "easy_npc:humanoid"
 
+# Поколение жителей. Меняется, когда меняется состав или расстановка NPC:
+# мод убирает жителей прошлых поколений, как только их чанк загрузится,
+# а датапак один раз расставляет новых — в том числе в старых мирах.
+# Дома, деньги и постройки игроков при этом не трогаются.
+NPC_GEN = 2
+GEN_TAG = f"lsgen_{NPC_GEN}"
+
 # Роль -> скин из citylife/tools/gen_skins.py.
 ROLE_SKIN = {
     "trader_food": "cook",
@@ -594,7 +601,7 @@ def npc_command(spot: dict) -> str:
     """Команда summon для одного NPC."""
     trades = ROLE_TRADES.get(spot["role"], [])
     name = json.dumps({"text": spot["title"]}, ensure_ascii=False)
-    tags = ["citylife_npc", f"citylife_{spot['role']}"]
+    tags = ["citylife_npc", f"citylife_{spot['role']}", GEN_TAG]
     data: dict = {
         "CustomName": name,
         "CustomNameVisible": True,
@@ -1011,13 +1018,15 @@ def main() -> int:
     # когда игрок уже в мире, и один раз запускает расстановку. Признак лежит
     # в scoreboard, поэтому при следующих входах ничего не повторяется.
     write(os.path.join(functions, "npc", "populate_once.mcfunction"), "\n".join([
-        "# Однократное заселение города. Вызывается достижением citylife:hidden/populate.",
+        f"# Заселение города жителями поколения {NPC_GEN}. Вызывается достижением",
+        f"# citylife:hidden/populate_{NPC_GEN}: у нового поколения новое достижение, поэтому",
+        "# оно срабатывает и в старых мирах, где прежнее уже получено.",
         "# Расставить заново вручную: /function citylife:npc/spawn_all",
-        "execute unless score #populated citylife_state matches 1 run "
+        f"execute unless score #populated citylife_state matches {NPC_GEN} run "
         "function citylife:npc/spawn_all",
-        "scoreboard players set #populated citylife_state 1",
+        f"scoreboard players set #populated citylife_state {NPC_GEN}",
     ]))
-    write(os.path.join(data, "citylife", "advancements", "hidden", "populate.json"),
+    write(os.path.join(data, "citylife", "advancements", "hidden", f"populate_{NPC_GEN}.json"),
           json.dumps({
               "criteria": {"tick": {"trigger": "minecraft:tick"}},
               "rewards": {"function": "citylife:npc/populate_once"},

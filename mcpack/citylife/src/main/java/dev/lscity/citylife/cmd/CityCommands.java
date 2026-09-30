@@ -165,6 +165,10 @@ public final class CityCommands {
                     return n;
                 }))));
 
+        // Самотесты мода: жители, жильё, 112, работа, ноутбук, прохожие.
+        root.then(Commands.literal("selftest").requires(source -> source.hasPermission(2))
+                .executes(ctx -> dev.lscity.citylife.test.SelfTests.start(ctx.getSource())));
+
         root.then(Commands.literal("money").requires(source -> source.hasPermission(2))
                 .then(moneyOp("give"))
                 .then(moneyOp("take"))

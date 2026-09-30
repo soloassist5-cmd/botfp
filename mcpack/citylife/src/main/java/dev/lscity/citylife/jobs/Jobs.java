@@ -217,6 +217,36 @@ public final class Jobs {
                 || player.tickCount % 20 != 0) {
             return;
         }
+        check(player);
+    }
+
+    /** Короткая строка задания для строки состояния: «Курьер · 230 м · 4:10». */
+    public static String hudLine(ServerPlayer player) {
+        Job job = ACTIVE.get(player.getUUID());
+        if (job == null) {
+            return "";
+        }
+        long left = Math.max(0, (job.deadline - player.level().getGameTime()) / 20);
+        if ("shift".equals(job.kind)) {
+            return job.title + " · " + job.worked + "/" + SHIFT + " с";
+        }
+        return job.title + " · " + (int) dist(player.position(), job.target) + " м · "
+                + left / 60 + ":" + String.format("%02d", left % 60);
+    }
+
+    /** Есть ли у игрока задание — для автотестов и телефона. */
+    public static boolean active(ServerPlayer player) {
+        return ACTIVE.containsKey(player.getUUID());
+    }
+
+    /** Куда сейчас ведёт задание. */
+    public static Waypoint target(ServerPlayer player) {
+        Job job = ACTIVE.get(player.getUUID());
+        return job == null ? null : job.target;
+    }
+
+    /** Проверка задания раз в секунду: на месте ли игрок, не вышло ли время. */
+    public static void check(ServerPlayer player) {
         Job job = ACTIVE.get(player.getUUID());
         if (job == null) {
             return;

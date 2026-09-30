@@ -21,6 +21,9 @@ public final class CityConfig {
     public final ForgeConfigSpec.DoubleValue arrivalRadius;
     public final ForgeConfigSpec.BooleanValue noMobs;
     public final ForgeConfigSpec.BooleanValue explosionsKeepBlocks;
+    public final ForgeConfigSpec.IntValue pedestrians;
+    public final ForgeConfigSpec.IntValue pedestriansMax;
+    public final ForgeConfigSpec.BooleanValue npcFacePlayers;
     public final ForgeConfigSpec.IntValue maxHomes;
     public final ForgeConfigSpec.IntValue homeSellPercent;
     public final ForgeConfigSpec.BooleanValue homeLocks;
@@ -69,6 +72,15 @@ public final class CityConfig {
         explosionsKeepBlocks = builder
                 .comment("Взрывы (гранаты, ракеты, мины, динамит) ранят, но не ломают блоки.")
                 .define("explosionsKeepBlocks", true);
+        pedestrians = builder
+                .comment("Сколько прохожих гуляет вокруг каждого игрока (0 — без прохожих).")
+                .defineInRange("pedestrians", 6, 0, 40);
+        pedestriansMax = builder
+                .comment("Предел прохожих на весь сервер.")
+                .defineInRange("pedestriansMax", 48, 0, 400);
+        npcFacePlayers = builder
+                .comment("Продавцы поворачиваются к подошедшему игроку.")
+                .define("npcFacePlayers", true);
         builder.pop();
 
         builder.comment("Недвижимость").push("estate");
