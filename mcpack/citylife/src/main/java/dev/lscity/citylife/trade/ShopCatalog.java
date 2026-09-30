@@ -408,6 +408,41 @@ public final class ShopCatalog {
             Map.entry("state", List.of("Приём граждан по будням. Сегодня, считай, будни.", "Все бумаги — в мэрию, там и очередь короче."))
     );
 
+    /**
+     * Роль по имени жителя: запасной путь, если тег роли потерялся
+     * (жителя переставили вручную, мир из старой версии и т.п.).
+     */
+    public static final Map<String, String> BY_NAME = Map.ofEntries(
+            Map.entry("Автодилер", "car_dealer"),
+            Map.entry("Аптекарь", "medic"),
+            Map.entry("Банкир", "banker"),
+            Map.entry("Бармен", "bartender"),
+            Map.entry("Бригадир", "builder"),
+            Map.entry("Винтовки", "rifle_dealer"),
+            Map.entry("Врач", "medic"),
+            Map.entry("Дежурный", "cop"),
+            Map.entry("Заправщик", "fuel_seller"),
+            Map.entry("Кладовщик", "foreman"),
+            Map.entry("Мастер-оружейник", "gunsmith"),
+            Map.entry("Охранник", "security"),
+            Map.entry("Охранник ТЦ", "security"),
+            Map.entry("Патроны", "ammo_seller"),
+            Map.entry("Пистолеты и ПП", "arms_dealer"),
+            Map.entry("Повар", "cook"),
+            Map.entry("Пожарный", "firefighter"),
+            Map.entry("Полицейский", "cop"),
+            Map.entry("Продавец", "shopkeeper"),
+            Map.entry("Продавец еды", "trader_food"),
+            Map.entry("Продавец одежды", "trader_clothes"),
+            Map.entry("Продавец продуктов", "trader_food"),
+            Map.entry("Продавец связи", "phone_seller"),
+            Map.entry("Продавец стройматериалов", "builder"),
+            Map.entry("Продавец техники", "trader_tech"),
+            Map.entry("Риелтор", "realtor"),
+            Map.entry("Управдом", "realtor"),
+            Map.entry("Чиновник", "clerk")
+    );
+
     /** Реплика на случай роли без своего текста. */
     public static final List<String> DEFAULT_LINES = List.of("Добрый день. Хорошего дня в городе.");
 

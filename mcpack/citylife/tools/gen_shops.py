@@ -20,6 +20,9 @@ sys.path.insert(0, os.path.join(PACK, "build"))
 
 import gen_datapack as G  # noqa: E402
 
+sys.path.insert(0, os.path.join(PACK, "world", "generator"))
+from citygen import plan as P  # noqa: E402
+
 OUT = os.path.join(ROOT, "src", "main", "java", "dev", "lscity", "citylife", "trade",
                    "ShopCatalog.java")
 
@@ -73,6 +76,18 @@ def item_line(stack: dict) -> str:
     return f'new ShopItem("{item}", {count}, "{snbt}")'
 
 
+def names() -> dict[str, str]:
+    """Имя жителя на табличке -> роль, по плану города."""
+    out: dict[str, str] = {}
+    for spot in P.build_plan(20260927).npc_spots:
+        out.setdefault(spot["title"], spot["role"])
+    for role, title, _sign, _weight in P.SHOP_KINDS:
+        out.setdefault(title, role)
+    for role, title in P.LABEL_PROFILE.values():
+        out.setdefault(title, role)
+    return out
+
+
 def main() -> int:
     rows = []
     for role, offers in sorted(G.ROLE_TRADES.items()):
@@ -109,6 +124,15 @@ def main() -> int:
         "    public static final Map<String, List<String>> LINES = Map.ofEntries(",
         ",\n".join(f'            Map.entry("{role}", List.of({java_lines(values)}))'
                    for role, values in sorted(LINES.items())),
+        "    );",
+        "",
+        "    /**",
+        "     * Роль по имени жителя: запасной путь, если тег роли потерялся",
+        "     * (жителя переставили вручную, мир из старой версии и т.п.).",
+        "     */",
+        "    public static final Map<String, String> BY_NAME = Map.ofEntries(",
+        ",\n".join(f'            Map.entry("{name}", "{role}")'
+                   for name, role in sorted(names().items())),
         "    );",
         "",
         "    /** Реплика на случай роли без своего текста. */",

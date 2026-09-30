@@ -435,5 +435,6 @@
   "block.citylife.laptop_block": "Laptop on a desk",
   "citylife.laptop.place_hint": "Shift+right-click a desk to place. On the desk: right-click opens the lid and turns it on, Shift+right-click closes and picks it up.",
   "citylife.market.desc.jobs": "Courier, taxi, shifts — pay to your account",
-  "citylife.market.desc.homes": "Your homes: route home and keys for friends"
+  "citylife.market.desc.homes": "Your homes: route home and keys for friends",
+  "citylife.shop.empty": "Shop \"%s\" is empty: these items are missing from the pack: %s. Reinstall the pack or tell the admin."
 }

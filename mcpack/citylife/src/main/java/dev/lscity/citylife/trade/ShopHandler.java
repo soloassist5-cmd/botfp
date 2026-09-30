@@ -4,9 +4,11 @@ import dev.lscity.citylife.CityLife;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -28,7 +30,21 @@ public final class ShopHandler {
     private ShopHandler() {
     }
 
-    @SubscribeEvent
+    /**
+     * Первый этап клика — «куда именно попали». Easy NPC может забрать клик
+     * себе уже здесь, и тогда основной этап до сервера не доходит вовсе.
+     * Поэтому для городских жителей этот этап гасим с PASS: игра идёт
+     * дальше, к обычному взаимодействию, которое ловит onInteract.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onInteractAt(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (roleOf(event.getTarget()) != null) {
+            event.setCancellationResult(InteractionResult.PASS);
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onInteract(PlayerInteractEvent.EntityInteract event) {
         Entity target = event.getTarget();
         String role = roleOf(target);
@@ -37,9 +53,11 @@ public final class ShopHandler {
         }
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
+        if (!(event.getEntity() instanceof ServerPlayer player)
+                || event.getHand() != InteractionHand.MAIN_HAND) {
             return;
         }
+        dev.lscity.citylife.cmd.CityCommands.note("role=" + role);
 
         // Риелтор и управдом ведут агентство недвижимости: каталог жилья,
         // а товары для дома — кнопкой в том же окне.
@@ -57,6 +75,17 @@ public final class ShopHandler {
             CityTrader trader = new CityTrader(target, shop);
             if (trader.hasGoods()) {
                 trader.open(player);
+                dev.lscity.citylife.cmd.CityCommands.note("shop=" + shop.title());
+                return;
+            }
+            if (!shop.offers().isEmpty()) {
+                // Товар есть в каталоге, но предметов нет в игре: говорим прямо,
+                // чего не хватает, а не отмахиваемся репликой.
+                String missing = shop.missing();
+                CityLife.LOG.warn("City Life: прилавок {} ({}) пуст, нет предметов: {}",
+                        role, shop.title(), missing);
+                player.displayClientMessage(Component.translatable("citylife.shop.empty",
+                        shop.title(), missing).withStyle(ChatFormatting.RED), false);
                 return;
             }
         }
@@ -64,27 +93,39 @@ public final class ShopHandler {
     }
 
     /**
-     * Роль жителя по тегам, или null — если это не наш NPC.
+     * Роль жителя, или null — если это не наш NPC.
      *
-     * Сначала проверяем метку жителя citylife_npc: теги с тем же префиксом
-     * мод ставит и другим сущностям (машина получает citylife_first_fill,
-     * когда ей заливают первый бак), и без этой проверки клик по машине
-     * перехватывался как разговор с продавцом — сесть в неё было нельзя.
+     * Основной путь — тег citylife_<роль> рядом с меткой citylife_npc: теги с
+     * тем же префиксом мод ставит и другим сущностям (машина получает
+     * citylife_first_fill, когда ей заливают первый бак), поэтому без метки
+     * жителя роль не читаем.
+     *
+     * Запасной путь — имя жителя («Продавец техники», «Банкир»): теги не
+     * передаются клиенту, а имя видно везде, поэтому клик распознаётся и на
+     * стороне игрока. Он же выручает жителей, у которых тег потерялся.
      */
     public static String roleOf(Entity entity) {
-        if (!entity.getTags().contains(PREFIX + MARKER)) {
+        if (entity.getTags().contains(PREFIX + MARKER)) {
+            for (String tag : entity.getTags()) {
+                if (!tag.startsWith(PREFIX)) {
+                    continue;
+                }
+                String role = tag.substring(PREFIX.length());
+                if (!MARKER.equals(role)) {
+                    return role;
+                }
+            }
+        }
+        if (entity.getCustomName() == null
+                || entity instanceof net.minecraft.world.entity.player.Player) {
             return null;
         }
-        for (String tag : entity.getTags()) {
-            if (!tag.startsWith(PREFIX)) {
-                continue;
-            }
-            String role = tag.substring(PREFIX.length());
-            if (!MARKER.equals(role)) {
-                return role;
-            }
+        net.minecraft.resources.ResourceLocation type = net.minecraftforge.registries
+                .ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+        if (type == null || !"easy_npc".equals(type.getNamespace())) {
+            return null;
         }
-        return null;
+        return ShopCatalog.BY_NAME.get(entity.getCustomName().getString());
     }
 
     /** Прилавок жителя, или null — если он ничем не торгует. */

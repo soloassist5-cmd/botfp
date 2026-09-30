@@ -21,6 +21,16 @@ import java.util.Collection;
  */
 public final class CityCommands {
 
+    /** Что увидел «виртуальный игрок» при клике; пишется только во время проверки. */
+    public static final java.util.List<String> CLICK_LOG = new java.util.ArrayList<>();
+    public static boolean clickTest;
+
+    public static void note(String text) {
+        if (clickTest) {
+            CLICK_LOG.add(text);
+        }
+    }
+
     private CityCommands() {
     }
 
@@ -118,6 +128,42 @@ public final class CityCommands {
                                     .clearOwner(StringArgumentType.getString(ctx, "id"));
                             return 1;
                         }))));
+
+        // Диагностика жителя: какую роль видит мод и что он ответит на клик.
+        root.then(Commands.literal("npc").requires(source -> source.hasPermission(2))
+                .then(Commands.argument("targets", EntityArgument.entities()).executes(ctx -> {
+                    int n = 0;
+                    for (var entity : EntityArgument.getEntities(ctx, "targets")) {
+                        String role = dev.lscity.citylife.trade.ShopHandler.roleOf(entity);
+                        var shop = role == null ? null
+                                : dev.lscity.citylife.trade.ShopCatalog.BY_ROLE.get(role);
+                        String line = entity.getName().getString() + " теги=" + entity.getTags()
+                                + " роль=" + role + " прилавок="
+                                + (shop == null ? "нет" : shop.title() + " товаров "
+                                + shop.build().size());
+                        ctx.getSource().sendSuccess(() -> Component.literal(line), false);
+                        n++;
+                    }
+                    return n;
+                })
+                // Клик «виртуальным игроком» по тому же пути событий, что у живого.
+                .then(Commands.literal("click").executes(ctx -> {
+                    int n = 0;
+                    for (var entity : EntityArgument.getEntities(ctx, "targets")) {
+                        var level = (net.minecraft.server.level.ServerLevel) entity.level();
+                        var fake = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(level);
+                        fake.moveTo(entity.getX() + 1, entity.getY(), entity.getZ());
+                        CLICK_LOG.clear();
+                        clickTest = true;
+                        var result = fake.interactOn(entity, net.minecraft.world.InteractionHand.MAIN_HAND);
+                        clickTest = false;
+                        String line = entity.getName().getString() + " -> " + result + " "
+                                + String.join(" | ", CLICK_LOG);
+                        ctx.getSource().sendSuccess(() -> Component.literal(line), false);
+                        n++;
+                    }
+                    return n;
+                }))));
 
         root.then(Commands.literal("money").requires(source -> source.hasPermission(2))
                 .then(moneyOp("give"))
