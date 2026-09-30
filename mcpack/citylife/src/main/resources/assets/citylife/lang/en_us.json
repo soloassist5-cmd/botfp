@@ -609,5 +609,8 @@
   "citylife.hospital.free": "You were taken to the city hospital. No money on the account — treatment is free.",
   "citylife.hospital.body": "Place of death",
   "citylife.hospital.route": "Your things stayed where you died — the navigator leads there, %s m.",
-  "citylife.statement.hospital": "Hospital treatment"
+  "citylife.statement.hospital": "Hospital treatment",
+  "citylife.realty.filter.business": "Business",
+  "citylife.realty.income": "income %s a day",
+  "citylife.statement.business_income": "Income: %s"
 }

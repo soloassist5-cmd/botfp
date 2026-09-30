@@ -29,6 +29,8 @@ public final class CityConfig {
     public final ForgeConfigSpec.BooleanValue homeLocks;
     public final ForgeConfigSpec.IntValue homeUpkeepPerMille;
     public final ForgeConfigSpec.IntValue homeDebtDays;
+    public final ForgeConfigSpec.IntValue maxBusinesses;
+    public final ForgeConfigSpec.IntValue businessIncomePerMille;
     public final ForgeConfigSpec.IntValue responderDelay;
     public final ForgeConfigSpec.IntValue responderStay;
     public final ForgeConfigSpec.IntValue medicFee;
@@ -107,6 +109,12 @@ public final class CityConfig {
         homeDebtDays = builder
                 .comment("Через сколько суток неоплаченной коммуналки дом отходит городу.")
                 .defineInRange("homeDebtDays", 7, 1, 365);
+        maxBusinesses = builder
+                .comment("Сколько бизнесов (магазинов, складов, офисов) может купить один игрок.")
+                .defineInRange("maxBusinesses", 3, 0, 100);
+        businessIncomePerMille = builder
+                .comment("Доход бизнеса за игровые сутки в промилле от цены (15 = 1,5%).")
+                .defineInRange("businessIncomePerMille", 15, 0, 1000);
         builder.pop();
 
         builder.comment("Экстренные службы 112").push("emergency");

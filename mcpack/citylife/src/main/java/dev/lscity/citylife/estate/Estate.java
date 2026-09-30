@@ -31,6 +31,11 @@ public final class Estate {
     public record Unit(String id, String kind, String title, String address, String district,
                        long price, String rooms, int[] box, int[] plot, BlockPos door) {
 
+        /** Бизнес приносит доход, но открыт для всех: без замков и защиты участка. */
+        public boolean business() {
+            return "business".equals(kind);
+        }
+
         public boolean inBox(double x, double y, double z) {
             return inside(box, x, y, z);
         }
@@ -111,7 +116,7 @@ public final class Estate {
     public static Unit plotAt(BlockPos pos) {
         all();
         for (Unit unit : byChunk.getOrDefault(key(pos.getX() >> 4, pos.getZ() >> 4), List.of())) {
-            if (unit.inPlot(pos)) {
+            if (unit.inPlot(pos) && !unit.business()) {
                 return unit;
             }
         }
@@ -124,7 +129,7 @@ public final class Estate {
         int cx = ((int) Math.floor(x)) >> 4;
         int cz = ((int) Math.floor(z)) >> 4;
         for (Unit unit : byChunk.getOrDefault(key(cx, cz), List.of())) {
-            if (unit.inBox(x, y, z)) {
+            if (unit.inBox(x, y, z) && !unit.business()) {
                 return unit;
             }
         }

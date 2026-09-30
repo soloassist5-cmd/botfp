@@ -352,6 +352,12 @@ public final class CityTests {
                     && d.getZ() <= b[5] && d.getY() >= b[1] && d.getY() <= b[4];
             boolean onEdge = d.getX() == b[0] || d.getX() == b[3] || d.getZ() == b[2]
                     || d.getZ() == b[5];
+            if (unit.business()) {
+                // Вход бизнеса — точка на тротуаре перед зданием, рядом с ним.
+                inside = d.getX() >= b[0] - 3 && d.getX() <= b[3] + 3 && d.getZ() >= b[2] - 3
+                        && d.getZ() <= b[5] + 3;
+                onEdge = true;
+            }
             if (unit.price() <= 0 || unit.address().isBlank() || !inside || !onEdge) {
                 bad.append(unit.id()).append(' ');
             }
@@ -839,6 +845,41 @@ public final class CityTests {
         patient.setRespawnPosition(h.getLevel().dimension(), died, 0F, true, false);
         if (dev.lscity.citylife.city.Hospital.admit(patient, died) != null) {
             h.fail("игрока с кроватью увезли в больницу");
+        }
+        h.succeed();
+    }
+
+    // --- бизнесы ------------------------------------------------------------------
+
+    /** Бизнес приносит доход раз в сутки, без коммуналки и без замков на двери. */
+    @SelfTest
+    public static void businessIncome(TestKit h) {
+        FakePlayer owner = player(h, "Tycoon");
+        var server = h.getLevel().getServer();
+        LifeData life = LifeData.get(server);
+        CityData bank = CityData.get(server);
+        Estate.Unit shop = Estate.all().stream().filter(Estate.Unit::business).findFirst().orElse(null);
+        if (shop == null) {
+            h.fail("в каталоге нет бизнесов");
+            return;
+        }
+        if (life.owner(shop.id()) != null) {
+            h.succeed();
+            return;
+        }
+        try {
+            life.setOwner(shop.id(), owner.getUUID(), "Tycoon", 0L);
+            bank.setBalance(owner.getUUID(), 0);
+            dev.lscity.citylife.estate.EstateBills.bill(server, life);
+            long income = dev.lscity.citylife.estate.EstateBills.income(shop);
+            if (income <= 0 || bank.balance(owner.getUUID()) != income) {
+                h.fail("доход бизнеса: ждали " + income + ", на счёте " + bank.balance(owner.getUUID()));
+            }
+            if (Estate.plotAt(shop.door()) != null) {
+                h.fail("у бизнеса есть защита участка — магазин закроется для покупателей");
+            }
+        } finally {
+            life.clearOwner(shop.id());
         }
         h.succeed();
     }

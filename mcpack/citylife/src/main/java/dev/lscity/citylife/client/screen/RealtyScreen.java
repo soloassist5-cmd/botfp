@@ -41,8 +41,8 @@ public class RealtyScreen extends Screen {
     private static final int MINE = 0xFFF2C12E;
     private static final int ROW = 13;
 
-    private static final String[] FILTERS = {"all", "house", "villa", "rowhouse", "flat", "free",
-            "rent", "mine"};
+    private static final String[] FILTERS = {"all", "house", "villa", "rowhouse", "flat",
+            "business", "free", "rent", "mine"};
     private static final Map<String, String> DISTRICTS = Map.of(
             "downtown", "Даунтаун", "midtown", "Мидтаун", "suburbs", "Пригород",
             "hills", "Холмы", "beach", "Пляж", "eastside", "Истсайд", "industrial", "Промзона");
@@ -229,6 +229,10 @@ public class RealtyScreen extends Screen {
                     Money.format(back)), b -> act("realty_sell", unit, null))
                     .bounds(px, ay, pw, 18).build());
             addRenderableWidget(route);
+            if (unit.business()) {
+                // Бизнес открыт для всех: ни ключей, ни аренды.
+                return;
+            }
             keyBox = new EditBox(font, px, ay + 42, pw - 50, 14,
                     Component.translatable("citylife.realty.key_hint"));
             keyBox.setHint(Component.translatable("citylife.realty.key_hint"));
@@ -335,9 +339,12 @@ public class RealtyScreen extends Screen {
             g.drawString(font, DISTRICTS.getOrDefault(unit.district(), unit.district()),
                     px + 2, cy + 13, DIM, false);
             long upkeep = Math.max(10, unit.price() * snapshot.getInt("upkeep") / 1000);
+            Component cost = unit.business()
+                    ? Component.translatable("citylife.realty.income",
+                    Money.format(unit.price() * snapshot.getInt("income") / 1000))
+                    : Component.translatable("citylife.rent.upkeep", Money.format(upkeep));
             g.drawString(font, font.plainSubstrByWidth(Money.format(unit.price()) + "  · "
-                    + Component.translatable("citylife.rent.upkeep", Money.format(upkeep))
-                    .getString(), pw - 4), px + 2, cy + 26, MINE, false);
+                    + cost.getString(), pw - 4), px + 2, cy + 26, MINE, false);
             CompoundTag owner = owners.get(unit.id());
             String status;
             int colour;
@@ -371,7 +378,7 @@ public class RealtyScreen extends Screen {
                     drawWrapped(g, rent, px + 2, ry, pw - 4, owner.getLong("d") > 0 ? TAKEN : DIM);
                 }
             }
-            if (owner != null && owner.getBoolean("m")) {
+            if (owner != null && owner.getBoolean("m") && !unit.business()) {
                 int ky = actionsTop() + 60;
                 List<String> keys = new ArrayList<>();
                 for (Tag item : owner.getList("keys", Tag.TAG_COMPOUND)) {

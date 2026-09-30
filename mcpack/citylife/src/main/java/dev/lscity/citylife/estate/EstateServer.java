@@ -81,6 +81,7 @@ public final class EstateServer {
         tag.putInt("limit", CityConfig.CONFIG.maxHomes.get());
         tag.putInt("sellPercent", CityConfig.CONFIG.homeSellPercent.get());
         tag.putInt("upkeep", CityConfig.CONFIG.homeUpkeepPerMille.get());
+        tag.putInt("income", CityConfig.CONFIG.businessIncomePerMille.get());
         ListTag owners = new ListTag();
         life.owners().forEach((unit, owner) -> {
             CompoundTag entry = new CompoundTag();
@@ -181,8 +182,12 @@ public final class EstateServer {
             say(player, Component.translatable("citylife.realty.taken"), ChatFormatting.RED);
             return;
         }
-        int limit = CityConfig.CONFIG.maxHomes.get();
-        if (life.ownedBy(player.getUUID()).size() >= limit) {
+        // Жильё и бизнесы считаются отдельно.
+        int limit = unit.business() ? CityConfig.CONFIG.maxBusinesses.get()
+                : CityConfig.CONFIG.maxHomes.get();
+        long have = life.ownedBy(player.getUUID()).stream().map(Estate::get)
+                .filter(u -> u != null && u.business() == unit.business()).count();
+        if (have >= limit) {
             say(player, Component.translatable("citylife.realty.limit", limit), ChatFormatting.RED);
             return;
         }
@@ -221,7 +226,7 @@ public final class EstateServer {
 
     /** Хозяин назначает цену аренды за сутки; 0 — не сдаёт и выселяет арендатора. */
     private static void rentSet(ServerPlayer player, Estate.Unit unit, long price) {
-        if (unit == null || !owns(player, unit)) {
+        if (unit == null || !owns(player, unit) || unit.business()) {
             return;
         }
         LifeData life = LifeData.get(player.server);

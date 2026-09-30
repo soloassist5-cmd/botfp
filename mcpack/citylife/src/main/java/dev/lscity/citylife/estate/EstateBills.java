@@ -37,8 +37,17 @@ public final class EstateBills {
 
     /** Коммуналка за сутки для объекта. */
     public static long upkeep(Estate.Unit unit) {
+        if (unit.business()) {
+            return 0;
+        }
         long perMille = CityConfig.CONFIG.homeUpkeepPerMille.get();
         return perMille <= 0 ? 0 : Math.max(10, unit.price() * perMille / 1000);
+    }
+
+    /** Доход бизнеса за сутки. */
+    public static long income(Estate.Unit unit) {
+        long perMille = CityConfig.CONFIG.businessIncomePerMille.get();
+        return unit.business() && perMille > 0 ? unit.price() * perMille / 1000 : 0;
     }
 
     @SubscribeEvent
@@ -71,6 +80,11 @@ public final class EstateBills {
                 continue;
             }
             LifeData.Owner owner = entry.getValue();
+            if (unit.business()) {
+                bank.deposit(owner.id(), income(unit), Texts.ru("citylife.statement.business_income",
+                        unit.title()), now);
+                continue;
+            }
             rent(bank, life, unit, owner, now);
 
             long due = upkeep(unit) + life.debt(unit.id());

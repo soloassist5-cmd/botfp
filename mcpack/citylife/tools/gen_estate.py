@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Каталог недвижимости для риелтора: дома, виллы, таунхаусы и квартиры.
+Каталог недвижимости для риелтора: дома, виллы, таунхаусы, квартиры
+и бизнесы (магазины, закусочные, клубы, АЗС, склады и офисы).
 
 Границы жилья считает тот же код генератора, что строит дома
 (homes.estate_units), и кладёт в ресурс мода data/citylife/estate.json.
@@ -44,11 +45,50 @@ def jail(city) -> dict:
     return {"cell": [x, P.CITY_Y + 1, z], "exit": [ex, ey, ez]}
 
 
+# Бизнес: название, множитель цены к площади здания. Доход в сутки задаёт мод.
+BUSINESS = {
+    "shop": ("Магазин", 0.45), "diner": ("Заведение", 0.35), "club": ("Клуб", 0.35),
+    "gas": ("АЗС", 0.4), "warehouse": ("Склад", 0.15), "office": ("Офис", 0.3),
+}
+
+
+def business_units(lot) -> list[dict]:
+    """
+    Коммерческая недвижимость: здание приносит доход владельцу, но остаётся
+    открытым для всех — продавцы в нём торгуют как прежде. Поэтому box —
+    здание (для маршрута и поиска), а замков и защиты участка у бизнеса нет.
+    """
+    if not lot.address or lot.kind not in BUSINESS:
+        return []
+    title, factor = BUSINESS[lot.kind]
+    lay = C.layout(lot)
+    x0, z0, x1, z1 = lay.frame_rect
+    area = (abs(x1 - x0) + 1) * (abs(z1 - z0) + 1)
+    rate = H.DISTRICT_PRICE.get(lot.district, 300)
+    price = max(30, round(area * rate * factor / 1000)) * 1000
+    label = (lot.label or "").strip()
+    name = f"{title} «{label.capitalize()}»" if label else title
+    door = list(B.entrance_point(lot))
+    return [{
+        "id": f"b_{lot.ix}_{lot.iz}_{lot.x0}_{lot.z0}",
+        "kind": "business",
+        "title": name,
+        "address": lot.address,
+        "district": lot.district,
+        "price": price,
+        "rooms": f"{area} м²",
+        "box": [min(x0, x1), P.CITY_Y - 2, min(z0, z1), max(x0, x1), P.CITY_Y + 24, max(z0, z1)],
+        "plot": [lot.x0, P.CITY_Y - 3, lot.z0, lot.x1, P.CITY_Y + 26, lot.z1],
+        "door": door,
+    }]
+
+
 def main() -> int:
     city = P.build_plan(SEED)
     units = []
     for lot in city.lots:
         units += H.estate_units(lot)
+        units += business_units(lot)
     ids = Counter(unit["id"] for unit in units)
     dup = [key for key, n in ids.items() if n > 1]
     if dup:
