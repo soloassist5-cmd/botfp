@@ -30,3 +30,16 @@ python3 build/build_site.py     # -> dist/
 - `vercel.json` — заголовки и настройки хостинга
 
 Деплой на Vercel идёт из каталога `mcpack/site/dist` этого репозитория.
+
+Зеркало — GitHub Pages, <https://soloassist5-cmd.github.io/botfp/>, из ветки
+`gh-pages`. В ней только содержимое `dist/` (плюс `.nojekyll`), без истории;
+все ссылки на странице относительные, поэтому она работает и из подкаталога.
+Обновить зеркало после пересборки:
+
+```bash
+export GIT_INDEX_FILE=$(mktemp -u)
+git read-tree HEAD:mcpack/site/dist && git rm -q --cached vercel.json
+git update-index --add --cacheinfo 100644,$(git hash-object -w --stdin </dev/null),.nojekyll
+C=$(echo "Site mirror" | git commit-tree $(git write-tree)); unset GIT_INDEX_FILE
+git push -f origin $C:refs/heads/gh-pages
+```
