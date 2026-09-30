@@ -1,0 +1,82 @@
+# Проверки сборки LS City Life на каждый push и pull request, где менялся mcpack/.
+#
+#   mod     — мод citylife собирается (Java 17, Forge 1.20.1), jar кладётся в артефакты
+#   scripts — установщики и скрипты отката разбираются без ошибок (PowerShell и bash),
+#             тексты установщика на месте (как проверяет build_pack.py)
+#   data    — генераторы дают ровно те файлы, что лежат в репозитории: каталог
+#             недвижимости, датапак города, отчёты по прилавкам и экономике
+#
+# Самотесты мода (/citylife selftest) требуют сервер со всей сборкой, около 300 МБ
+# модов, поэтому их гоняет citylife/tools/run_gametests.py перед выкладкой.
+name: LS City Life
+
+on:
+  push:
+    paths: ["mcpack/**", ".github/workflows/lscity.yml"]
+  pull_request:
+    paths: ["mcpack/**", ".github/workflows/lscity.yml"]
+  workflow_dispatch:
+
+jobs:
+  mod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.3"
+      - name: Сборка мода
+        working-directory: mcpack/citylife
+        run: gradle build --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: citylife-jar
+          path: mcpack/citylife/build/libs/*.jar
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: PowerShell-скрипты разбираются
+        shell: pwsh
+        run: |
+          $bad = 0
+          foreach ($f in Get-ChildItem mcpack/install/*.ps1, mcpack/server/*.ps1) {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errors)
+            if ($errors) { $errors | ForEach-Object { Write-Host "$($f.Name): $($_.Message)" }; $bad++ }
+            else { Write-Host "ok $($f.Name)" }
+          }
+          exit $bad
+      - name: bash-скрипты разбираются
+        run: for f in mcpack/install/*.sh mcpack/server/*.sh; do bash -n "$f" && echo "ok $f"; done
+      - name: Тексты установщика, ASCII и CRLF в .ps1/.bat
+        working-directory: mcpack
+        run: python3 -c "import sys; sys.path.insert(0, 'build'); import build_pack; build_pack.check_scripts()"
+
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Генераторы
+        working-directory: mcpack
+        run: |
+          python3 citylife/tools/gen_estate.py
+          python3 build/gen_datapack.py
+          python3 build/gen_trades_doc.py
+          python3 build/gen_economy_doc.py > /dev/null
+      - name: Сгенерированное совпадает с репозиторием
+        run: |
+          git status --short mcpack
+          git diff --exit-code --stat -- mcpack/citylife/src/main/resources/data/citylife/estate.json \
+            mcpack/datapack mcpack/docs/trades.md mcpack/docs/economy.md
