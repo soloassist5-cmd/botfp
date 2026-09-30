@@ -34,6 +34,8 @@ public final class CityConfig {
     public final ForgeConfigSpec.IntValue medicFee;
     public final ForgeConfigSpec.IntValue finePerStar;
     public final ForgeConfigSpec.IntValue jailSecondsPerStar;
+    public final ForgeConfigSpec.BooleanValue hospitalRespawn;
+    public final ForgeConfigSpec.IntValue hospitalBill;
     public final ForgeConfigSpec.IntValue jobPayPercent;
     public final ForgeConfigSpec.IntValue backupMinutes;
     public final ForgeConfigSpec.IntValue backupKeep;
@@ -123,6 +125,12 @@ public final class CityConfig {
         jailSecondsPerStar = builder
                 .comment("Сколько секунд в камере за каждую звезду розыска.")
                 .defineInRange("jailSecondsPerStar", 60, 0, 3600);
+        hospitalRespawn = builder
+                .comment("Без своей кровати игрок возрождается у городской больницы.")
+                .define("hospitalRespawn", true);
+        hospitalBill = builder
+                .comment("Сколько стоит лечение после смерти (со счёта; нет денег — бесплатно).")
+                .defineInRange("hospitalBill", 200, 0, 1_000_000);
         builder.pop();
 
         builder.comment("Подработки").push("jobs");

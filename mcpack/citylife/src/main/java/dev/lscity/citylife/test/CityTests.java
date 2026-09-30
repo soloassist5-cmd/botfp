@@ -806,4 +806,40 @@ public final class CityTests {
         }
         h.succeed();
     }
+
+    // --- больница -----------------------------------------------------------------
+
+    /** Без кровати — к больнице, счёт за лечение и маршрут к месту гибели. */
+    @SelfTest
+    public static void hospitalRespawn(TestKit h) {
+        FakePlayer patient = player(h, "Patient");
+        CityData bank = CityData.get(h.getLevel().getServer());
+        bank.deposit(patient.getUUID(), 1000);
+        long before = bank.balance(patient.getUUID());
+        BlockPos died = patient.blockPosition();
+        BlockPos spot = dev.lscity.citylife.city.Hospital.admit(patient, died);
+        if (spot == null) {
+            h.fail("игрока без кровати не отправили в больницу");
+            return;
+        }
+        // FakePlayer не телепортируется (нет соединения) — проверяем саму точку.
+        Waypoint door = dev.lscity.citylife.city.Hospital.entrance();
+        if (spot.distSqr(new BlockPos(door.x(), door.y(), door.z())) > 6 * 6) {
+            h.fail("возрождение не у больницы: " + spot);
+        }
+        long bill = dev.lscity.citylife.CityConfig.CONFIG.hospitalBill.get();
+        if (bank.balance(patient.getUUID()) != before - bill) {
+            h.fail("счёт за лечение не списан");
+        }
+        Waypoint route = bank.route(patient.getUUID());
+        if (route == null || route.x() != died.getX() || route.z() != died.getZ()) {
+            h.fail("нет маршрута к месту гибели");
+        }
+        bank.setRoute(patient.getUUID(), null);
+        patient.setRespawnPosition(h.getLevel().dimension(), died, 0F, true, false);
+        if (dev.lscity.citylife.city.Hospital.admit(patient, died) != null) {
+            h.fail("игрока с кроватью увезли в больницу");
+        }
+        h.succeed();
+    }
 }

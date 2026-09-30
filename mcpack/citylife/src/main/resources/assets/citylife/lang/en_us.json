@@ -604,5 +604,10 @@
   "citylife.car.lock": "Lock",
   "citylife.car.unlock": "Unlock",
   "citylife.wanted.car_theft": "car theft",
-  "citylife.wanted.car_breakin": "breaking into a car"
+  "citylife.wanted.car_breakin": "breaking into a car",
+  "citylife.hospital.paid": "You were taken to the city hospital. Treatment: %s from your account.",
+  "citylife.hospital.free": "You were taken to the city hospital. No money on the account — treatment is free.",
+  "citylife.hospital.body": "Place of death",
+  "citylife.hospital.route": "Your things stayed where you died — the navigator leads there, %s m.",
+  "citylife.statement.hospital": "Hospital treatment"
 }

@@ -604,5 +604,10 @@
   "citylife.car.lock": "Запереть",
   "citylife.car.unlock": "Открыть",
   "citylife.wanted.car_theft": "угон машины",
-  "citylife.wanted.car_breakin": "взлом машины"
+  "citylife.wanted.car_breakin": "взлом машины",
+  "citylife.hospital.paid": "Вас доставили в городскую больницу. Лечение: %s со счёта.",
+  "citylife.hospital.free": "Вас доставили в городскую больницу. Денег на счету нет — лечение бесплатно.",
+  "citylife.hospital.body": "Место гибели",
+  "citylife.hospital.route": "Ваши вещи остались на месте гибели — навигатор ведёт туда, %s м.",
+  "citylife.statement.hospital": "Лечение в больнице"
 }
