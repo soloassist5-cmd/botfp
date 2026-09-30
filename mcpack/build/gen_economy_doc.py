@@ -28,6 +28,10 @@ FOOD_BASE, FOOD_PER_BLOCK = 60, 0.25
 SHIFT_PAY, SHIFT_SECONDS = 280, 180
 GARBAGE_PAY = 380
 UPKEEP_PER_MILLE = 3
+# Доход бизнеса за игровые сутки (businessIncomePerMille в конфиге мода).
+INCOME_PER_MILLE = 15
+# Игровые сутки — 20 минут.
+DAY_HOURS = 20 / 60
 WALK, DRIVE = 4.3, 12.0          # блоков в секунду пешком и на машине
 
 
@@ -83,6 +87,19 @@ def main() -> int:
         med = statistics.median(prices)
         out.append(f"| {title} | {num(prices[0])} | {num(med)} | {num(prices[-1])} | "
                    f"{med / hour:.1f} | {num(med * UPKEEP_PER_MILLE / 1000)} |")
+    business = sorted(u["price"] for u in estate if u["kind"] == "business")
+    if business:
+        med = statistics.median(business)
+        income = med * INCOME_PER_MILLE / 1000
+        days = 1000 / INCOME_PER_MILLE
+        out += ["", "## Бизнесы", "",
+                f"{len(business)} магазинов, складов, офисов и заведений. Доход — "
+                f"{INCOME_PER_MILLE / 10:.1f}% цены в игровые сутки, без коммуналки; "
+                f"окупается за {days:.0f} суток (~{days * DAY_HOURS:.0f} ч игры).", "",
+                "| Дешевле всего | Медиана | Дороже всего | Часов работы (медиана) | Доход в сутки (медиана) | Доход в час игры |",
+                "|---|---|---|---|---|---|",
+                f"| {num(business[0])} | {num(med)} | {num(business[-1])} | {med / hour:.1f} | "
+                f"{num(income)} | {num(income / DAY_HOURS)} |"]
     out += ["", "## Товары", "", "| Что | Цена, ₽ | Часов |", "|---|---|---|"]
     import gen_trades_doc as D  # noqa: E402 — русские названия товаров
 

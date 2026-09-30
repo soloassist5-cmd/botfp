@@ -22,7 +22,7 @@ setup.path_or_exit = Либо введи путь к папке игры вру�
 setup.nothing = Ничего не выбрано, выхожу.
 setup.missing = Папки нет: {0}
 setup.installing = Ставлю в: {0}
-setup.size_note = Скачивание примерно 342 МБ, это может занять несколько минут.
+setup.size_note = Скачивание примерно 273 МБ, это может занять несколько минут.
 
 install.error = ОШИБКА
 install.no_modslist = не найден {0}

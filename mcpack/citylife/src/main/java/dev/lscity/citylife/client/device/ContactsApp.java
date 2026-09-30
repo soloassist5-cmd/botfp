@@ -6,7 +6,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 
-/** Контакты: кто в сети с телефоном, его номер и расстояние. Клик — написать. */
+/**
+ * Контакты: кто в сети с телефоном, его номер и расстояние. Клик — написать,
+ * зелёная трубка справа — позвонить.
+ */
 class ContactsApp extends DeviceApp {
 
     private int scroll;
@@ -27,6 +30,10 @@ class ContactsApp extends DeviceApp {
 
     private int[] row(int[] area, int index) {
         return new int[]{area[0], area[1] + index * 27, area[2], 24};
+    }
+
+    private int[] callRect(int[] r) {
+        return new int[]{r[0] + r[2] - 22, r[1] + 3, 18, 18};
     }
 
     @Override
@@ -52,6 +59,10 @@ class ContactsApp extends DeviceApp {
             screen.text(g, entry.getString("name"), r[0] + 25, r[1] + 3, t.text());
             screen.text(g, SimCardItem.format(entry.getInt("number")) + " · "
                     + entry.getInt("dist") + " м", r[0] + 25, r[1] + 13, t.dim());
+            int[] c = callRect(r);
+            boolean hover = screen.inside(mouseX, mouseY, c);
+            PhoneUi.disc(g, c[0] + 9, c[1] + 9, 8, hover ? 0xFF3FD06A : 0xFF1F9E4A);
+            screen.text(g, "✆", c[0] + 9 - screen.font().width("✆") / 2, c[1] + 5, 0xFFFFFFFF);
         }
     }
 
@@ -59,7 +70,16 @@ class ContactsApp extends DeviceApp {
     public boolean click(double mx, double my, int[] area) {
         ListTag contacts = screen.list("contacts");
         for (int i = scroll, shown = 0; i < contacts.size(); i++, shown++) {
-            if (screen.inside(mx, my, row(area, shown))) {
+            int[] r = row(area, shown);
+            if (screen.inside(mx, my, callRect(r))) {
+                net.minecraft.nbt.CompoundTag args = new net.minecraft.nbt.CompoundTag();
+                args.putString("number", Integer.toString(contacts.getCompound(i).getInt("number")));
+                screen.send("call_dial", args);
+                // Экран звонка — в приложении «Звонки», если оно есть на устройстве.
+                screen.open("phone");
+                return true;
+            }
+            if (screen.inside(mx, my, r)) {
                 screen.openChat(contacts.getCompound(i).getInt("number"));
                 return true;
             }
