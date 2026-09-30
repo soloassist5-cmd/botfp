@@ -65,10 +65,8 @@ $Fallback = @{
     'install.head_configs'   = 'Configs'
     'install.head_world'     = 'Los Santos world'
     'install.no_world'       = 'world archive not found - skipping'
-    'install.world_exists'   = 'world is already there - keeping it'
     'install.world_datapack' = 'world kept, city datapack updated (NPCs, guide, rules)'
     'install.world_ok'       = 'world unpacked into saves\los-santos'
-    'install.server_world_exists' = 'server world is already there - keeping it'
     'install.server_world_ok' = 'world unpacked into world\'
     'install.head_forge'     = 'Forge'
     'install.forge_have'     = 'server Forge is already installed'
@@ -358,7 +356,8 @@ if ($Target -eq 'client') {
     Set-Settings (Join-Path $Dest 'server.properties') $chosen.server '='
 }
 Set-Content -LiteralPath $QualityFile -Value $Quality -Encoding ASCII
-Write-Ok ("$Quality - " + (T "install.quality_$Quality"))
+$QualityNote = @{ low = (T 'install.quality_low'); normal = (T 'install.quality_normal'); high = (T 'install.quality_high') }
+Write-Ok ("$Quality - " + $QualityNote[$Quality])
 
 # --- 3. World ----------------------------------------------------------------
 
