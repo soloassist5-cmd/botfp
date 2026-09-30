@@ -4,7 +4,7 @@ summon easy_npc:humanoid -78.5 70 175.5 {CustomName:'{"text": "Управдом"
 # НОЧНОЙ КЛУБ — Бармен
 summon easy_npc:humanoid -98.5 69 214.5 {CustomName:'{"text": "Бармен"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_bartender"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/bartender.png",Name:"",URL:""}}
 # НОЧНОЙ КЛУБ — Охранник
-summon easy_npc:humanoid -96.5 69 214.5 {CustomName:'{"text": "Охранник"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_security"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/citizen_c.png",Name:"",URL:""}}
+summon easy_npc:humanoid -96.5 69 214.5 {CustomName:'{"text": "Охранник"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_security"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/police.png",Name:"",URL:""}}
 # ЭЛЕКТРОНИКА — Продавец техники
 summon easy_npc:humanoid -112.5 69 302.5 {CustomName:'{"text": "Продавец техники"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_tech"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
 # ПРОДУКТЫ — Продавец продуктов

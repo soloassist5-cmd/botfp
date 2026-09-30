@@ -1,6 +1,8 @@
 package dev.lscity.citylife.cmd;
 
 import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.nbt.CompoundTag;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import dev.lscity.citylife.data.CityData;
 import net.minecraft.commands.CommandSourceStack;
@@ -74,6 +76,49 @@ public final class CityCommands {
                     return roles;
                 }));
 
+        // Диагностика недвижимости: сколько объектов в каталоге и сколько куплено.
+        root.then(Commands.literal("estate").requires(source -> source.hasPermission(2))
+                .executes(ctx -> {
+                    var all = dev.lscity.citylife.estate.Estate.all();
+                    var life = dev.lscity.citylife.data.LifeData.get(ctx.getSource().getServer());
+                    ctx.getSource().sendSuccess(() -> Component.literal("Недвижимость: "
+                            + all.size() + " объектов, куплено " + life.owners().size()), false);
+                    return all.size();
+                })
+                .then(Commands.literal("at")
+                        .then(Commands.argument("pos", net.minecraft.commands.arguments.coordinates
+                                .BlockPosArgument.blockPos()).executes(ctx -> {
+                                    var pos = net.minecraft.commands.arguments.coordinates
+                                            .BlockPosArgument.getBlockPos(ctx, "pos");
+                                    var unit = dev.lscity.citylife.estate.Estate.plotAt(pos);
+                                    ctx.getSource().sendSuccess(() -> Component.literal(unit == null
+                                            ? "здесь нет жилья" : unit.id() + " — " + unit.label()
+                                            + ", " + unit.price() + " ₽, дверь "
+                                            + unit.door().toShortString()), false);
+                                    return unit == null ? 0 : 1;
+                                })))
+                .then(Commands.literal("give")
+                        .then(Commands.argument("target", EntityArgument.player())
+                                .then(Commands.argument("id", StringArgumentType.word())
+                                        .executes(ctx -> {
+                                            ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+                                            String id = StringArgumentType.getString(ctx, "id");
+                                            if (dev.lscity.citylife.estate.Estate.get(id) == null) {
+                                                return 0;
+                                            }
+                                            dev.lscity.citylife.data.LifeData.get(target.server)
+                                                    .setOwner(id, target.getUUID(),
+                                                            target.getGameProfile().getName(),
+                                                            target.level().getGameTime());
+                                            return 1;
+                                        }))))
+                .then(Commands.literal("reset")
+                        .then(Commands.argument("id", StringArgumentType.word()).executes(ctx -> {
+                            dev.lscity.citylife.data.LifeData.get(ctx.getSource().getServer())
+                                    .clearOwner(StringArgumentType.getString(ctx, "id"));
+                            return 1;
+                        }))));
+
         root.then(Commands.literal("money").requires(source -> source.hasPermission(2))
                 .then(moneyOp("give"))
                 .then(moneyOp("take"))
@@ -100,6 +145,105 @@ public final class CityCommands {
                                 }))));
 
         event.getDispatcher().register(root);
+        event.getDispatcher().register(house());
+        dev.lscity.citylife.city.Emergency.register(event.getDispatcher());
+        dev.lscity.citylife.jobs.Jobs.register(event.getDispatcher());
+    }
+
+    /**
+     * /house — своё жильё без похода в агентство: где я стою, мои дома,
+     * ключи друзьям. Действует на дом, в котором (или на участке которого)
+     * стоит игрок, а если он на улице — на первый купленный.
+     */
+    private static LiteralArgumentBuilder<CommandSourceStack> house() {
+        return Commands.literal("house")
+                .executes(ctx -> houseInfo(ctx.getSource().getPlayerOrException()))
+                .then(Commands.literal("info")
+                        .executes(ctx -> houseInfo(ctx.getSource().getPlayerOrException())))
+                .then(Commands.literal("list").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    var homes = dev.lscity.citylife.estate.EstateServer.homes(player);
+                    if (homes.isEmpty()) {
+                        player.sendSystemMessage(Component.translatable("citylife.house.none"));
+                    }
+                    for (var unit : homes) {
+                        player.sendSystemMessage(Component.literal("• " + unit.label()
+                                + " (" + unit.door().toShortString() + ")"));
+                    }
+                    return homes.size();
+                }))
+                .then(Commands.literal("route").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    var unit = myHome(player);
+                    if (unit == null) {
+                        player.sendSystemMessage(Component.translatable("citylife.house.none"));
+                        return 0;
+                    }
+                    CompoundTag args = new CompoundTag();
+                    args.putString("id", unit.id());
+                    dev.lscity.citylife.estate.EstateServer.handle(player, "realty_route", args);
+                    return 1;
+                }))
+                .then(Commands.literal("trust")
+                        .then(Commands.argument("name", StringArgumentType.word()).executes(ctx -> {
+                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                            var unit = myHome(player);
+                            if (unit == null) {
+                                player.sendSystemMessage(
+                                        Component.translatable("citylife.house.none"));
+                                return 0;
+                            }
+                            dev.lscity.citylife.estate.EstateServer.trust(player, unit,
+                                    StringArgumentType.getString(ctx, "name"));
+                            return 1;
+                        })))
+                .then(Commands.literal("untrust")
+                        .then(Commands.argument("name", StringArgumentType.word()).executes(ctx -> {
+                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                            var unit = myHome(player);
+                            String name = StringArgumentType.getString(ctx, "name");
+                            var life = dev.lscity.citylife.data.LifeData.get(player.server);
+                            if (unit == null) {
+                                return 0;
+                            }
+                            for (java.util.UUID id : java.util.List.copyOf(life.trusted(unit.id()))) {
+                                if (life.trustedName(id).equalsIgnoreCase(name)) {
+                                    life.untrust(unit.id(), id);
+                                    player.sendSystemMessage(Component.translatable(
+                                            "citylife.realty.untrusted", name, unit.address()));
+                                    return 1;
+                                }
+                            }
+                            player.sendSystemMessage(Component.translatable("citylife.mail.unknown",
+                                    name));
+                            return 0;
+                        })));
+    }
+
+    private static dev.lscity.citylife.estate.Estate.Unit myHome(ServerPlayer player) {
+        var here = dev.lscity.citylife.estate.Estate.plotAt(player.blockPosition());
+        var owner = here == null ? null
+                : dev.lscity.citylife.data.LifeData.get(player.server).owner(here.id());
+        if (owner != null && owner.id().equals(player.getUUID())) {
+            return here;
+        }
+        var homes = dev.lscity.citylife.estate.EstateServer.homes(player);
+        return homes.isEmpty() ? null : homes.get(0);
+    }
+
+    private static int houseInfo(ServerPlayer player) {
+        var unit = dev.lscity.citylife.estate.Estate.plotAt(player.blockPosition());
+        if (unit == null) {
+            player.sendSystemMessage(Component.translatable("citylife.house.street"));
+            return 0;
+        }
+        var owner = dev.lscity.citylife.data.LifeData.get(player.server).owner(unit.id());
+        player.sendSystemMessage(Component.literal(unit.label() + " · " + unit.rooms() + " · "
+                + dev.lscity.citylife.economy.Money.format(unit.price())));
+        player.sendSystemMessage(owner == null
+                ? Component.translatable("citylife.realty.free")
+                : Component.translatable("citylife.realty.owner", owner.name()));
+        return 1;
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> moneyOp(String verb) {

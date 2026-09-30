@@ -13,7 +13,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 /** Сетевой канал мода: телефон синхронизируется снимками состояния. */
 public final class Net {
-    private static final String VERSION = "1";
+    private static final String VERSION = "2";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new net.minecraft.resources.ResourceLocation(CityLife.MOD_ID, "main"))
@@ -47,6 +47,11 @@ public final class Net {
                 .decoder(NavPacket::decode)
                 .consumerMainThread(NavPacket::handle)
                 .add();
+        CHANNEL.messageBuilder(PanelPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(PanelPacket::encode)
+                .decoder(PanelPacket::decode)
+                .consumerMainThread(PanelPacket::handle)
+                .add();
         CHANNEL.messageBuilder(ActionPacket.class, id, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(ActionPacket::encode)
                 .decoder(ActionPacket::decode)
@@ -73,6 +78,15 @@ public final class Net {
         }
     }
 
+    /** Включить ноутбук, стоящий на столе. */
+    public static void openLaptop(ServerPlayer player, BlockPos pos) {
+        DeviceServer.Device device = DeviceServer.resolve(player, DeviceServer.laptopContext(pos));
+        if (device != null) {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                    new OpenDevicePacket(DeviceServer.snapshot(player, device), true));
+        }
+    }
+
     /** Обновить уже открытый гаджет. */
     public static void syncDevice(ServerPlayer player, DeviceServer.Device device) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
@@ -86,6 +100,13 @@ public final class Net {
 
     public static void openPinPrompt(ServerPlayer player, BlockPos pos, String label) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new OpenPinPacket(pos, label));
+    }
+
+    /** Открыть (open) или обновить экран-панель у игрока. */
+    public static void sendPanel(ServerPlayer player, String kind, CompoundTag snapshot,
+                                 boolean open) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                new PanelPacket(kind, snapshot, open));
     }
 
     public static void sendAction(String action, CompoundTag args) {

@@ -21,6 +21,15 @@ public final class CityConfig {
     public final ForgeConfigSpec.DoubleValue arrivalRadius;
     public final ForgeConfigSpec.BooleanValue noMobs;
     public final ForgeConfigSpec.BooleanValue explosionsKeepBlocks;
+    public final ForgeConfigSpec.IntValue maxHomes;
+    public final ForgeConfigSpec.IntValue homeSellPercent;
+    public final ForgeConfigSpec.BooleanValue homeLocks;
+    public final ForgeConfigSpec.IntValue responderDelay;
+    public final ForgeConfigSpec.IntValue responderStay;
+    public final ForgeConfigSpec.IntValue medicFee;
+    public final ForgeConfigSpec.IntValue finePerStar;
+    public final ForgeConfigSpec.IntValue jailSecondsPerStar;
+    public final ForgeConfigSpec.IntValue jobPayPercent;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -60,6 +69,43 @@ public final class CityConfig {
         explosionsKeepBlocks = builder
                 .comment("Взрывы (гранаты, ракеты, мины, динамит) ранят, но не ломают блоки.")
                 .define("explosionsKeepBlocks", true);
+        builder.pop();
+
+        builder.comment("Недвижимость").push("estate");
+        maxHomes = builder
+                .comment("Сколько домов и квартир может купить один игрок.")
+                .defineInRange("maxHomes", 3, 1, 100);
+        homeSellPercent = builder
+                .comment("Сколько процентов цены агентство возвращает при продаже.")
+                .defineInRange("homeSellPercent", 70, 0, 100);
+        homeLocks = builder
+                .comment("Чужой не войдёт в купленный дом, пока владелец в сети,",
+                         "и никогда не сломает и не построит ничего на его участке.")
+                .define("homeLocks", true);
+        builder.pop();
+
+        builder.comment("Экстренные службы 112").push("emergency");
+        responderDelay = builder
+                .comment("Через сколько секунд после вызова приезжает наряд.")
+                .defineInRange("responderDelay", 30, 0, 600);
+        responderStay = builder
+                .comment("Сколько секунд наряд остаётся на месте, если его не отпустили.")
+                .defineInRange("responderStay", 180, 30, 3600);
+        medicFee = builder
+                .comment("Плата за лечение у фельдшера скорой (0 — бесплатно).")
+                .defineInRange("medicFee", 300, 0, 100_000);
+        finePerStar = builder
+                .comment("Штраф за каждую звезду розыска при задержании.")
+                .defineInRange("finePerStar", 1000, 0, 1_000_000);
+        jailSecondsPerStar = builder
+                .comment("Сколько секунд в камере за каждую звезду розыска.")
+                .defineInRange("jailSecondsPerStar", 60, 0, 3600);
+        builder.pop();
+
+        builder.comment("Подработки").push("jobs");
+        jobPayPercent = builder
+                .comment("Множитель оплаты заданий в процентах (100 — как задумано).")
+                .defineInRange("jobPayPercent", 100, 0, 1000);
         builder.pop();
 
         builder.comment("Умные замки").push("locks");

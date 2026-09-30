@@ -52,6 +52,9 @@ ROLE_SKIN = {
     "builder": "builder",
     "police": "police",
     "guard": "police",
+    "cop": "police",
+    "security": "police",
+    "firefighter": "firefighter",
     "mechanic": "mechanic",
 }
 CITIZEN_SKINS = ["citizen_a", "citizen_b", "citizen_c", "citizen_d"]
@@ -282,6 +285,15 @@ def sell(item: str, count: int, price: int, tag: dict | None = None) -> dict:
     return offer(rubles(price), stack(item, count, tag))
 
 
+def buy(item: str, count: int, price: int) -> dict:
+    """Скупка: житель берёт товар и платит рублями — заработок для игрока.
+
+    Цена скупки всегда ниже цены продажи того же товара, иначе деньги
+    можно было бы «печатать», перепродавая купленное.
+    """
+    return offer(stack(item, count), rubles(price))
+
+
 def potion(kind: str, price: int, item: str = "minecraft:potion") -> dict:
     return sell(item, 1, price, {"Potion": f"minecraft:{kind}"})
 
@@ -315,6 +327,16 @@ ROLE_TRADES: dict[str, list[dict]] = {
         sell("minecraft:milk_bucket", 1, 50),
         sell("minecraft:golden_carrot", 4, 100),
         sell("minecraft:cake", 1, 150),
+        # Скупка урожая и улова у фермеров и рыбаков.
+        buy("minecraft:wheat", 16, 60),
+        buy("minecraft:potato", 16, 50),
+        buy("minecraft:carrot", 16, 30),
+        buy("minecraft:beetroot", 16, 50),
+        buy("minecraft:pumpkin", 4, 60),
+        buy("minecraft:melon", 4, 60),
+        buy("minecraft:sugar_cane", 16, 50),
+        buy("minecraft:cod", 8, 80),
+        buy("minecraft:salmon", 8, 100),
     ],
     # Одежда: кожаный комплект в пяти цветах и краски, чтобы перекрасить.
     "trader_clothes": [
@@ -364,6 +386,15 @@ ROLE_TRADES: dict[str, list[dict]] = {
         sell("citylife:card_mastercard", 1, 300),
         sell("citylife:atm", 1, 2000),
         sell("securitycraft:briefcase", 1, 1500),
+        # Скупка драгметаллов и камней.
+        buy("minecraft:gold_ingot", 1, 150),
+        buy("minecraft:raw_gold", 1, 120),
+        buy("minecraft:diamond", 1, 800),
+        buy("minecraft:emerald", 1, 400),
+        buy("minecraft:lapis_lazuli", 16, 200),
+        buy("minecraft:redstone", 32, 200),
+        buy("minecraft:amethyst_shard", 8, 150),
+        buy("minecraft:quartz", 16, 150),
     ],
     "gunsmith": GUNSMITH_TRADES,
     "arms_dealer": ARMS_TRADES,
@@ -494,6 +525,14 @@ ROLE_TRADES: dict[str, list[dict]] = {
         sell("minecraft:iron_ingot", 3, 100),
         sell("minecraft:copper_ingot", 16, 500),
         sell("minecraft:coal", 16, 100),
+        # Скупка сырья: брёвна, уголь, руда, камень.
+        buy("minecraft:oak_log", 16, 40),
+        buy("minecraft:spruce_log", 16, 40),
+        buy("minecraft:birch_log", 16, 40),
+        buy("minecraft:coal", 32, 90),
+        buy("minecraft:raw_copper", 16, 150),
+        buy("minecraft:raw_iron", 8, 120),
+        buy("minecraft:cobblestone", 64, 20),
     ],
     # Стройка и магазин стройматериалов: всё для своего дома.
     "builder": [
@@ -808,8 +847,31 @@ GUIDE_PAGES = [
         {"text": "С чего начать\n\n", "bold": True},
         {"text": "1. Перетащи SIM-карту на телефон в инвентаре.\n"
                  "2. Правый клик телефоном — рабочий стол.\n"
-                 "3. Работа — команда /work, раз в 15 минут.\n"
-                 "4. Жильё и замки — у риелтора в мэрии."},
+                 "3. Работа — приложение «Работа» или /job.\n"
+                 "4. Жильё — у риелтора в мэрии."},
+    ],
+    [
+        {"text": "Заработок\n\n", "bold": True},
+        {"text": "Курьер — посылка к двери по адресу.\n"
+                 "Такси — нужна машина, пассажир и адрес.\n"
+                 "Смена — 3 минуты в магазине или на АЗС.\n\n"
+                 "Скупка: урожай и рыбу берёт продавец еды, "
+                 "руду и камни — банкир, брёвна и уголь — кладовщик. /work — раз в 15 минут."},
+    ],
+    [
+        {"text": "Своё жильё\n\n", "bold": True},
+        {"text": "Дома, виллы, таунхаусы и квартиры продаёт риелтор "
+                 "в мэрии, квартиры — управдомы у подъездов.\n\n"
+                 "Пока хозяин в игре, чужой не войдёт. Когда его нет — "
+                 "зайти можно, но рыться в сундуках — кража."},
+    ],
+    [
+        {"text": "112\n\n", "bold": True},
+        {"text": "Полиция, скорая и пожарные приезжают через 30 секунд. "
+                 "Кликни по сотруднику — в чате появятся варианты: "
+                 "вылечить, потушить, задержать, отбой.\n\n"
+                 "Драка, кража и взлом дают звёзды розыска: "
+                 "полиция задерживает, штраф и камера."},
     ],
     [
         {"text": "Телефон и SIM\n\n", "bold": True},

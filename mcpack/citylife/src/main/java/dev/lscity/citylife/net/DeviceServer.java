@@ -93,7 +93,25 @@ public final class DeviceServer {
         return ctx;
     }
 
+    public static CompoundTag laptopContext(BlockPos pos) {
+        CompoundTag ctx = new CompoundTag();
+        ctx.putLong("laptop", pos.asLong());
+        return ctx;
+    }
+
     public static Device resolve(ServerPlayer player, CompoundTag ctx) {
+        if (ctx.contains("laptop")) {
+            BlockPos pos = BlockPos.of(ctx.getLong("laptop"));
+            if (pos.distToCenterSqr(player.position()) > 100
+                    || !(player.level().getBlockEntity(pos)
+                    instanceof dev.lscity.citylife.pc.LaptopBlockEntity laptop)
+                    || !(laptop.stack().getItem() instanceof DeviceItem item)
+                    || !player.level().getBlockState(pos)
+                    .getValue(dev.lscity.citylife.pc.LaptopBlock.OPEN)) {
+                return null;
+            }
+            return new Device(item.model(), laptop.device(), ctx, null);
+        }
         if (ctx.contains("pc")) {
             BlockPos pos = BlockPos.of(ctx.getLong("pc"));
             if (pos.distToCenterSqr(player.position()) > 100
@@ -218,6 +236,33 @@ public final class DeviceServer {
         }
         tag.put("mail", inbox);
         tag.putInt("unread", unread);
+
+        // Работа и своё жильё.
+        tag.put("jobs", dev.lscity.citylife.jobs.Jobs.snapshot(player));
+        ListTag homes = new ListTag();
+        var life = dev.lscity.citylife.data.LifeData.get(player.server);
+        for (var unit : dev.lscity.citylife.estate.Estate.all()) {
+            var owner = life.owner(unit.id());
+            boolean mine = owner != null && owner.id().equals(id);
+            if (!mine && (owner == null || !life.trusted(unit.id()).contains(id))) {
+                continue;
+            }
+            CompoundTag entry = new CompoundTag();
+            entry.putString("id", unit.id());
+            entry.putString("title", unit.title());
+            entry.putString("address", unit.address());
+            entry.putString("rooms", unit.rooms());
+            entry.putBoolean("mine", mine);
+            entry.putString("owner", owner.name());
+            ListTag keys = new ListTag();
+            for (UUID key : life.trusted(unit.id())) {
+                keys.add(net.minecraft.nbt.StringTag.valueOf(life.trustedName(key)));
+            }
+            entry.put("keys", keys);
+            entry.putInt("distance", (int) Math.sqrt(unit.door().distToCenterSqr(player.position())));
+            homes.add(entry);
+        }
+        tag.put("homes", homes);
 
         ListTag board = new ListTag();
         for (Ad ad : data.ads()) {
@@ -501,6 +546,13 @@ public final class DeviceServer {
             case "lock_unpair" -> data.unpairLock(id, BlockPos.of(args.getLong("pos")));
             case "lock_grant" -> lockGrant(player, args);
             case "lock_pin" -> lockSetPin(player, args);
+            case "job_take" -> dev.lscity.citylife.jobs.Jobs.take(player, args.getString("kind"));
+            case "job_quit" -> dev.lscity.citylife.jobs.Jobs.quit(player, false);
+            case "home_route" -> dev.lscity.citylife.estate.EstateServer.handle(player,
+                    "realty_route", args);
+            case "home_trust" -> dev.lscity.citylife.estate.EstateServer.trust(player,
+                    dev.lscity.citylife.estate.Estate.get(args.getString("id")),
+                    args.getString("name").trim());
             case "sos" -> {
                 // 112, как в жизни, дозванивается и без SIM-карты — но только с телефона.
                 if (device.model().has("sos")) {
@@ -718,22 +770,7 @@ public final class DeviceServer {
     }
 
     private static void emergency(ServerPlayer player, String kind) {
-        String service = switch (kind) {
-            case "medic" -> "Скорая";
-            case "fire" -> "Пожарная";
-            default -> "Полиция";
-        };
-        Component message = Component.translatable("citylife.sos.broadcast", service,
-                player.getGameProfile().getName(),
-                player.getBlockX(), player.getBlockY(), player.getBlockZ())
-                .withStyle(ChatFormatting.RED);
-        if (CityConfig.CONFIG.emergencyToEveryone.get()) {
-            player.server.getPlayerList().broadcastSystemMessage(message, false);
-        } else {
-            player.server.getPlayerList().getPlayers().stream()
-                    .filter(candidate -> player.server.getPlayerList().isOp(candidate.getGameProfile()))
-                    .forEach(candidate -> candidate.sendSystemMessage(message));
-            player.sendSystemMessage(message);
-        }
+        dev.lscity.citylife.city.Emergency.broadcast(player, kind);
+        dev.lscity.citylife.city.Emergency.call(player, kind);
     }
 }

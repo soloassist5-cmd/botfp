@@ -65,6 +65,12 @@ public class DeviceItem extends Item {
     public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
+        if (model.kind() == dev.lscity.citylife.device.DeviceModel.Kind.LAPTOP
+                && context.getPlayer() != null && context.getPlayer().isShiftKeyDown()
+                && context.getClickedFace() == net.minecraft.core.Direction.UP
+                && !Cameras.isCamera(level, pos)) {
+            return placeOnDesk(stack, context);
+        }
         if (!Cameras.isCamera(level, pos)) {
             return InteractionResult.PASS;
         }
@@ -81,6 +87,33 @@ public class DeviceItem extends Item {
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    /**
+     * Ноутбук ставится на стол: Shift+ПКМ по верхней грани. В блок уходит
+     * сам предмет со всеми данными, крышка сразу открыта.
+     */
+    private InteractionResult placeOnDesk(ItemStack stack, UseOnContext context) {
+        Level level = context.getLevel();
+        BlockPos above = context.getClickedPos().above();
+        if (!level.getBlockState(above).canBeReplaced()) {
+            return InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        net.minecraft.world.level.block.state.BlockState state =
+                dev.lscity.citylife.Registration.LAPTOP_BLOCK.get().defaultBlockState()
+                        .setValue(dev.lscity.citylife.pc.LaptopBlock.FACING,
+                                context.getHorizontalDirection().getOpposite())
+                        .setValue(dev.lscity.citylife.pc.LaptopBlock.OPEN, true);
+        level.setBlockAndUpdate(above, state);
+        if (level.getBlockEntity(above) instanceof dev.lscity.citylife.pc.LaptopBlockEntity laptop) {
+            laptop.setStack(stack.split(1));
+        }
+        level.playSound(null, above, net.minecraft.sounds.SoundEvents.WOODEN_TRAPDOOR_OPEN,
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.5F, 1.6F);
+        return InteractionResult.CONSUME;
     }
 
     // --- SIM-карта в инвентаре ------------------------------------------------
@@ -173,6 +206,10 @@ public class DeviceItem extends Item {
         } else {
             lines.add(Component.translatable("citylife.device.wifi")
                     .withStyle(ChatFormatting.DARK_AQUA));
+        }
+        if (model.kind() == dev.lscity.citylife.device.DeviceModel.Kind.LAPTOP) {
+            lines.add(Component.translatable("citylife.laptop.place_hint")
+                    .withStyle(ChatFormatting.DARK_GRAY));
         }
     }
 }

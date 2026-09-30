@@ -116,6 +116,8 @@ public class DeviceScreen extends Screen {
             case "game2048" -> new Game2048App(this);
             case "terminal" -> new TerminalApp(this);
             case "sos" -> new SosApp(this);
+            case "jobs" -> new JobsApp(this);
+            case "homes" -> new HomesApp(this);
             case "store" -> new StoreApp(this);
             case "marketplace" -> new MarketApp(this);
             case "settings" -> new SettingsApp(this);

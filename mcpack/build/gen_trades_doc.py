@@ -96,9 +96,20 @@ def main() -> int:
         if not offers:
             out.append("Не торгует — отвечает репликой.")
             continue
-        out += ["| Товар | Кол-во | Цена, ₽ |", "|---|---|---|"]
-        for o in offers:
-            out.append(f"| {title(o['sell'])} | {int(o['sell']['Count'])} | {price(o['buy'])} |")
+        sales = [o for o in offers if not o["buy"]["id"].startswith("minecraft:")]
+        buys = [o for o in offers if o["buy"]["id"].startswith("minecraft:")]
+        if sales:
+            out += ["| Товар | Кол-во | Цена, ₽ |", "|---|---|---|"]
+            for o in sales:
+                out.append(f"| {title(o['sell'])} | {int(o['sell']['Count'])} | "
+                           f"{price(o['buy'])} |")
+        if buys:
+            # Скупка: житель берёт товар у игрока и платит рублями.
+            out += ["", "**Скупка** — житель покупает у игрока:", "",
+                    "| Товар | Кол-во | Платит, ₽ |", "|---|---|---|"]
+            for o in buys:
+                out.append(f"| {title(o['buy'])} | {int(o['buy']['Count'])} | "
+                           f"{price(o['sell'])} |")
     path = os.path.join(ROOT, "docs", "trades.md")
     with open(path, "w", encoding="utf-8") as fh:
         fh.write("\n".join(out) + "\n")

@@ -225,6 +225,39 @@ noMobs = true
 explosionsKeepBlocks = true
 ```
 
+## Недвижимость, 112 и подработки
+
+Каталог жилья (`data/citylife/estate.json` в jar мода) собирает
+`citylife/tools/gen_estate.py` тем же кодом генератора, что строит дома:
+для каждого дома, виллы, секции таунхауса и квартиры — адрес, цена, габарит
+дома (`box`), участок (`plot`) и дверь. Границы совпадают с постройкой блок
+в блок, цена считается по площади, этажности и району. Владельцы хранятся
+в `data/citylife_life.dat` мира вместе с розыском и статистикой работы.
+
+Настройки — в том же `config/citylife-common.toml`:
+
+```
+[estate]
+maxHomes = 3            # сколько жилья на одного игрока
+homeSellPercent = 70    # сколько агентство возвращает при продаже
+homeLocks = true        # запирать дом при владельце, защищать участок
+
+[emergency]
+responderDelay = 30     # через сколько секунд приезжает наряд
+responderStay = 180     # сколько стоит на месте
+medicFee = 300          # лечение у фельдшера
+finePerStar = 1000      # штраф за звезду розыска
+jailSecondsPerStar = 60 # камера за звезду
+
+[jobs]
+jobPayPercent = 100     # множитель оплаты подработок
+```
+
+Команды администратора: `/citylife estate` (сколько куплено),
+`/citylife estate at <x y z>`, `/citylife estate give <игрок> <id>`,
+`/citylife estate reset <id>`, `/sos dispatch <police|medic|fire> <x y z>` —
+прислать наряд в любую точку.
+
 ## Как появляются NPC
 
 Жители не записаны в файлы мира: их ставит датапак. При первом входе в мир

@@ -55,6 +55,8 @@ public final class AppIcons {
             case "mines" -> new int[]{0xFF9AA3B5, 0xFF4A5268};
             case "game2048" -> new int[]{0xFFF2B179, 0xFFD27A2E};
             case "terminal" -> new int[]{0xFF2A2F38, 0xFF0E1014};
+            case "jobs" -> new int[]{0xFFFFC857, 0xFFD9822B};
+            case "homes" -> new int[]{0xFF6FD08C, 0xFF2E8A5A};
             default -> new int[]{0xFF6E7488, 0xFF3A3F50};
         };
     }
@@ -101,6 +103,26 @@ public final class AppIcons {
                 g.fill(cx - half + 2, cy + s / 20, cx + half - 1, cy + s / 4, WHITE);
                 PhoneUi.disc(g, cx, cy + s / 8, Math.max(1, s / 16), 0xFFD06A1E);
                 g.fill(cx - 1, cy + s / 8, cx + 1, cy + s / 5 + 1, 0xFFD06A1E);
+            }
+            case "jobs" -> {
+                // Портфель: корпус, ручка сверху и застёжка.
+                int w = s / 2;
+                int h = s / 3;
+                PhoneUi.roundedRect(g, cx - w / 2, cy - h / 2 + 2, w, h, 2, WHITE);
+                g.fill(cx - s / 10, cy - h / 2 - 2, cx + s / 10, cy - h / 2, WHITE);
+                g.fill(cx - s / 10, cy - h / 2 - 2, cx - s / 10 + 2, cy - h / 2 + 2, WHITE);
+                g.fill(cx + s / 10 - 2, cy - h / 2 - 2, cx + s / 10, cy - h / 2 + 2, WHITE);
+                g.fill(cx - w / 2, cy + 1, cx + w / 2, cy + 2, 0xFFD9822B);
+                g.fill(cx - 2, cy - 1, cx + 2, cy + 4, 0xFFD9822B);
+            }
+            case "homes" -> {
+                // Домик с дверью.
+                int half = s / 4;
+                for (int i = 0; i <= half; i++) {
+                    g.fill(cx - i, cy - s / 5 + i, cx + i + 1, cy - s / 5 + i + 1, WHITE);
+                }
+                g.fill(cx - half + 2, cy + s / 20, cx + half - 1, cy + s / 4, WHITE);
+                g.fill(cx - 2, cy + s / 10, cx + 2, cy + s / 4, 0xFF2E8A5A);
             }
             case "sos" -> {
                 PhoneUi.ring(g, cx, cy, s / 4, 2, WHITE);

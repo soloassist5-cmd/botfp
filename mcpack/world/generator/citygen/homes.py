@@ -533,10 +533,12 @@ def house_sign(frame: Frame, lot: Lot, u: int, v: int) -> None:
 #  Типы жилья
 # ---------------------------------------------------------------------------
 
-def build_house(canvas, lot: Lot) -> None:
-    """Частный дом на своём участке."""
-    rng = _rng(lot)
-    frame = Frame(canvas, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)
+def _house_layout(frame: Frame, rng: random.Random):
+    """
+    Габарит частного дома. Вынесен отдельно: тот же расчёт нужен риелтору
+    (границы дома, который продаётся), поэтому генератор и выгрузка
+    недвижимости тянут случайные числа в одном и том же порядке.
+    """
     W, D = frame.W, frame.D
     style = rng.choice(HOUSE_STYLES)
     setback = rng.randint(4, 6)
@@ -550,6 +552,39 @@ def build_house(canvas, lot: Lot) -> None:
     door_u = u0 + w // 2 if floors == 1 else u0 + max(3, w // 2 + 1)
     if floors == 2 and door_u > box.u1 - 2:
         door_u = box.u1 - 2
+    return style, box, door_u, drive_u
+
+
+def _villa_layout(frame: Frame, rng: random.Random):
+    """Габарит виллы — по той же причине, что и _house_layout."""
+    W, D = frame.W, frame.D
+    modern = rng.random() < 0.5
+    style = rng.choice(MODERN_STYLES if modern else HOUSE_STYLES[:2] + HOUSE_STYLES[4:5])
+    setback = 3
+    w = max(9, min(W - 10, rng.randint(12, 15)))
+    d = max(8, min(D - setback - 7, rng.randint(8, 10)))
+    box = Box(2, setback, w, d, 2)
+    door_u = box.u0 + max(3, w // 2 + 1)
+    return style, box, door_u
+
+
+def _row_layout(frame: Frame) -> tuple[int, int, int, int]:
+    """Таунхаусы: число секций, ширина секции, длина ряда, глубина."""
+    W, D = frame.W, frame.D
+    setback = 3
+    count = max(2, min(5, (W - 2) // 7))
+    unit = (W - 3) // count
+    total = unit * count + 1
+    d = max(8, min(D - setback - 4, 10))
+    return count, unit, total, d
+
+
+def build_house(canvas, lot: Lot) -> None:
+    """Частный дом на своём участке."""
+    rng = _rng(lot)
+    frame = Frame(canvas, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)
+    style, box, door_u, drive_u = _house_layout(frame, rng)
+    w, d = box.w, box.d
 
     garden(frame, lot, box, style, door_u, rng, drive_u)
     shell(frame, box, style, door_u)
@@ -567,13 +602,7 @@ def build_villa(canvas, lot: Lot) -> None:
     rng = _rng(lot)
     frame = Frame(canvas, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)
     W, D = frame.W, frame.D
-    modern = rng.random() < 0.5
-    style = rng.choice(MODERN_STYLES if modern else HOUSE_STYLES[:2] + HOUSE_STYLES[4:5])
-    setback = 3
-    w = max(9, min(W - 10, rng.randint(12, 15)))
-    d = max(8, min(D - setback - 7, rng.randint(8, 10)))
-    box = Box(2, setback, w, d, 2)
-    door_u = box.u0 + max(3, w // 2 + 1)
+    style, box, door_u = _villa_layout(frame, rng)
     drive_u = box.u1 + 2
 
     garden(frame, lot, box, style, door_u, rng, drive_u)
@@ -627,10 +656,7 @@ def build_rowhouses(canvas, lot: Lot) -> None:
     frame = Frame(canvas, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)
     W, D = frame.W, frame.D
     setback = 3
-    count = max(2, min(5, (W - 2) // 7))
-    unit = (W - 3) // count
-    total = unit * count + 1
-    d = max(8, min(D - setback - 4, 10))
+    count, unit, total, d = _row_layout(frame)
     base = rng.choice(HOUSE_STYLES[:4])
     row = Box(1, setback, total, d, 2)
 
@@ -694,6 +720,46 @@ def apartment_box(lot: Lot) -> tuple[Box, int]:
     return box, box.u0 + 2
 
 
+@dataclass
+class Flat:
+    """Квартира в многоквартирном доме, координаты участка."""
+    floor: int
+    number: int
+    side: str
+    a: int
+    b: int
+    rv0: int
+    rv1: int
+    wall_v: int      # стена с дверью в коридор
+    out: str         # куда открывается дверь (в коридор)
+    last: bool
+
+
+def apartment_flats(box: Box) -> list[Flat]:
+    """
+    Нарезка этажей на квартиры: общий расчёт для стройки и для риелтора.
+    Номера сквозные по дому, как на табличках «КВ. N».
+    """
+    u0, v0, u1, v1 = box.u0, box.v0, box.u1, box.v1
+    corridor = v0 + box.d // 2
+    span = u1 - 1 - (u0 + 5) + 1
+    count = max(1, span // 6)
+    width = span // count
+    flats: list[Flat] = []
+    number = 0
+    for k in range(box.floors):
+        for side, wall_v, out in (("front", corridor - 1, "back"),
+                                  ("back", corridor + 2, "front")):
+            for i in range(count):
+                a = u0 + 5 + i * width
+                last = i == count - 1
+                b = u1 - 1 if last else a + width - 2
+                rv0, rv1 = (v0 + 1, corridor - 2) if side == "front" else (corridor + 3, v1 - 1)
+                number += 1
+                flats.append(Flat(k, number, side, a, b, rv0, rv1, wall_v, out, last))
+    return flats
+
+
 def build_apartment(canvas, lot: Lot) -> None:
     """
     Жилой дом: подъезд с лестницей, коридор, квартиры с обеих сторон.
@@ -726,7 +792,6 @@ def build_apartment(canvas, lot: Lot) -> None:
     frame.wall_sign(door_u + 1, FY + 2, v0, "front", lines, color="white", glowing=True)
 
     corridor = v0 + box.d // 2          # коридор: две клетки corridor и corridor+1
-    number = 0
     for k in range(box.floors):
         fy = FY + STOREY * k
         # Подъезд: лестница вдоль левой стены, проход рядом с ней.
@@ -743,34 +808,28 @@ def build_apartment(canvas, lot: Lot) -> None:
             frame.light(u, fy + 3, corridor)
 
         # Квартиры: нарезаем обе стороны на секции по 6-7 блоков.
-        span = u1 - 1 - (u0 + 5) + 1
-        count = max(1, span // 6)
-        width = span // count
-        for side, wall_v, out in (("front", corridor - 1, "back"),
-                                  ("back", corridor + 2, "front")):
-            for i in range(count):
-                a = u0 + 5 + i * width
-                last = i == count - 1
-                b = u1 - 1 if last else a + width - 2
-                rv0, rv1 = (v0 + 1, corridor - 2) if side == "front" else (corridor + 3, v1 - 1)
-                if not last:
-                    _partition(frame, b + 1, rv0, b + 1, rv1, fy, wall)
-                number += 1
-                door = a + 1
-                frame.door(door, fy + 1, wall_v, out, "spruce")
-                frame.set(door, fy + 3, wall_v, wall)
-                frame.wall_sign(door + 1, fy + 2, wall_v, out, [f"КВ. {number}"],
-                                color="black")
-                # Обстановка у дальней стены и свет под потолком.
-                if b - a >= 2 and rv1 - rv0 >= 2:
-                    far, head, step = (rv0, "front", 1) if side == "front" \
-                        else (rv1, "back", -1)
-                    _bed(frame, b, fy + 1, far + step, head,
-                         rng.choice(("red", "blue", "white", "green", "yellow")))
-                    _chest(frame, a, fy + 1, far, out)
-                    if b - 1 > a:
-                        frame.set(b - 1, fy + 1, far, B.CRAFTING)
-                frame.light((a + b) // 2, fy + 3, (rv0 + rv1) // 2)
+        for flat in apartment_flats(box):
+            if flat.floor != k:
+                continue
+            a, b, rv0, rv1 = flat.a, flat.b, flat.rv0, flat.rv1
+            side, wall_v, out, number = flat.side, flat.wall_v, flat.out, flat.number
+            if not flat.last:
+                _partition(frame, b + 1, rv0, b + 1, rv1, fy, wall)
+            door = a + 1
+            frame.door(door, fy + 1, wall_v, out, "spruce")
+            frame.set(door, fy + 3, wall_v, wall)
+            frame.wall_sign(door + 1, fy + 2, wall_v, out, [f"КВ. {number}"],
+                            color="black")
+            # Обстановка у дальней стены и свет под потолком.
+            if b - a >= 2 and rv1 - rv0 >= 2:
+                far, head, step = (rv0, "front", 1) if side == "front" \
+                    else (rv1, "back", -1)
+                _bed(frame, b, fy + 1, far + step, head,
+                     rng.choice(("red", "blue", "white", "green", "yellow")))
+                _chest(frame, a, fy + 1, far, out)
+                if b - 1 > a:
+                    frame.set(b - 1, fy + 1, far, B.CRAFTING)
+            frame.light((a + b) // 2, fy + 3, (rv0 + rv1) // 2)
 
     light_all(frame, box)
     T = flat_roof(frame, box, style)
@@ -778,3 +837,112 @@ def build_apartment(canvas, lot: Lot) -> None:
     if box.w >= 12:
         frame.fill(u1 - 4, T, v1 - 4, u1 - 2, T + 2, v1 - 2, B.CONCRETE_LIGHT)
         frame.fill(u1 - 4, T + 3, v1 - 4, u1 - 2, T + 3, v1 - 2, B.slab("smooth_stone"))
+
+
+# ---------------------------------------------------------------------------
+#  Недвижимость: что продаёт риелтор
+# ---------------------------------------------------------------------------
+
+# Цена за квадратный блок жилой площади по районам: вилла на холмах
+# дороже домика в промзоне. Итог округляется до тысячи.
+DISTRICT_PRICE = {
+    "downtown": 480, "hills": 650, "beach": 550, "midtown": 380,
+    "suburbs": 300, "eastside": 230, "industrial": 200,
+}
+KIND_TITLE = {"house": "Дом", "villa": "Вилла", "rowhouse": "Таунхаус", "flat": "Квартира"}
+
+
+def _price(lot: Lot, area: int, floors: int, bonus: float = 1.0) -> int:
+    rate = DISTRICT_PRICE.get(lot.district, 300)
+    return max(10, round(area * floors * rate * bonus / 1000)) * 1000
+
+
+def estate_units(lot: Lot) -> list[dict]:
+    """
+    Жильё на участке, которое можно купить: дом, вилла, секция таунхауса
+    или квартира. Координаты мировые; box — сам дом (в нём запираются
+    двери и сундуки), plot — всё, что принадлежит владельцу (там нельзя
+    ломать и строить чужим), door — входная дверь, куда ведёт навигатор.
+
+    Геометрию считают те же функции, что строят дом, поэтому границы
+    совпадают с постройкой блок в блок.
+    """
+    if not lot.address or lot.kind not in ("house", "villa", "rowhouse", "apartment"):
+        return []
+    frame = Frame(None, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)
+
+    def rect(u0: int, v0: int, u1: int, v1: int) -> tuple[int, int, int, int]:
+        ax, az = frame.world(u0, v0)
+        bx, bz = frame.world(u1, v1)
+        return min(ax, bx), min(az, bz), max(ax, bx), max(az, bz)
+
+    def point(u: int, y: int, v: int) -> list[int]:
+        x, z = frame.world(u, v)
+        return [x, y, z]
+
+    def unit(kind: str, suffix: str, address: str, box_rect, y0: int, y1: int,
+             plot_rect, door: list[int], price: int, rooms: str) -> dict:
+        bx0, bz0, bx1, bz1 = box_rect
+        px0, pz0, px1, pz1 = plot_rect
+        return {
+            "id": f"{lot.ix}_{lot.iz}_{lot.x0}_{lot.z0}{suffix}",
+            "kind": kind,
+            "title": KIND_TITLE[kind],
+            "address": address,
+            "district": lot.district,
+            "price": price,
+            "rooms": rooms,
+            "box": [bx0, y0, bz0, bx1, y1, bz1],
+            "plot": [px0, CITY_Y - 3, pz0, px1, y1 + 2, pz1],
+            "door": door,
+        }
+
+    units: list[dict] = []
+    lot_rect = (lot.x0, lot.z0, lot.x1, lot.z1)
+    if lot.kind in ("house", "villa"):
+        rng = _rng(lot)
+        if lot.kind == "house":
+            _, box, door_u, _ = _house_layout(frame, rng)
+            bonus = 1.0
+        else:
+            _, box, door_u = _villa_layout(frame, rng)
+            bonus = 1.6          # гараж, бассейн и вид с холма
+        area = box.w * box.d
+        units.append(unit(lot.kind, "", lot.address,
+                          rect(box.u0, box.v0, box.u1, box.v1),
+                          CITY_Y - 2, box.top + 9, lot_rect,
+                          point(door_u, FY + 1, box.v0),
+                          _price(lot, area, box.floors, bonus),
+                          f"{box.floors} эт., {area} м²"))
+    elif lot.kind == "rowhouse":
+        count, unit_w, _, d = _row_layout(frame)
+        setback = 3
+        for i in range(count):
+            u0 = 1 + i * unit_w
+            box = Box(u0, setback, unit_w + 1, d, 2)
+            door_u = u0 + unit_w // 2 + 1
+            # Участок секции: её полоса от улицы до задней границы.
+            plot = rect(u0 + (1 if i else 0), 0, box.u1 - (0 if i == count - 1 else 1),
+                        frame.D - 1)
+            area = box.w * box.d
+            units.append(unit("rowhouse", f"_s{i + 1}", f"{lot.address}, секция {i + 1}",
+                              rect(box.u0, box.v0, box.u1, box.v1),
+                              CITY_Y - 2, box.top + 7, plot,
+                              point(door_u, FY + 1, box.v0),
+                              _price(lot, area, 2, 0.9), f"2 эт., {area} м²"))
+    else:
+        box, _ = apartment_box(lot)
+        for flat in apartment_flats(box):
+            fy = FY + STOREY * flat.floor
+            v0, v1 = (flat.rv0, flat.wall_v) if flat.side == "front" \
+                else (flat.wall_v, flat.rv1)
+            r = rect(flat.a, v0, flat.b, v1)
+            area = (flat.b - flat.a + 1) * (flat.rv1 - flat.rv0 + 1)
+            units.append(unit("flat", f"_f{flat.number}", f"{lot.address}, кв. {flat.number}",
+                              r, fy, fy + 3, r,
+                              point(flat.a + 1, fy + 1, flat.wall_v),
+                              _price(lot, area, 1, 1.2),
+                              f"{flat.floor + 1} этаж, {area} м²"))
+            # Квартира не залезает на чужой этаж: plot = сам блок квартиры.
+            units[-1]["plot"] = [r[0], fy, r[1], r[2], fy + 3, r[3]]
+    return units

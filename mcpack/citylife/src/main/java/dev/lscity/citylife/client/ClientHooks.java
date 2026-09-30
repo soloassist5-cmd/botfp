@@ -41,6 +41,18 @@ public final class ClientHooks {
         }
     }
 
+    public static void handlePanel(dev.lscity.citylife.net.PanelPacket packet) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if ("realty".equals(packet.kind())) {
+            if (minecraft.screen instanceof dev.lscity.citylife.client.screen.RealtyScreen screen) {
+                screen.update(packet.snapshot());
+            } else if (packet.open()) {
+                minecraft.setScreen(
+                        new dev.lscity.citylife.client.screen.RealtyScreen(packet.snapshot()));
+            }
+        }
+    }
+
     public static void handleNav(NavPacket packet) {
         if (packet.active()) {
             NavClient.set(new Waypoint(packet.name(), packet.x(), packet.y(), packet.z(),

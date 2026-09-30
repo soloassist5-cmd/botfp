@@ -113,6 +113,10 @@ public final class Registration {
     public static final RegistryObject<Block> HEADSET = BLOCKS.register("headset",
             () -> new DeskBlock(desk(), 3, 0, 5, 13, 9, 11));
 
+    /** Ноутбук на столе: отдельного предмета нет, ставится самим ноутбуком. */
+    public static final RegistryObject<Block> LAPTOP_BLOCK = BLOCKS.register("laptop_block",
+            () -> new dev.lscity.citylife.pc.LaptopBlock(desk().strength(0.5F)));
+
     public static final RegistryObject<Block> PICKUP_POINT = BLOCKS.register("pickup_point",
             () -> new PickupPointBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE).strength(4.0F, 12.0F)
@@ -129,6 +133,10 @@ public final class Registration {
     public static final RegistryObject<BlockEntityType<PcCaseBlockEntity>> PC_CASE_BE =
             BLOCK_ENTITIES.register("pc_case", () -> BlockEntityType.Builder
                     .of(PcCaseBlockEntity::new, PC_CASE.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<dev.lscity.citylife.pc.LaptopBlockEntity>>
+            LAPTOP_BE = BLOCK_ENTITIES.register("laptop_block", () -> BlockEntityType.Builder
+                    .of(dev.lscity.citylife.pc.LaptopBlockEntity::new, LAPTOP_BLOCK.get()).build(null));
 
     public static final RegistryObject<MenuType<PcCaseMenu>> PC_CASE_MENU =
             MENUS.register("pc_case", () -> IForgeMenuType.create(PcCaseMenu::new));

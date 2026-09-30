@@ -35,6 +35,9 @@ public record ActionPacket(String action, CompoundTag args) {
                     AtmServer.sync(player,
                             net.minecraft.core.BlockPos.of(packet.args().getLong("pos")));
                 }
+            } else if (packet.action().startsWith("realty_")) {
+                dev.lscity.citylife.estate.EstateServer.handle(player, packet.action(),
+                        packet.args());
             } else {
                 DeviceServer.handle(player, packet.action(), packet.args());
             }

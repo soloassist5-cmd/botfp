@@ -1,6 +1,6 @@
 # NPC, пачка 5 из 8
 # ТОРГОВЫЙ ЦЕНТР — Охранник ТЦ
-summon easy_npc:humanoid 102.5 69 115.5 {CustomName:'{"text": "Охранник ТЦ"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_security"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/citizen_b.png",Name:"",URL:""}}
+summon easy_npc:humanoid 102.5 69 115.5 {CustomName:'{"text": "Охранник ТЦ"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_security"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/police.png",Name:"",URL:""}}
 # ЭЛЕКТРОНИКА — Продавец техники
 summon easy_npc:humanoid 97.5 69 170.5 {CustomName:'{"text": "Продавец техники"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_trader_tech"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/clerk.png",Name:"",URL:""}}
 # ЖИЛОЙ ДОМ — Управдом
@@ -28,9 +28,9 @@ summon easy_npc:humanoid 171.5 69 -85.5 {CustomName:'{"text": "Продавец 
 # ДОХОДНЫЙ ДОМ — Управдом
 summon easy_npc:humanoid 175.5 70 -17.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
 # ПОЛИЦИЯ — Полицейский
-summon easy_npc:humanoid 157.5 69 22.5 {CustomName:'{"text": "Полицейский"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cop"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/citizen_b.png",Name:"",URL:""}}
+summon easy_npc:humanoid 157.5 69 22.5 {CustomName:'{"text": "Полицейский"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cop"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/police.png",Name:"",URL:""}}
 # ПОЛИЦИЯ — Дежурный
-summon easy_npc:humanoid 159.5 69 22.5 {CustomName:'{"text": "Дежурный"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cop"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/citizen_d.png",Name:"",URL:""}}
+summon easy_npc:humanoid 159.5 69 22.5 {CustomName:'{"text": "Дежурный"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cop"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/police.png",Name:"",URL:""}}
 # БОЛЬНИЦА — Врач
 summon easy_npc:humanoid 170.5 69 95.5 {CustomName:'{"text": "Врач"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_medic"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[270.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/medic.png",Name:"",URL:""}}
 # ПРОДУКТЫ — Продавец продуктов
@@ -48,4 +48,4 @@ summon easy_npc:humanoid 210.5 69 -171.5 {CustomName:'{"text": "Продавец
 # АВТОСАЛОН — Автодилер
 summon easy_npc:humanoid 215.5 69 21.5 {CustomName:'{"text": "Автодилер"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_car_dealer"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/dealer.png",Name:"",URL:""}}
 # ПОЖАРНАЯ ЧАСТЬ — Пожарный
-summon easy_npc:humanoid 214.5 69 97.5 {CustomName:'{"text": "Пожарный"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_firefighter"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[90.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/citizen_d.png",Name:"",URL:""}}
+summon easy_npc:humanoid 214.5 69 97.5 {CustomName:'{"text": "Пожарный"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_firefighter"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[90.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/firefighter.png",Name:"",URL:""}}

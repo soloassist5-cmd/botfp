@@ -40,12 +40,14 @@ public class LockpickItem extends Item {
             lock.toggle(level, context.getClickedPos(), state, entity, "отмычка", false);
             entity.note("ВЗЛОМ: " + player.getGameProfile().getName());
             player.sendSystemMessage(Component.translatable("citylife.lockpick.success"));
+            dev.lscity.citylife.city.Wanted.crime(player, 1, "citylife.wanted.burglary");
             return InteractionResult.CONSUME;
         }
 
         player.sendSystemMessage(Component.translatable("citylife.lockpick.fail"));
         entity.note("Попытка взлома: " + player.getGameProfile().getName());
         if (CityConfig.CONFIG.lockpickAlarm.get()) {
+            dev.lscity.citylife.city.Wanted.crime(player, 1, "citylife.wanted.burglary");
             level.playSound(null, context.getClickedPos(), SoundEvents.BELL_BLOCK,
                     SoundSource.BLOCKS, 1.4F, 1.8F);
             if (entity.getOwner() != null) {

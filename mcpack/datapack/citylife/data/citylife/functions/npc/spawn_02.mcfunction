@@ -38,7 +38,7 @@ summon easy_npc:humanoid -275.5 69 110.5 {CustomName:'{"text": "Продавец
 # ПЛЯЖНЫЙ БАР — Бармен
 summon easy_npc:humanoid -286.5 69 170.5 {CustomName:'{"text": "Бармен"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_bartender"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/bartender.png",Name:"",URL:""}}
 # ПЛЯЖНЫЙ БАР — Охранник
-summon easy_npc:humanoid -288.5 69 170.5 {CustomName:'{"text": "Охранник"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_security"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/citizen_c.png",Name:"",URL:""}}
+summon easy_npc:humanoid -288.5 69 170.5 {CustomName:'{"text": "Охранник"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_security"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/police.png",Name:"",URL:""}}
 # МАГАЗИН — Продавец
 summon easy_npc:humanoid -303.5 69 405.5 {CustomName:'{"text": "Продавец"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_shopkeeper"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/shopkeeper.png",Name:"",URL:""}}
 # ЭЛЕКТРОНИКА — Продавец техники

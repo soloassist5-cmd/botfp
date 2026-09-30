@@ -41,6 +41,17 @@ public final class ShopHandler {
             return;
         }
 
+        // Риелтор и управдом ведут агентство недвижимости: каталог жилья,
+        // а товары для дома — кнопкой в том же окне.
+        if ("realtor".equals(role)) {
+            dev.lscity.citylife.estate.EstateServer.open(player, target);
+            return;
+        }
+        // Приехавший по вызову 112 наряд: у каждого свой разговор.
+        if (role.startsWith("resp_")) {
+            dev.lscity.citylife.city.Emergency.talk(player, target, role.substring(5));
+            return;
+        }
         Shop shop = ShopCatalog.BY_ROLE.get(role);
         if (shop != null) {
             CityTrader trader = new CityTrader(target, shop);
