@@ -20,7 +20,7 @@ public final class Devices {
     /** Без интернета не открываются. */
     public static final Set<String> NETWORK_APPS =
             Set.of("messages", "contacts", "bank", "navigator", "locks", "store", "marketplace",
-                    "cameras", "browser", "mail", "jobs", "homes");
+                    "cameras", "browser", "mail", "jobs", "homes", "phone");
 
     /** Что можно доставить из магазина приложений, если этого нет в прошивке. */
     public static final List<String> STORE_APPS =
@@ -28,41 +28,41 @@ public final class Devices {
                     "music", "mines", "game2048", "terminal", "jobs", "homes");
 
     private static final List<String> BASIC = List.of(
-            "messages", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras", "sos",
+            "messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras", "sos",
             "store", "marketplace", "settings");
 
     public static final DeviceModel LS_PHONE = new DeviceModel("smartphone", Kind.PHONE,
             true, 4, BASIC, 9000, 0xFF0E1018);
 
     public static final DeviceModel NOKTA = new DeviceModel("phone_nokta", Kind.PHONE,
-            true, 0, List.of("messages", "contacts", "sos", "snake", "calc", "settings"),
+            true, 0, List.of("messages", "phone", "contacts", "sos", "snake", "calc", "settings"),
             1500, 0xFF1D2A33);
 
     public static final DeviceModel GRAN_A5 = new DeviceModel("phone_gran_a5", Kind.PHONE,
-            true, 2, List.of("messages", "contacts", "bank", "navigator", "jobs", "homes", "sos", "store",
+            true, 2, List.of("messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "sos", "store",
             "marketplace", "settings"), 6000, 0xFF26303F);
 
     public static final DeviceModel GRAN_X = new DeviceModel("phone_gran_x", Kind.PHONE,
-            true, 10, List.of("messages", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras", "sos",
+            true, 10, List.of("messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras", "sos",
             "store", "marketplace", "browser", "notes", "calc", "compass", "flashlight",
             "settings"),
             30000, 0xFF1A1A1E);
 
     public static final DeviceModel POLUS = new DeviceModel("phone_polus", Kind.PHONE,
-            true, 2, List.of("messages", "contacts", "navigator", "sos", "compass", "flashlight",
+            true, 2, List.of("messages", "phone", "contacts", "navigator", "sos", "compass", "flashlight",
             "store", "settings"), 12000, 0xFF3B4A2C);
 
     public static final DeviceModel FOLD = new DeviceModel("phone_fold", Kind.PHONE,
-            true, 10, List.of("messages", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras", "sos",
+            true, 10, List.of("messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras", "sos",
             "store", "marketplace", "browser", "mail", "notes", "calc", "settings"), 40000,
             0xFF2A2440);
 
     public static final DeviceModel MINIFON = new DeviceModel("phone_mini", Kind.PHONE,
-            true, 2, List.of("messages", "contacts", "navigator", "sos", "tetris", "snake",
+            true, 2, List.of("messages", "phone", "contacts", "navigator", "sos", "tetris", "snake",
             "store", "settings"), 4000, 0xFF3A7BD5);
 
     public static final DeviceModel TABLET = new DeviceModel("tablet", Kind.TABLET,
-            true, 10, List.of("messages", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras",
+            true, 10, List.of("messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "locks", "cameras",
             "store", "marketplace", "browser", "mail", "music", "notes", "calc", "settings"),
             18000, 0xFF20242E);
 

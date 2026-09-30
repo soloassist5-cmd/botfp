@@ -169,6 +169,28 @@ public final class CityCommands {
         root.then(Commands.literal("selftest").requires(source -> source.hasPermission(2))
                 .executes(ctx -> dev.lscity.citylife.test.SelfTests.start(ctx.getSource())));
 
+        // Резервная копия мира сейчас и список копий (откат — restore-backup у сервера).
+        root.then(Commands.literal("backup").requires(source -> source.hasPermission(3))
+                .executes(ctx -> {
+                    CommandSourceStack source = ctx.getSource();
+                    boolean started = dev.lscity.citylife.data.Backups.make(source.getServer(),
+                            message -> source.sendSuccess(() -> Component.literal(message), true));
+                    source.sendSuccess(() -> Component.translatable(started
+                            ? "citylife.backup.started" : "citylife.backup.busy"), false);
+                    return started ? 1 : 0;
+                })
+                .then(Commands.literal("list").executes(ctx -> {
+                    var list = dev.lscity.citylife.data.Backups.list(ctx.getSource().getServer());
+                    ctx.getSource().sendSuccess(() -> Component.translatable("citylife.backup.list",
+                            list.size(), dev.lscity.citylife.data.Backups.folder(
+                                    ctx.getSource().getServer()).toString()), false);
+                    for (var path : list.subList(0, Math.min(10, list.size()))) {
+                        ctx.getSource().sendSuccess(() -> Component.literal("  "
+                                + path.getFileName()), false);
+                    }
+                    return list.size();
+                })));
+
         root.then(Commands.literal("money").requires(source -> source.hasPermission(2))
                 .then(moneyOp("give"))
                 .then(moneyOp("take"))
@@ -204,6 +226,8 @@ public final class CityCommands {
         event.getDispatcher().register(house());
         dev.lscity.citylife.city.Emergency.register(event.getDispatcher());
         dev.lscity.citylife.jobs.Jobs.register(event.getDispatcher());
+        dev.lscity.citylife.phone.Calls.register(event.getDispatcher());
+        dev.lscity.citylife.phone.Taxi.register(event.getDispatcher());
     }
 
     /**

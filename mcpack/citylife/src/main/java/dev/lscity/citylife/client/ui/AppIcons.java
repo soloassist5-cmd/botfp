@@ -56,6 +56,7 @@ public final class AppIcons {
             case "game2048" -> new int[]{0xFFF2B179, 0xFFD27A2E};
             case "terminal" -> new int[]{0xFF2A2F38, 0xFF0E1014};
             case "jobs" -> new int[]{0xFFFFC857, 0xFFD9822B};
+            case "phone" -> new int[]{0xFF6BE07B, 0xFF1F9E4A};
             case "homes" -> new int[]{0xFF6FD08C, 0xFF2E8A5A};
             default -> new int[]{0xFF6E7488, 0xFF3A3F50};
         };
@@ -114,6 +115,16 @@ public final class AppIcons {
                 g.fill(cx + s / 10 - 2, cy - h / 2 - 2, cx + s / 10, cy - h / 2 + 2, WHITE);
                 g.fill(cx - w / 2, cy + 1, cx + w / 2, cy + 2, 0xFFD9822B);
                 g.fill(cx - 2, cy - 1, cx + 2, cy + 4, 0xFFD9822B);
+            }
+            case "phone" -> {
+                // Трубка: две скруглённые «чашки» и дуга между ними.
+                int r = Math.max(2, s / 9);
+                PhoneUi.disc(g, cx - s / 6, cy + s / 7, r, WHITE);
+                PhoneUi.disc(g, cx + s / 6, cy - s / 7, r, WHITE);
+                for (int i = -s / 6; i <= s / 6; i++) {
+                    int yy = cy - i * 6 / 7 + (i * i) / Math.max(1, s / 3);
+                    g.fill(cx + i - 1, yy - 1, cx + i + 1, yy + 1, WHITE);
+                }
             }
             case "homes" -> {
                 // Домик с дверью.

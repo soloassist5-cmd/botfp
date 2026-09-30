@@ -249,6 +249,7 @@ public final class DeviceServer {
 
         // Работа и своё жильё.
         tag.put("jobs", dev.lscity.citylife.jobs.Jobs.snapshot(player));
+        tag.put("call", dev.lscity.citylife.phone.Calls.snapshot(player));
         ListTag homes = new ListTag();
         var life = dev.lscity.citylife.data.LifeData.get(player.server);
         for (var unit : dev.lscity.citylife.estate.Estate.all()) {
@@ -348,7 +349,17 @@ public final class DeviceServer {
     }
 
     /** Есть ли у игрока гаджет с этой SIM — тогда SMS дойдёт до него сразу. */
-    private static boolean carries(ServerPlayer player, int number) {
+    /** Номер первой SIM-карты в телефонах из инвентаря (0 — нет ни одной). */
+    public static int simInInventory(ServerPlayer player) {
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.getItem() instanceof DeviceItem && DeviceState.sim(stack.getTag()) != 0) {
+                return DeviceState.sim(stack.getTag());
+            }
+        }
+        return 0;
+    }
+
+    public static boolean carries(ServerPlayer player, int number) {
         for (ItemStack stack : player.getInventory().items) {
             if (stack.getItem() instanceof DeviceItem && DeviceState.sim(stack.getTag()) == number) {
                 return true;
@@ -565,6 +576,11 @@ public final class DeviceServer {
             case "job_take" -> dev.lscity.citylife.jobs.Jobs.take(player, args.getString("kind"));
             case "job_quit" -> dev.lscity.citylife.jobs.Jobs.quit(player, false);
             case "duty_set" -> dev.lscity.citylife.jobs.Duty.set(player, args.getString("service"));
+            case "call_dial" -> dev.lscity.citylife.phone.Calls.dial(player, device.sim(),
+                    dev.lscity.citylife.phone.Calls.parse(args.getString("number")));
+            case "call_answer" -> dev.lscity.citylife.phone.Calls.answer(player);
+            case "call_hangup" -> dev.lscity.citylife.phone.Calls.hangup(player);
+            case "taxi_order" -> dev.lscity.citylife.phone.Taxi.order(player);
             case "home_route" -> dev.lscity.citylife.estate.EstateServer.handle(player,
                     "realty_route", args);
             case "home_trust" -> dev.lscity.citylife.estate.EstateServer.trust(player,

@@ -161,6 +161,16 @@ public class CityData extends SavedData {
         throw new IllegalStateException("City Life: свободных номеров не осталось");
     }
 
+    /** Номер, уже выданный этому владельцу (0 — нет): самотесты не плодят номера. */
+    public int numberOf(UUID owner) {
+        for (Map.Entry<Integer, UUID> e : numbers.entrySet()) {
+            if (e.getValue().equals(owner)) {
+                return e.getKey();
+            }
+        }
+        return 0;
+    }
+
     public boolean numberExists(int number) {
         return numbers.containsKey(number);
     }

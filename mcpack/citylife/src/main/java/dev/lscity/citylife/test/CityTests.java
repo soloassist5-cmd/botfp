@@ -608,4 +608,149 @@ public final class CityTests {
         }
         h.succeed();
     }
+
+    // --- звонки и такси -----------------------------------------------------------
+
+    /** Телефон с SIM в руку тестовому игроку; номер один на игрока. */
+    private static int giveSim(FakePlayer player) {
+        CityData data = CityData.get(player.server);
+        int number = data.numberOf(player.getUUID());
+        if (number == 0) {
+            number = data.issueNumber(player.getUUID());
+        }
+        ItemStack phone = new ItemStack(Registration.DEVICES.get("smartphone").get());
+        dev.lscity.citylife.device.DeviceState.setSim(phone.getOrCreateTag(), number);
+        player.getInventory().clearContent();
+        player.getInventory().add(phone);
+        return number;
+    }
+
+    /** Звонок: гудки у второго, ответ, разговор, сброс; занято, если уже говорит. */
+    @SelfTest
+    public static void phoneCallConnects(TestKit h) {
+        FakePlayer alice = player(h, "Alice");
+        FakePlayer bob = player(h, "Bob");
+        FakePlayer carol = player(h, "Carol");
+        dev.lscity.citylife.city.Online.TEST.addAll(List.of(alice, bob, carol));
+        try {
+            int from = giveSim(alice);
+            int to = giveSim(bob);
+            giveSim(carol);
+            if (dev.lscity.citylife.net.DeviceServer.simInInventory(alice) != from) {
+                h.fail("номер SIM в телефоне не виден");
+            }
+            dev.lscity.citylife.phone.Calls.dial(alice, from, to);
+            var call = dev.lscity.citylife.phone.Calls.of(bob.getUUID());
+            if (call == null || !"incoming".equals(dev.lscity.citylife.phone.Calls.snapshot(bob)
+                    .getString("state"))) {
+                h.fail("у второго нет входящего звонка");
+            }
+            dev.lscity.citylife.phone.Calls.dial(carol,
+                    dev.lscity.citylife.net.DeviceServer.simInInventory(carol), to);
+            if (dev.lscity.citylife.phone.Calls.of(carol.getUUID()) != null) {
+                h.fail("дозвонились до занятого абонента");
+            }
+            dev.lscity.citylife.phone.Calls.answer(bob);
+            if (!"active".equals(dev.lscity.citylife.phone.Calls.snapshot(alice).getString("state"))) {
+                h.fail("после ответа разговор не начался");
+            }
+            dev.lscity.citylife.phone.Calls.hangup(alice);
+            if (dev.lscity.citylife.phone.Calls.of(bob.getUUID()) != null) {
+                h.fail("после сброса звонок висит у второго");
+            }
+            if (dev.lscity.citylife.phone.Calls.snapshot(bob).getList("recent", 8).isEmpty()) {
+                h.fail("звонка нет в недавних");
+            }
+        } finally {
+            dev.lscity.citylife.phone.Calls.hangup(alice);
+            dev.lscity.citylife.phone.Calls.hangup(carol);
+            dev.lscity.citylife.city.Online.TEST.removeAll(List.of(alice, bob, carol));
+        }
+        h.succeed();
+    }
+
+    /** Такси: заказ уходит таксисту на смене, он принимает, подача оплачивается. */
+    @SelfTest(timeout = 300)
+    public static void taxiOrderReachesDriver(TestKit h) {
+        FakePlayer client = player(h, "Passenger");
+        FakePlayer driver = player(h, "Cabbie");
+        CityData bank = CityData.get(h.getLevel().getServer());
+        dev.lscity.citylife.city.Online.TEST.addAll(List.of(client, driver));
+        Runnable cleanup = () -> {
+            dev.lscity.citylife.jobs.Duty.set(driver, "off");
+            dev.lscity.citylife.city.Online.TEST.removeAll(List.of(client, driver));
+        };
+        try {
+            orderTaxi(h, client, driver, bank, cleanup);
+        } catch (RuntimeException e) {
+            cleanup.run();
+            throw e;
+        }
+    }
+
+    private static void orderTaxi(TestKit h, FakePlayer client, FakePlayer driver, CityData bank,
+                                  Runnable cleanup) {
+        if (dev.lscity.citylife.phone.Taxi.order(client) != 0) {
+            h.fail("заказ принят, хотя таксистов на смене нет");
+        }
+        dev.lscity.citylife.jobs.Duty.set(driver, "taxi");
+        int id = dev.lscity.citylife.phone.Taxi.order(client);
+        if (id == 0) {
+            h.fail("таксист на смене не получил заказ");
+        }
+        if (dev.lscity.citylife.phone.Taxi.accept(driver, id) != 1) {
+            h.fail("таксист не смог принять заказ");
+        }
+        if (bank.route(driver.getUUID()) == null) {
+            h.fail("у таксиста нет маршрута к клиенту");
+        }
+        long before = bank.balance(driver.getUUID());
+        driver.moveTo(client.getX() + 3, client.getY(), client.getZ());
+        h.succeedWhen(() -> {
+            if (bank.balance(driver.getUUID()) < before + dev.lscity.citylife.phone.Taxi.PICKUP_PAY) {
+                h.fail("подачу такси не оплатили");
+            }
+            cleanup.run();
+        });
+    }
+
+    // --- резервные копии ----------------------------------------------------------
+
+    /** Копия мира пишется в backups/ целиком (с level.dat) и не мешает серверу. */
+    @SelfTest(timeout = 1200)
+    public static void backupMakesZip(TestKit h) {
+        var server = h.getLevel().getServer();
+        String[] result = new String[1];
+        if (!dev.lscity.citylife.data.Backups.make(server, message -> result[0] = message)) {
+            h.fail("копия уже делается");
+        }
+        h.succeedWhen(() -> {
+            if (result[0] == null) {
+                h.fail("копия ещё пишется");
+            }
+            var list = dev.lscity.citylife.data.Backups.list(server);
+            if (list.isEmpty()) {
+                h.fail("архива нет: " + result[0]);
+            }
+            java.nio.file.Path zip = list.get(0);
+            try (var file = new java.util.zip.ZipFile(zip.toFile())) {
+                String root = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                        .toAbsolutePath().normalize().getFileName().toString();
+                if (file.getEntry(root + "/level.dat") == null) {
+                    h.fail("в архиве нет level.dat");
+                }
+                if (h.getLevel().noSave) {
+                    h.fail("автосохранение не вернулось после копии");
+                }
+            } catch (java.io.IOException e) {
+                h.fail("архив не читается: " + e.getMessage());
+            } finally {
+                try {
+                    java.nio.file.Files.deleteIfExists(zip);
+                } catch (java.io.IOException ignored) {
+                    // не страшно
+                }
+            }
+        });
+    }
 }

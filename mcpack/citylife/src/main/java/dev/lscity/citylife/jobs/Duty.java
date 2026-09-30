@@ -1,6 +1,7 @@
 package dev.lscity.citylife.jobs;
 
 import dev.lscity.citylife.CityLife;
+import dev.lscity.citylife.city.Online;
 import dev.lscity.citylife.city.Wanted;
 import dev.lscity.citylife.data.CityData;
 import dev.lscity.citylife.data.LifeData;
@@ -42,7 +43,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = CityLife.MOD_ID)
 public final class Duty {
 
-    public static final List<String> SERVICES = List.of("police", "medic", "fire");
+    public static final List<String> SERVICES = List.of("police", "medic", "fire", "taxi");
     public static final long ARRIVAL_PAY = 400;
     public static final long ARREST_PAY_PER_STAR = 300;
     public static final long HEAL_FEE = 150;
@@ -68,14 +69,15 @@ public final class Duty {
         }
         ON_DUTY.put(player.getUUID(), service);
         player.displayClientMessage(Component.translatable("citylife.duty.on",
-                Texts.ru("citylife.sos." + service)).withStyle(ChatFormatting.GREEN), false);
+                Texts.ru("taxi".equals(service) ? "citylife.duty.taxi_name"
+                        : "citylife.sos." + service)).withStyle(ChatFormatting.GREEN), false);
         player.displayClientMessage(Component.translatable("citylife.duty.hint." + service)
                 .withStyle(ChatFormatting.GRAY), false);
     }
 
     /** Дежурные этой службы, кроме самого звонящего. */
     public static List<ServerPlayer> onDuty(ServerPlayer caller, String service) {
-        return caller.server.getPlayerList().getPlayers().stream()
+        return Online.players(caller.server).stream()
                 .filter(p -> p != caller && service.equals(ON_DUTY.get(p.getUUID())))
                 .toList();
     }

@@ -41,10 +41,15 @@ tasks.withType(Javadoc).configureEach {
 
 repositories {
     mavenCentral()
+    // API Simple Voice Chat: звонки по телефону идут через его приватные группы.
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    // Только для компиляции: сам мод голосового чата стоит в сборке отдельно,
+    // а без него звонки просто недоступны.
+    compileOnly "de.maxhenkel.voicechat:voicechat-api:2.5.0"
 }
 
 tasks.named('processResources', ProcessResources).configure {

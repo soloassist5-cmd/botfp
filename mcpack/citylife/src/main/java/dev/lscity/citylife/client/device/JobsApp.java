@@ -17,7 +17,7 @@ class JobsApp extends DeviceApp {
 
     private static final String[] KINDS = {"courier", "food", "taxi", "shift", "guard", "loader",
             "garbage"};
-    private static final String[] SERVICES = {"police", "medic", "fire"};
+    private static final String[] SERVICES = {"police", "medic", "fire", "taxi"};
     private static final int ROW = 34;
     private long lastRefresh;
     private int offset;
@@ -49,7 +49,7 @@ class JobsApp extends DeviceApp {
     }
 
     private int[] dutyRect(int[] area, int i) {
-        int w = (area[2] - 6) / 4;
+        int w = (area[2] - 8) / 5;
         int y = area[1] + (jobs().contains("active") ? 62 : 18);
         return new int[]{area[0] + i * (w + 2), y, w, 16};
     }
@@ -97,10 +97,10 @@ class JobsApp extends DeviceApp {
 
         // Дежурство: три службы и «снять».
         String duty = jobs.getString("duty");
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             int[] r = dutyRect(area, i);
-            boolean on = i < 3 ? SERVICES[i].equals(duty) : duty.isEmpty();
-            String label = i < 3 ? Component.translatable("citylife.duty.short." + SERVICES[i])
+            boolean on = i < 4 ? SERVICES[i].equals(duty) : duty.isEmpty();
+            String label = i < 4 ? Component.translatable("citylife.duty.short." + SERVICES[i])
                     .getString() : Component.translatable("citylife.duty.short.off").getString();
             screen.button(g, r[0], r[1], r[2], label, on ? t.green() : t.button(), mouseX, mouseY);
         }
@@ -131,10 +131,10 @@ class JobsApp extends DeviceApp {
     @Override
     public boolean click(double mx, double my, int[] area) {
         CompoundTag jobs = jobs();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             if (screen.inside(mx, my, dutyRect(area, i))) {
                 CompoundTag args = new CompoundTag();
-                args.putString("service", i < 3 ? SERVICES[i] : "off");
+                args.putString("service", i < 4 ? SERVICES[i] : "off");
                 screen.send("duty_set", args);
                 return true;
             }

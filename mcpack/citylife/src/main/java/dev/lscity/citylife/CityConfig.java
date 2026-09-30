@@ -35,6 +35,9 @@ public final class CityConfig {
     public final ForgeConfigSpec.IntValue finePerStar;
     public final ForgeConfigSpec.IntValue jailSecondsPerStar;
     public final ForgeConfigSpec.IntValue jobPayPercent;
+    public final ForgeConfigSpec.IntValue backupMinutes;
+    public final ForgeConfigSpec.IntValue backupKeep;
+    public final ForgeConfigSpec.BooleanValue backupSingleplayer;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -126,6 +129,18 @@ public final class CityConfig {
         jobPayPercent = builder
                 .comment("Множитель оплаты заданий в процентах (100 — как задумано).")
                 .defineInRange("jobPayPercent", 100, 0, 1000);
+        builder.pop();
+
+        builder.comment("Резервные копии мира (папка backups рядом с сервером)").push("backup");
+        backupMinutes = builder
+                .comment("Как часто делать копию мира, в минутах. 0 — не делать.")
+                .defineInRange("backupMinutes", 60, 0, 10_080);
+        backupKeep = builder
+                .comment("Сколько последних копий хранить; старые удаляются.")
+                .defineInRange("backupKeep", 24, 1, 1000);
+        backupSingleplayer = builder
+                .comment("Делать копии и в одиночной игре (по умолчанию только на сервере).")
+                .define("backupSingleplayer", false);
         builder.pop();
 
         builder.comment("Умные замки").push("locks");
