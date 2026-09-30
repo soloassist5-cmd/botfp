@@ -147,6 +147,45 @@ def atm_top() -> None:
     c.write(os.path.join(BLOCKS, "atm_top.png"))
 
 
+def parcel() -> None:
+    """Посылка: картонная коробка, крест-накрест скотч и наклейка с адресом."""
+    c = Canvas(16, 16)
+    c.rect(2, 4, 13, 14, (184, 138, 88, 255))
+    c.frame(2, 4, 13, 14, (122, 88, 52, 255))
+    c.rect(2, 4, 13, 5, (206, 164, 112, 255))    # верхняя грань светлее
+    c.rect(7, 4, 8, 14, (222, 206, 160, 255))    # скотч
+    c.rect(3, 9, 6, 12, (244, 244, 240, 255))    # наклейка
+    c.rect(3, 10, 5, 10, (60, 60, 70, 255))
+    c.rect(3, 11, 6, 11, (60, 60, 70, 255))
+    c.rect(2, 14, 13, 14, SHADE)
+    c.write(os.path.join(ITEMS, "parcel.png"))
+
+
+def food_bag() -> None:
+    """Пакет с едой на доставку: бумажный пакет, ручки, логотип."""
+    c = Canvas(16, 16)
+    c.rect(3, 5, 12, 14, (226, 196, 150, 255))
+    c.frame(3, 5, 12, 14, (158, 124, 84, 255))
+    c.frame(5, 2, 10, 5, (158, 124, 84, 255))    # ручки
+    c.rect(6, 3, 9, 4, (0, 0, 0, 0))
+    c.rect(6, 8, 9, 11, (214, 60, 52, 255))      # логотип
+    c.rect(7, 9, 8, 10, (250, 214, 90, 255))
+    c.rect(3, 14, 12, 14, SHADE)
+    c.write(os.path.join(ITEMS, "food_bag.png"))
+
+
+def trash_bag() -> None:
+    """Мешок с мусором: чёрный, завязан сверху."""
+    c = Canvas(16, 16)
+    c.rect(3, 6, 12, 14, (46, 48, 54, 255))
+    c.rect(4, 5, 11, 5, (46, 48, 54, 255))
+    c.rect(6, 2, 9, 4, (46, 48, 54, 255))        # узел
+    c.rect(4, 7, 5, 11, (86, 90, 100, 255))      # блик
+    c.frame(3, 6, 12, 14, (26, 26, 30, 255))
+    c.rect(7, 3, 8, 3, (240, 196, 60, 255))      # завязка
+    c.write(os.path.join(ITEMS, "trash_bag.png"))
+
+
 def main() -> int:
     os.makedirs(ITEMS, exist_ok=True)
     os.makedirs(BLOCKS, exist_ok=True)
@@ -157,10 +196,13 @@ def main() -> int:
     card("card_mir", (24, 108, 180), (16, 62, 120), (86, 196, 132))
     card("card_mastercard", (52, 56, 70), (28, 30, 40), (214, 88, 60), (240, 166, 60))
     canister()
+    parcel()
+    food_bag()
+    trash_bag()
     atm_front()
     atm_side()
     atm_top()
-    made = len(NOTES) + 2 + 2 + 2 + 3
+    made = len(NOTES) + 2 + 2 + 2 + 3 + 3
     print(f"Текстур записано: {made}")
     print(f"  предметы: {ITEMS}")
     print(f"  блоки:    {BLOCKS}")

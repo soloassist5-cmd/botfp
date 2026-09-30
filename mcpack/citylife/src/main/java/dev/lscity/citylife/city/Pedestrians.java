@@ -86,6 +86,7 @@ public final class Pedestrians {
 
     private static final Map<UUID, Walker> WALKERS = new HashMap<>();
     private static List<BlockPos> points;
+    private static Map<String, List<BlockPos>> places;
 
     private Pedestrians() {
     }
@@ -99,19 +100,42 @@ public final class Pedestrians {
         List<BlockPos> out = new ArrayList<>();
         try (InputStream in = Pedestrians.class.getResourceAsStream("/data/citylife/walk.json")) {
             if (in != null) {
-                JsonArray array = JsonParser.parseReader(new InputStreamReader(in,
-                        StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonArray("points");
+                var root = JsonParser.parseReader(new InputStreamReader(in,
+                        StandardCharsets.UTF_8)).getAsJsonObject();
+                JsonArray array = root.getAsJsonArray("points");
+                Map<String, List<BlockPos>> kinds = new HashMap<>();
+                if (root.has("places")) {
+                    for (var entry : root.getAsJsonObject("places").entrySet()) {
+                        List<BlockPos> list = new ArrayList<>();
+                        for (JsonElement element : entry.getValue().getAsJsonArray()) {
+                            list.add(pos(element.getAsJsonArray()));
+                        }
+                        kinds.put(entry.getKey(), list);
+                    }
+                }
+                places = kinds;
                 for (JsonElement element : array) {
-                    JsonArray p = element.getAsJsonArray();
-                    out.add(new BlockPos(p.get(0).getAsInt(), p.get(1).getAsInt(),
-                            p.get(2).getAsInt()));
+                    out.add(pos(element.getAsJsonArray()));
                 }
             }
         } catch (Exception error) {
             CityLife.LOG.error("City Life: не прочитать точки прохожих", error);
         }
         points = out;
+        if (places == null) {
+            places = new HashMap<>();
+        }
         return out;
+    }
+
+    private static BlockPos pos(JsonArray p) {
+        return new BlockPos(p.get(0).getAsInt(), p.get(1).getAsInt(), p.get(2).getAsInt());
+    }
+
+    /** Места работы нужного типа (кафе, склады, ТЦ…) — из плана города. */
+    public static List<BlockPos> places(String kind) {
+        points();
+        return places.getOrDefault(kind, List.of());
     }
 
     /** Случайная точка на расстоянии от min до max блоков от центра, или null. */
@@ -248,6 +272,26 @@ public final class Pedestrians {
         w.speed = speed;
         if (w.target == null || !w.target.equals(to) || w.path == null || w.path.isDone()) {
             route(mob, w, to);
+        }
+    }
+
+    /** Удержать прохожего на месте: он ждёт (пассажир такси у подъезда). */
+    public static void pin(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w != null) {
+            w.pinned = true;
+            w.wander = false;
+            w.path = null;
+        }
+    }
+
+    /** Отпустить: снова гуляет сам и пропадёт, когда рядом не будет игроков. */
+    public static void release(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w != null) {
+            w.pinned = false;
+            w.wander = true;
+            w.path = null;
         }
     }
 

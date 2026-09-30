@@ -144,6 +144,11 @@ public final class Wanted {
         if (jail > now) {
             tag.putInt("jail", (int) ((jail - now) / 20));
         }
+        String duty = dev.lscity.citylife.jobs.Duty.of(player);
+        if (!duty.isEmpty()) {
+            tag.putString("duty", dev.lscity.citylife.data.Texts.ru("citylife.hud.duty",
+                    dev.lscity.citylife.data.Texts.ru("citylife.sos." + duty)));
+        }
         String job = dev.lscity.citylife.jobs.Jobs.hudLine(player);
         if (!job.isEmpty()) {
             tag.putString("job", job);

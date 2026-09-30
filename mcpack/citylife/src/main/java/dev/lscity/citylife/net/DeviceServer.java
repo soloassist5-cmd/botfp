@@ -564,6 +564,7 @@ public final class DeviceServer {
             case "lock_pin" -> lockSetPin(player, args);
             case "job_take" -> dev.lscity.citylife.jobs.Jobs.take(player, args.getString("kind"));
             case "job_quit" -> dev.lscity.citylife.jobs.Jobs.quit(player, false);
+            case "duty_set" -> dev.lscity.citylife.jobs.Duty.set(player, args.getString("service"));
             case "home_route" -> dev.lscity.citylife.estate.EstateServer.handle(player,
                     "realty_route", args);
             case "home_trust" -> dev.lscity.citylife.estate.EstateServer.trust(player,

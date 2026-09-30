@@ -65,6 +65,14 @@ public final class Registration {
     public static final RegistryObject<Item> SMART_LOCK_ITEM = ITEMS.register("smart_lock",
             () -> new BlockItem(SMART_LOCK.get(), new Item.Properties()));
 
+    // Груз подработок: посылка, пакет с едой, мешок с мусором.
+    public static final RegistryObject<Item> PARCEL = ITEMS.register("parcel",
+            () -> new dev.lscity.citylife.jobs.CargoItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> FOOD_BAG = ITEMS.register("food_bag",
+            () -> new dev.lscity.citylife.jobs.CargoItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> TRASH_BAG = ITEMS.register("trash_bag",
+            () -> new dev.lscity.citylife.jobs.CargoItem(new Item.Properties().stacksTo(16)));
+
     public static final RegistryObject<Item> LOCKPICK = ITEMS.register("lockpick",
             () -> new LockpickItem(new Item.Properties().durability(24)));
 
@@ -206,6 +214,9 @@ public final class Registration {
                         output.accept(BANKNOTE_1000.get());
                         output.accept(BANKNOTE_5000.get());
                         output.accept(FUEL_CANISTER.get());
+                        output.accept(PARCEL.get());
+                        output.accept(FOOD_BAG.get());
+                        output.accept(TRASH_BAG.get());
                     })
                     .build());
 

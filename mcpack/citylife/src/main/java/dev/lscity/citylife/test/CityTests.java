@@ -37,6 +37,7 @@ import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -444,26 +445,136 @@ public final class CityTests {
 
     // --- работа -------------------------------------------------------------------
 
-    /** Курьер: задание выдаётся, у двери засчитывается и платит. */
-    @SelfTest
-    public static void courierPays(TestKit h) {
-        FakePlayer courier = player(h, "Courier");
+    /** Дойти до точки задания и дать ему проверить (как раз в секунду в игре). */
+    private static void arrive(FakePlayer who, Waypoint point) {
+        who.moveTo(point.x() + 0.5D, point.y(), point.z() + 0.5D);
+        Jobs.check(who);
+    }
+
+    private static void deliveryPays(TestKit h, String kind, net.minecraft.world.item.Item cargo) {
+        FakePlayer worker = player(h, "Worker_" + kind);
         CityData bank = CityData.get(h.getLevel().getServer());
-        long before = bank.balance(courier.getUUID());
-        Jobs.take(courier, "courier");
-        Waypoint target = Jobs.target(courier);
-        if (target == null) {
-            h.fail("задание курьера не выдано");
+        long before = bank.balance(worker.getUUID());
+        Jobs.take(worker, kind);
+        Waypoint pickup = Jobs.target(worker);
+        if (pickup == null) {
+            h.fail(kind + ": задание не выдано");
             return;
         }
-        courier.moveTo(target.x() + 0.5D, target.y(), target.z() + 0.5D);
-        Jobs.check(courier);
-        if (Jobs.active(courier)) {
-            Jobs.quit(courier, false);
-            h.fail("у двери задание не засчитано");
+        arrive(worker, pickup);
+        boolean hasCargo = worker.getInventory().items.stream().anyMatch(st -> st.is(cargo));
+        Waypoint door = Jobs.target(worker);
+        if (!hasCargo || door == null || door.equals(pickup)) {
+            Jobs.quit(worker, false);
+            h.fail(kind + ": на месте выдачи груз не выдан");
         }
-        if (bank.balance(courier.getUUID()) <= before) {
-            h.fail("за доставку не заплатили");
+        arrive(worker, door);
+        if (Jobs.active(worker)) {
+            Jobs.quit(worker, false);
+            h.fail(kind + ": у двери задание не засчитано");
+        }
+        if (bank.balance(worker.getUUID()) <= before) {
+            h.fail(kind + ": за доставку не заплатили");
+        }
+        if (worker.getInventory().items.stream().anyMatch(st -> st.is(cargo))) {
+            h.fail(kind + ": груз не забрали при сдаче");
+        }
+    }
+
+    /** Курьер: посылка в пункте выдачи, сдача у двери, оплата. */
+    @SelfTest
+    public static void courierPays(TestKit h) {
+        deliveryPays(h, "courier", Registration.PARCEL.get());
+        h.succeed();
+    }
+
+    /** Доставка еды: пакет в кафе, сдача у двери, оплата. */
+    @SelfTest
+    public static void foodPays(TestKit h) {
+        deliveryPays(h, "food", Registration.FOOD_BAG.get());
+        h.succeed();
+    }
+
+    /** Мусорщик: мешки на улицах, собрал — сдал на склад — оплата. */
+    @SelfTest
+    public static void garbagePays(TestKit h) {
+        FakePlayer worker = player(h, "Garbage");
+        ServerLevel level = h.getLevel();
+        CityData bank = CityData.get(level.getServer());
+        long before = bank.balance(worker.getUUID());
+        Jobs.take(worker, "garbage");
+        if (!Jobs.active(worker)) {
+            h.fail("мусорщик: задание не выдано (нет загруженных точек?)");
+        }
+        // Подбираем все светящиеся мешки этого задания.
+        var bags = level.getEntitiesOfClass(ItemEntity.class,
+                new net.minecraft.world.phys.AABB(worker.blockPosition()).inflate(300),
+                e -> e.getItem().is(Registration.TRASH_BAG.get()));
+        if (bags.isEmpty()) {
+            List<String> where = new java.util.ArrayList<>();
+            for (Entity e : level.getAllEntities()) {
+                if (e instanceof ItemEntity item && item.getItem().is(Registration.TRASH_BAG.get())) {
+                    where.add(e.blockPosition().toShortString());
+                }
+            }
+            Waypoint first = Jobs.target(worker);
+            Jobs.quit(worker, false);
+            h.fail("мусорщик: мешков рядом нет; всего в мире " + where + ", игрок "
+                    + worker.blockPosition().toShortString() + ", первая точка "
+                    + (first == null ? "-" : first.x() + "," + first.y() + "," + first.z()));
+        }
+        for (ItemEntity bag : bags) {
+            worker.getInventory().add(bag.getItem().copy());
+            bag.discard();
+        }
+        Jobs.check(worker);
+        Waypoint dump = Jobs.target(worker);
+        arrive(worker, dump);
+        if (Jobs.active(worker)) {
+            Jobs.quit(worker, false);
+            h.fail("мусорщик: на складе не засчитано");
+        }
+        if (bank.balance(worker.getUUID()) <= before) {
+            h.fail("мусорщик: не заплатили");
+        }
+        h.succeed();
+    }
+
+    /** Такси без машины не берётся. */
+    @SelfTest
+    public static void taxiNeedsCar(TestKit h) {
+        FakePlayer driver = player(h, "Driver");
+        Jobs.take(driver, "taxi");
+        if (Jobs.active(driver)) {
+            Jobs.quit(driver, false);
+            h.fail("такси взято без машины");
+        }
+        h.succeed();
+    }
+
+    /** Дежурный полицейский задерживает разыскиваемого кликом и получает награду. */
+    @SelfTest
+    public static void dutyPoliceArrests(TestKit h) {
+        FakePlayer officer = player(h, "Officer");
+        FakePlayer thief = player(h, "Robber");
+        var server = h.getLevel().getServer();
+        LifeData life = LifeData.get(server);
+        CityData bank = CityData.get(server);
+        try {
+            dev.lscity.citylife.jobs.Duty.set(officer, "police");
+            life.setWanted(thief.getUUID(), 2, h.getLevel().getGameTime() + 6000);
+            long before = bank.balance(officer.getUUID());
+            officer.interactOn(thief, InteractionHand.MAIN_HAND);
+            if (life.wanted(thief.getUUID()) != 0 || life.jailUntil(thief.getUUID()) == 0) {
+                h.fail("разыскиваемый не задержан");
+            }
+            if (bank.balance(officer.getUUID()) <= before) {
+                h.fail("полицейскому не заплатили за задержание");
+            }
+        } finally {
+            dev.lscity.citylife.jobs.Duty.set(officer, "off");
+            life.setWanted(thief.getUUID(), 0, 0);
+            life.setJail(thief.getUUID(), 0);
         }
         h.succeed();
     }

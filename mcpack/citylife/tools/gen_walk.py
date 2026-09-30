@@ -23,6 +23,10 @@ from citygen import buildings as B  # noqa: E402
 
 OUT = os.path.join(ROOT, "src", "main", "resources", "data", "citylife", "walk.json")
 
+# Тип участка -> место работы.
+PLACE_KIND = {"diner": "diner", "mall": "mall", "warehouse": "warehouse", "gas": "gas",
+              "pickup": "pickup", "club": "club", "shop": "shop", "construction": "construction"}
+
 
 def main() -> int:
     city = P.build_plan(20260927)
@@ -32,10 +36,23 @@ def main() -> int:
             continue
         points.add(tuple(B.entrance_point(lot)))
     rows = sorted(points)
+    # Места работы по типам: куда ехать на смену, откуда забирать еду,
+    # куда везти мусор.
+    places: dict[str, list] = {}
+    for lot in city.lots:
+        kind = PLACE_KIND.get(lot.kind)
+        if lot.kind == "shop" and lot.shop_role == "cook":
+            kind = "diner"          # кафе на улицах — тоже кухня для доставки
+        if kind:
+            places.setdefault(kind, []).append(list(B.entrance_point(lot)))
     with open(OUT, "w", encoding="utf-8") as fh:
-        json.dump({"points": [list(p) for p in rows]}, fh, separators=(",", ":"))
+        json.dump({"points": [list(p) for p in rows],
+                   "places": {k: sorted(v) for k, v in sorted(places.items())}},
+                  fh, separators=(",", ":"))
         fh.write("\n")
-    print(f"{len(rows)} точек -> {os.path.relpath(OUT, PACK)}")
+    print(f"{len(rows)} точек, мест работы: "
+          + ", ".join(f"{k} {len(v)}" for k, v in sorted(places.items()))
+          + f" -> {os.path.relpath(OUT, PACK)}")
     return 0
 
 

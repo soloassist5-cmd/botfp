@@ -65,9 +65,46 @@ public final class Emergency {
 
     private static final String CREW_TAG = "citylife_crew";
 
-    /** Вызов, который ещё едет. */
-    private record Call(String kind, UUID caller, Vec3 where, long due) {
+    /** Вызов, который ещё едет. accepted — дежурный игрок, принявший вызов. */
+    private static final class Call {
+        final int id;
+        final String kind;
+        final UUID caller;
+        final Vec3 where;
+        final long due;
+        UUID accepted;
+
+        Call(int id, String kind, UUID caller, Vec3 where, long due) {
+            this.id = id;
+            this.kind = kind;
+            this.caller = caller;
+            this.where = where;
+            this.due = due;
+        }
+
+        String kind() {
+            return kind;
+        }
+
+        UUID caller() {
+            return caller;
+        }
+
+        Vec3 where() {
+            return where;
+        }
+
+        long due() {
+            return due;
+        }
     }
+
+    /** Дежурный едет на вызов: успеет за 5 минут — город заплатит. */
+    private record Response(UUID responder, UUID caller, String kind, long deadline) {
+    }
+
+    private static final List<Response> RESPONSES = new ArrayList<>();
+    private static int nextCall = 1;
 
     /** Наряд на месте. */
     private static final class Crew {
@@ -127,10 +164,19 @@ public final class Emergency {
             }
         }
         int delay = CityConfig.CONFIG.responderDelay.get();
-        CALLS.add(new Call(kind, player.getUUID(), player.position(),
-                player.level().getGameTime() + delay * 20L));
+        Call call = new Call(nextCall++, kind, player.getUUID(), player.position(),
+                player.level().getGameTime() + delay * 20L);
+        CALLS.add(call);
         player.displayClientMessage(Component.translatable("citylife.sos.accepted",
                 service(kind), delay).withStyle(ChatFormatting.AQUA), false);
+        // Дежурные игроки видят вызов первыми: кто примет — едет вместо наряда.
+        for (ServerPlayer officer : dev.lscity.citylife.jobs.Duty.onDuty(player, kind)) {
+            officer.sendSystemMessage(Component.translatable("citylife.duty.call",
+                    player.getGameProfile().getName(),
+                    (int) officer.position().distanceTo(player.position()))
+                    .withStyle(ChatFormatting.RED));
+            officer.sendSystemMessage(dev.lscity.citylife.jobs.Duty.acceptButton(call.id));
+        }
         return true;
     }
 
@@ -152,7 +198,7 @@ public final class Emergency {
 
     /** Прислать наряд сразу, без ожидания: для /sos dispatch и автотестов. */
     public static int dispatch(MinecraftServer server, String kind, Vec3 where) {
-        return arrive(server, new Call(kind, new UUID(0L, 0L), where, 0L));
+        return arrive(server, new Call(0, kind, new UUID(0L, 0L), where, 0L));
     }
 
     /** Сущности наряда (люди и машина), пока он на месте. */
@@ -407,7 +453,9 @@ public final class Emergency {
 
         for (Iterator<Call> it = CALLS.iterator(); it.hasNext(); ) {
             Call call = it.next();
-            if (now >= call.due()) {
+            if (call.accepted != null) {
+                it.remove();
+            } else if (now >= call.due()) {
                 it.remove();
                 arrive(server, call);
             } else if ((call.due() - now) % 20 == 0) {
@@ -420,6 +468,9 @@ public final class Emergency {
             }
         }
 
+        if (now % 20 == 0) {
+            responses(server, now);
+        }
         for (Iterator<Crew> it = CREWS.values().iterator(); it.hasNext(); ) {
             Crew crew = it.next();
             long age = now - crew.arrived;
@@ -447,6 +498,69 @@ public final class Emergency {
                 }
             }
         }
+    }
+
+    /** Дежурные в пути: доехал до звонившего — оплата, опоздал — вызов снят. */
+    private static void responses(MinecraftServer server, long now) {
+        for (Iterator<Response> it = RESPONSES.iterator(); it.hasNext(); ) {
+            Response r = it.next();
+            ServerPlayer responder = server.getPlayerList().getPlayer(r.responder());
+            ServerPlayer caller = server.getPlayerList().getPlayer(r.caller());
+            if (responder == null || now > r.deadline()) {
+                it.remove();
+                if (responder != null) {
+                    responder.sendSystemMessage(Component.translatable("citylife.duty.late")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+                continue;
+            }
+            if (caller == null || (caller.level() == responder.level()
+                    && caller.distanceTo(responder) < 6)) {
+                it.remove();
+                if (caller != null) {
+                    dev.lscity.citylife.jobs.Duty.paid(responder, caller, r.kind());
+                }
+                CityData.get(server).setRoute(responder.getUUID(), null);
+                dev.lscity.citylife.net.Net.sendRoute(responder, null);
+            }
+        }
+    }
+
+    /** Дежурный нажал «Принять вызов». */
+    private static int accept(ServerPlayer officer, int id) {
+        for (Call call : CALLS) {
+            if (call.id != id) {
+                continue;
+            }
+            if (call.accepted != null) {
+                officer.displayClientMessage(Component.translatable("citylife.duty.taken")
+                        .withStyle(ChatFormatting.GRAY), true);
+                return 0;
+            }
+            if (!call.kind.equals(dev.lscity.citylife.jobs.Duty.of(officer))) {
+                return 0;
+            }
+            call.accepted = officer.getUUID();
+            ServerPlayer caller = officer.server.getPlayerList().getPlayer(call.caller);
+            BlockPos to = caller != null ? caller.blockPosition() : BlockPos.containing(call.where);
+            var point = new dev.lscity.citylife.data.Waypoint(
+                    dev.lscity.citylife.data.Texts.ru("citylife.duty.route"), to.getX(), to.getY(),
+                    to.getZ(), "pin", false);
+            CityData.get(officer.server).setRoute(officer.getUUID(), point);
+            dev.lscity.citylife.net.Net.sendRoute(officer, point);
+            RESPONSES.add(new Response(officer.getUUID(), call.caller, call.kind,
+                    officer.level().getGameTime() + 20L * 300));
+            officer.sendSystemMessage(Component.translatable("citylife.duty.accepted")
+                    .withStyle(ChatFormatting.GREEN));
+            if (caller != null) {
+                caller.sendSystemMessage(Component.translatable("citylife.duty.coming",
+                        officer.getGameProfile().getName()).withStyle(ChatFormatting.AQUA));
+            }
+            return 1;
+        }
+        officer.displayClientMessage(Component.translatable("citylife.duty.taken")
+                .withStyle(ChatFormatting.GRAY), true);
+        return 0;
     }
 
     private static void siren(ServerLevel level, Crew crew, long age) {
@@ -788,6 +902,10 @@ public final class Emergency {
                                                     + ", нарядов всего " + CREWS.size()), true);
                                     return 1;
                                 }))));
+        root.then(Commands.literal("accept")
+                .then(Commands.argument("call", IntegerArgumentType.integer(1))
+                        .executes(ctx -> accept(ctx.getSource().getPlayerOrException(),
+                                IntegerArgumentType.getInteger(ctx, "call")))));
         root.then(Commands.literal("act")
                 .then(Commands.argument("crew", IntegerArgumentType.integer(1))
                         .then(Commands.argument("action", StringArgumentType.word())

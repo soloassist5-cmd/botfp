@@ -60,6 +60,13 @@ public final class HudOverlay {
             g.drawString(font, line, right - w, y, 0xFFFFB84D, false);
             y += 15;
         }
+        String duty = state.getString("duty");
+        if (!duty.isEmpty()) {
+            int w = font.width(duty);
+            g.fill(right - w - 4, y - 3, right + 3, y + 10, 0x90000000);
+            g.drawString(font, duty, right - w, y, 0xFF6FB7FF, false);
+            y += 15;
+        }
         String job = state.getString("job");
         if (!job.isEmpty()) {
             int w = font.width(job);
