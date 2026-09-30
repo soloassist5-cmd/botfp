@@ -119,6 +119,7 @@ public class DeviceScreen extends Screen {
             case "jobs" -> new JobsApp(this);
             case "phone" -> new PhoneApp(this);
             case "homes" -> new HomesApp(this);
+            case "cars" -> new CarsApp(this);
             case "store" -> new StoreApp(this);
             case "marketplace" -> new MarketApp(this);
             case "settings" -> new SettingsApp(this);

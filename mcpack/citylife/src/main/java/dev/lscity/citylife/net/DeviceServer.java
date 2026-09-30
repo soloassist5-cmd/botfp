@@ -279,6 +279,7 @@ public final class DeviceServer {
             homes.add(entry);
         }
         tag.put("homes", homes);
+        tag.put("cars", dev.lscity.citylife.vehicle.Garage.snapshot(player));
 
         ListTag board = new ListTag();
         for (Ad ad : data.ads()) {
@@ -581,6 +582,11 @@ public final class DeviceServer {
             case "call_answer" -> dev.lscity.citylife.phone.Calls.answer(player);
             case "call_hangup" -> dev.lscity.citylife.phone.Calls.hangup(player);
             case "taxi_order" -> dev.lscity.citylife.phone.Taxi.order(player);
+            case "car_lock", "car_unlock" -> dev.lscity.citylife.vehicle.Garage.setLocked(player,
+                    dev.lscity.citylife.vehicle.Garage.byId(player, args.getString("id")),
+                    "car_lock".equals(action));
+            case "car_route" -> dev.lscity.citylife.vehicle.Garage.route(player,
+                    dev.lscity.citylife.vehicle.Garage.byId(player, args.getString("id")));
             case "home_route" -> dev.lscity.citylife.estate.EstateServer.handle(player,
                     "realty_route", args);
             case "home_trust" -> dev.lscity.citylife.estate.EstateServer.trust(player,

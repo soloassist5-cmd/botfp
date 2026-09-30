@@ -228,6 +228,7 @@ public final class CityCommands {
         dev.lscity.citylife.jobs.Jobs.register(event.getDispatcher());
         dev.lscity.citylife.phone.Calls.register(event.getDispatcher());
         dev.lscity.citylife.phone.Taxi.register(event.getDispatcher());
+        dev.lscity.citylife.vehicle.Garage.register(event.getDispatcher());
     }
 
     /**

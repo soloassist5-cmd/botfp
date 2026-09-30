@@ -58,6 +58,7 @@ public final class AppIcons {
             case "jobs" -> new int[]{0xFFFFC857, 0xFFD9822B};
             case "phone" -> new int[]{0xFF6BE07B, 0xFF1F9E4A};
             case "homes" -> new int[]{0xFF6FD08C, 0xFF2E8A5A};
+            case "cars" -> new int[]{0xFFFF7A45, 0xFFC0441C};
             default -> new int[]{0xFF6E7488, 0xFF3A3F50};
         };
     }
@@ -134,6 +135,14 @@ public final class AppIcons {
                 }
                 g.fill(cx - half + 2, cy + s / 20, cx + half - 1, cy + s / 4, WHITE);
                 g.fill(cx - 2, cy + s / 10, cx + 2, cy + s / 4, 0xFF2E8A5A);
+            }
+            case "cars" -> {
+                // Машина сбоку: кузов, крыша и два колеса.
+                int half = s / 3;
+                g.fill(cx - half, cy - s / 16, cx + half, cy + s / 8, WHITE);
+                g.fill(cx - half / 2, cy - s / 5, cx + half / 2, cy - s / 16, WHITE);
+                PhoneUi.disc(g, cx - half / 2, cy + s / 8, Math.max(2, s / 10), WHITE);
+                PhoneUi.disc(g, cx + half / 2, cy + s / 8, Math.max(2, s / 10), WHITE);
             }
             case "sos" -> {
                 PhoneUi.ring(g, cx, cy, s / 4, 2, WHITE);

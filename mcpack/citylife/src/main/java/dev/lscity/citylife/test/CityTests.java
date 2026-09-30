@@ -753,4 +753,57 @@ public final class CityTests {
             }
         });
     }
+
+    // --- свои машины --------------------------------------------------------------
+
+    /** Запертая машина не пускает чужого; открытая пускает, но это угон со звездой. */
+    @SelfTest
+    public static void carLockAndTheft(TestKit h) {
+        FakePlayer owner = player(h, "CarOwner");
+        FakePlayer thief = player(h, "CarThief");
+        LifeData life = LifeData.get(h.getLevel().getServer());
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", "vehicle:smart_car");
+        BlockPos at = h.absolutePos(new BlockPos(6, 1, 6));
+        Entity vehicle = EntityType.loadEntityRecursive(tag, h.getLevel(), e -> {
+            e.moveTo(at.getX() + 0.5D, at.getY(), at.getZ() + 0.5D, 0F, 0F);
+            return e;
+        });
+        if (vehicle == null || !dev.lscity.citylife.vehicle.Garage.isVehicle(vehicle)) {
+            h.fail("машина мода Vehicle не создаётся");
+            return;
+        }
+        h.getLevel().addFreshEntity(vehicle);
+        var garage = dev.lscity.citylife.vehicle.GarageData.get(h.getLevel().getServer());
+        try {
+            var car = dev.lscity.citylife.vehicle.Garage.claim(owner, vehicle);
+            dev.lscity.citylife.vehicle.Garage.setLocked(owner, car, true);
+            if (thief.startRiding(vehicle, true)) {
+                h.fail("чужой сел в запертую машину");
+            }
+            if (!owner.startRiding(vehicle, true)) {
+                h.fail("хозяин не сел в свою машину");
+            }
+            owner.stopRiding();
+            dev.lscity.citylife.vehicle.Garage.setLocked(owner, car, false);
+            life.setWanted(thief.getUUID(), 0, 0);
+            if (!thief.startRiding(vehicle, true)) {
+                h.fail("в открытую машину не сесть");
+            }
+            if (life.wanted(thief.getUUID()) == 0) {
+                h.fail("угон открытой машины без розыска");
+            }
+            thief.stopRiding();
+            if (dev.lscity.citylife.vehicle.Garage.snapshot(owner).isEmpty()) {
+                h.fail("машины нет в «Моём транспорте»");
+            }
+        } finally {
+            life.setWanted(thief.getUUID(), 0, 0);
+            vehicle.discard();
+        }
+        if (garage.car(vehicle.getUUID()) != null) {
+            h.fail("разобранная машина осталась в гараже");
+        }
+        h.succeed();
+    }
 }
