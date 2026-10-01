@@ -883,4 +883,143 @@ public final class CityTests {
         }
         h.succeed();
     }
+
+    // --- ограбления ---------------------------------------------------------------
+
+    /** Роль первого продавца с товаром (кроме риелтора, у него своё окно). */
+    private static String shopRole() {
+        return ShopCatalog.BY_ROLE.entrySet().stream()
+                .filter(e -> !e.getValue().offers().isEmpty() && !"realtor".equals(e.getKey()))
+                .map(Map.Entry::getKey).findFirst().orElseThrow();
+    }
+
+    private static void cleanRobber(FakePlayer robber, Vec3 spot) {
+        dev.lscity.citylife.city.Robbery.cancel(robber);
+        LifeData.get(robber.server).setWanted(robber.getUUID(), 0, 0);
+        Emergency.cancelAt(spot, 8);
+        robber.getInventory().clearContent();
+        robber.setShiftKeyDown(false);
+    }
+
+    /** С оружием и присев — касса: две звезды, тревога, через 30 с наличные. */
+    @SelfTest
+    public static void shopRobbery(TestKit h) {
+        FakePlayer robber = player(h, "Robber");
+        String role = shopRole();
+        Entity clerk = npc(h, new BlockPos(9, 1, 8), "Тест " + role, "citylife_npc",
+                "citylife_" + role, ShopCatalog.GEN_TAG);
+        LifeData life = LifeData.get(h.getLevel().getServer());
+        try {
+            robber.setShiftKeyDown(true);
+            if (!("shop:" + role).equals(click(robber, clerk))) {
+                h.fail("без оружия присевший не попал к прилавку");
+            }
+            robber.setItemInHand(InteractionHand.MAIN_HAND,
+                    new ItemStack(net.minecraft.world.item.Items.IRON_SWORD));
+            String outcome = click(robber, clerk);
+            if (!("rob:" + role).equals(outcome)) {
+                h.fail("ограбление не началось: " + outcome);
+            }
+            if (life.wanted(robber.getUUID()) < 2) {
+                h.fail("за ограбление нет двух звёзд");
+            }
+            if (!Emergency.pendingAt(clerk.position(), 4)) {
+                h.fail("полиция не выехала к магазину");
+            }
+            long now = h.getLevel().getGameTime();
+            dev.lscity.citylife.city.Robbery.check(robber, now + 20);
+            if (!dev.lscity.citylife.city.Robbery.active(robber)) {
+                h.fail("ограбление закончилось раньше времени");
+            }
+            if (dev.lscity.citylife.city.Robbery.hudLine(robber).isEmpty()) {
+                h.fail("в углу экрана нет строки ограбления");
+            }
+            long before = dev.lscity.citylife.economy.Money.cash(robber);
+            dev.lscity.citylife.city.Robbery.check(robber, now + 20L * 600);
+            if (dev.lscity.citylife.city.Robbery.active(robber)) {
+                h.fail("ограбление не закончилось по времени");
+            }
+            if (dev.lscity.citylife.economy.Money.cash(robber) <= before) {
+                h.fail("грабитель не получил наличных");
+            }
+            if (!("norob:" + role).equals(click(robber, clerk))) {
+                h.fail("пустую кассу ограбили второй раз");
+            }
+            Wanted.arrest(robber, false);
+            if (dev.lscity.citylife.economy.Money.cash(robber) != before) {
+                h.fail("при задержании награбленное не изъяли");
+            }
+        } finally {
+            life.setJail(robber.getUUID(), 0);
+            dev.lscity.citylife.city.Robbery.refill("shop:" + clerk.getUUID());
+            cleanRobber(robber, clerk.position());
+            clerk.discard();
+        }
+        h.succeed();
+    }
+
+    /** Отошёл от кассы — ограбление сорвалось, денег нет, розыск остался. */
+    @SelfTest
+    public static void robberyFailsWhenLeaving(TestKit h) {
+        FakePlayer robber = player(h, "Runaway");
+        String role = shopRole();
+        Entity clerk = npc(h, new BlockPos(9, 1, 8), "Тест " + role, "citylife_npc",
+                "citylife_" + role, ShopCatalog.GEN_TAG);
+        try {
+            robber.setShiftKeyDown(true);
+            robber.setItemInHand(InteractionHand.MAIN_HAND,
+                    new ItemStack(net.minecraft.world.item.Items.IRON_AXE));
+            if (!("rob:" + role).equals(click(robber, clerk))) {
+                h.fail("ограбление не началось");
+            }
+            robber.moveTo(robber.getX() + 20, robber.getY(), robber.getZ());
+            dev.lscity.citylife.city.Robbery.check(robber, h.getLevel().getGameTime() + 20L * 600);
+            if (dev.lscity.citylife.city.Robbery.active(robber)) {
+                h.fail("ушедший всё ещё грабит");
+            }
+            if (dev.lscity.citylife.economy.Money.cash(robber) > 0) {
+                h.fail("сбежавший получил деньги");
+            }
+            if (LifeData.get(robber.server).wanted(robber.getUUID()) == 0) {
+                h.fail("после сорванного ограбления пропал розыск");
+            }
+        } finally {
+            dev.lscity.citylife.city.Robbery.refill("shop:" + clerk.getUUID());
+            cleanRobber(robber, clerk.position());
+            clerk.discard();
+        }
+        h.succeed();
+    }
+
+    /** Отмычка по банкомату: три звезды, тревога, деньги через 45 с. */
+    @SelfTest
+    public static void atmRobbery(TestKit h) {
+        FakePlayer robber = player(h, "Safecracker");
+        BlockPos atm = h.absolutePos(new BlockPos(9, 1, 8));
+        h.setBlock(new BlockPos(9, 1, 8), Registration.ATM.get());
+        Vec3 spot = Vec3.atCenterOf(atm);
+        try {
+            ItemStack pick = new ItemStack(Registration.LOCKPICK.get());
+            robber.setItemInHand(InteractionHand.MAIN_HAND, pick);
+            pick.useOn(new net.minecraft.world.item.context.UseOnContext(robber,
+                    InteractionHand.MAIN_HAND, new BlockHitResult(spot, Direction.WEST, atm, false)));
+            if (!dev.lscity.citylife.city.Robbery.active(robber)) {
+                h.fail("взлом банкомата не начался");
+            }
+            if (LifeData.get(robber.server).wanted(robber.getUUID()) < 3) {
+                h.fail("за банкомат нет трёх звёзд");
+            }
+            if (!Emergency.pendingAt(spot, 4)) {
+                h.fail("полиция не выехала к банкомату");
+            }
+            dev.lscity.citylife.city.Robbery.check(robber, h.getLevel().getGameTime() + 20L * 600);
+            if (dev.lscity.citylife.economy.Money.cash(robber) <= 0) {
+                h.fail("из банкомата не выдали денег");
+            }
+        } finally {
+            dev.lscity.citylife.city.Robbery.refill("atm:" + atm.asLong());
+            cleanRobber(robber, spot);
+        }
+        h.succeed();
+    }
 }

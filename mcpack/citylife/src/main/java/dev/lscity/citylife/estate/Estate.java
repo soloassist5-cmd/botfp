@@ -136,6 +136,17 @@ public final class Estate {
         return null;
     }
 
+    /** Бизнес (магазин, кафе, склад), в стенах которого точка. */
+    public static Unit businessAt(BlockPos pos) {
+        all();
+        for (Unit unit : byChunk.getOrDefault(key(pos.getX() >> 4, pos.getZ() >> 4), List.of())) {
+            if (unit.business() && unit.inBox(pos)) {
+                return unit;
+            }
+        }
+        return null;
+    }
+
     public static Unit boxAt(BlockPos pos) {
         return boxAt(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
     }

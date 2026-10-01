@@ -612,5 +612,22 @@
   "citylife.statement.hospital": "Лечение в больнице",
   "citylife.realty.filter.business": "Бизнесы",
   "citylife.realty.income": "доход %s в сутки",
-  "citylife.statement.business_income": "Доход: %s"
+  "citylife.statement.business_income": "Доход: %s",
+  "citylife.wanted.robbery": "ограбление магазина",
+  "citylife.wanted.atm": "взлом банкомата",
+  "citylife.duty.alarm": "Тревога: %s, до места %s м.",
+  "citylife.rob.clerk": "Не стреляйте! Забирайте всё… Кнопка уже нажата, полиция едет!",
+  "citylife.rob.atm_place": "банкомат",
+  "citylife.rob.started": "Ограбление: %s. Продержитесь %s с и не отходите дальше %s блоков.",
+  "citylife.rob.progress": "Ограбление: %s / %s с",
+  "citylife.rob.hud": "Ограбление: %s · %s с · %s/%s м",
+  "citylife.rob.done": "Деньги ваши: %s наличными. Уходите, пока не приехала полиция!",
+  "citylife.rob.failed": "Ограбление сорвалось: %s. Розыск остаётся.",
+  "citylife.rob.busy": "Вы уже кого-то грабите.",
+  "citylife.rob.taken": "Здесь уже идёт ограбление.",
+  "citylife.rob.empty": "Пусто — здесь недавно грабили. Деньги появятся через %s мин.",
+  "citylife.rob.news": "ТРЕВОГА: ограбление — %s, x%s z%s",
+  "citylife.rob.owner": "Ваш бизнес «%s» грабят: касса «%s». Полиция уже едет.",
+  "citylife.rob.owner_from": "Охрана бизнеса",
+  "citylife.rob.seized": "Полиция изъяла награбленное: %s."
 }

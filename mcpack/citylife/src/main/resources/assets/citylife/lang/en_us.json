@@ -612,5 +612,22 @@
   "citylife.statement.hospital": "Hospital treatment",
   "citylife.realty.filter.business": "Business",
   "citylife.realty.income": "income %s a day",
-  "citylife.statement.business_income": "Income: %s"
+  "citylife.statement.business_income": "Income: %s",
+  "citylife.wanted.robbery": "shop robbery",
+  "citylife.wanted.atm": "ATM break-in",
+  "citylife.duty.alarm": "Alarm: %s, %s m away.",
+  "citylife.rob.clerk": "Don't shoot! Take it all… I hit the button, the police are coming!",
+  "citylife.rob.atm_place": "ATM",
+  "citylife.rob.started": "Robbery: %s. Hold on for %s s and stay within %s blocks.",
+  "citylife.rob.progress": "Robbery: %s / %s s",
+  "citylife.rob.hud": "Robbery: %s · %s s · %s/%s m",
+  "citylife.rob.done": "The money is yours: %s in cash. Get away before the police arrive!",
+  "citylife.rob.failed": "Robbery failed: %s. You are still wanted.",
+  "citylife.rob.busy": "You are already robbing someone.",
+  "citylife.rob.taken": "A robbery is already going on here.",
+  "citylife.rob.empty": "Empty: it was robbed recently. Money will be back in %s min.",
+  "citylife.rob.news": "ALARM: robbery at %s, x%s z%s",
+  "citylife.rob.owner": "Your business \"%s\" is being robbed: till \"%s\". The police are on the way.",
+  "citylife.rob.owner_from": "Business security",
+  "citylife.rob.seized": "The police seized the stolen money: %s."
 }

@@ -100,8 +100,11 @@ public final class Emergency {
     }
 
     /** Дежурный едет на вызов: успеет за 5 минут — город заплатит. */
-    private record Response(UUID responder, UUID caller, String kind, long deadline) {
+    private record Response(UUID responder, UUID caller, String kind, Vec3 where, long deadline) {
     }
+
+    /** «Звонящий» тревоги, которую поднял сам город (касса, банкомат). */
+    public static final UUID CITY = new UUID(0L, 0L);
 
     private static final List<Response> RESPONSES = new ArrayList<>();
     private static int nextCall = 1;
@@ -178,6 +181,45 @@ public final class Emergency {
             officer.sendSystemMessage(dev.lscity.citylife.jobs.Duty.acceptButton(call.id));
         }
         return true;
+    }
+
+    /**
+     * Тревога без звонящего: сработала кнопка в магазине или датчик банкомата.
+     * Наряд едет к месту, дежурные полицейские видят вызов и могут принять его.
+     * Если полиция уже едет сюда или стоит рядом, второй наряд не шлём.
+     */
+    public static boolean alarm(ServerPlayer suspect, Vec3 where, String place) {
+        for (Call call : CALLS) {
+            if (CITY.equals(call.caller()) && call.where().distanceTo(where) < 48) {
+                return false;
+            }
+        }
+        for (Crew crew : CREWS.values()) {
+            if ("police".equals(crew.kind) && crew.scene != null
+                    && Vec3.atCenterOf(crew.scene).distanceTo(where) < 48) {
+                return false;
+            }
+        }
+        int delay = CityConfig.CONFIG.responderDelay.get();
+        Call call = new Call(nextCall++, "police", CITY, where,
+                suspect.level().getGameTime() + delay * 20L);
+        CALLS.add(call);
+        for (ServerPlayer officer : dev.lscity.citylife.jobs.Duty.onDuty(suspect, "police")) {
+            officer.sendSystemMessage(Component.translatable("citylife.duty.alarm", place,
+                    (int) officer.position().distanceTo(where)).withStyle(ChatFormatting.RED));
+            officer.sendSystemMessage(dev.lscity.citylife.jobs.Duty.acceptButton(call.id));
+        }
+        return true;
+    }
+
+    /** Ждёт ли наряд полиции выезда к этой точке — для автотестов. */
+    public static boolean pendingAt(Vec3 where, double radius) {
+        return CALLS.stream().anyMatch(c -> c.where().distanceTo(where) < radius);
+    }
+
+    /** Снять ещё не приехавшие вызовы у точки — уборка после автотестов. */
+    public static void cancelAt(Vec3 where, double radius) {
+        CALLS.removeIf(c -> c.where().distanceTo(where) < radius);
     }
 
     // --- приезд -------------------------------------------------------------------
@@ -514,6 +556,16 @@ public final class Emergency {
                 }
                 continue;
             }
+            if (CITY.equals(r.caller())) {
+                // Тревога от города: засчитываем приезд на место, а не к человеку.
+                if (responder.position().distanceTo(r.where()) < 8) {
+                    it.remove();
+                    dev.lscity.citylife.jobs.Duty.paid(responder, null, r.kind());
+                    CityData.get(server).setRoute(responder.getUUID(), null);
+                    dev.lscity.citylife.net.Net.sendRoute(responder, null);
+                }
+                continue;
+            }
             if (caller == null || (caller.level() == responder.level()
                     && caller.distanceTo(responder) < 6)) {
                 it.remove();
@@ -549,7 +601,7 @@ public final class Emergency {
             CityData.get(officer.server).setRoute(officer.getUUID(), point);
             dev.lscity.citylife.net.Net.sendRoute(officer, point);
             RESPONSES.add(new Response(officer.getUUID(), call.caller, call.kind,
-                    officer.level().getGameTime() + 20L * 300));
+                    Vec3.atBottomCenterOf(to), officer.level().getGameTime() + 20L * 300));
             officer.sendSystemMessage(Component.translatable("citylife.duty.accepted")
                     .withStyle(ChatFormatting.GREEN));
             if (caller != null) {

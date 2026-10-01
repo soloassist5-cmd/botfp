@@ -27,6 +27,14 @@ public class LockpickItem extends Item {
             return InteractionResult.SUCCESS;
         }
         BlockState state = level.getBlockState(context.getClickedPos());
+        if (state.getBlock() instanceof dev.lscity.citylife.block.AtmBlock) {
+            // Отмычкой по банкомату — взлом. Отмычка тупится, только если взлом начался.
+            if (dev.lscity.citylife.city.Robbery.robAtm(player, context.getClickedPos())) {
+                context.getItemInHand().hurtAndBreak(1, player, owner ->
+                        owner.broadcastBreakEvent(context.getHand()));
+            }
+            return InteractionResult.CONSUME;
+        }
         if (!(state.getBlock() instanceof SmartLockBlock lock)
                 || !(level.getBlockEntity(context.getClickedPos())
                         instanceof SmartLockBlockEntity entity)) {

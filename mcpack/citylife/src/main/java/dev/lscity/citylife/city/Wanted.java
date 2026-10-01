@@ -90,6 +90,11 @@ public final class Wanted {
         bank.withdraw(player.getUUID(), paid, dev.lscity.citylife.data.Texts.ru(
                 "citylife.statement.fine"), player.level().getGameTime());
         life.setWanted(player.getUUID(), 0, 0);
+        long seized = Robbery.confiscate(player);
+        if (seized > 0) {
+            player.sendSystemMessage(Component.translatable("citylife.rob.seized",
+                    Money.format(seized)).withStyle(ChatFormatting.GOLD));
+        }
         if (player.isPassenger()) {
             player.stopRiding();
         }
@@ -149,7 +154,10 @@ public final class Wanted {
             tag.putString("duty", dev.lscity.citylife.data.Texts.ru("citylife.hud.duty",
                     dev.lscity.citylife.data.Texts.ru("citylife.sos." + duty)));
         }
-        String job = dev.lscity.citylife.jobs.Jobs.hudLine(player);
+        String job = Robbery.hudLine(player);
+        if (job.isEmpty()) {
+            job = dev.lscity.citylife.jobs.Jobs.hudLine(player);
+        }
         if (!job.isEmpty()) {
             tag.putString("job", job);
         }
@@ -176,6 +184,9 @@ public final class Wanted {
         int stars = life.wanted(id);
         if (stars > 0 && now >= life.wantedDecay(id)) {
             life.setWanted(id, stars - 1, now + DECAY);
+            if (stars == 1) {
+                Robbery.forget(id);
+            }
             player.displayClientMessage(Component.translatable("citylife.wanted.decay",
                     stars(stars - 1)).withStyle(ChatFormatting.GRAY), true);
         }

@@ -76,6 +76,13 @@ public final class ShopHandler {
             return;
         }
         Shop shop = ShopCatalog.BY_ROLE.get(role);
+        // Присел с оружием у продавца — это ограбление кассы, а не покупка.
+        if (shop != null && player.isShiftKeyDown()
+                && dev.lscity.citylife.city.Robbery.armed(player)) {
+            lastOutcome = dev.lscity.citylife.city.Robbery.robShop(player, target, shop.title())
+                    ? "rob:" + role : "norob:" + role;
+            return;
+        }
         if (shop != null) {
             CityTrader trader = new CityTrader(target, shop);
             if (trader.hasGoods()) {

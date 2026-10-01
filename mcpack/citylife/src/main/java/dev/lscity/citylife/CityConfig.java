@@ -42,6 +42,11 @@ public final class CityConfig {
     public final ForgeConfigSpec.IntValue backupMinutes;
     public final ForgeConfigSpec.IntValue backupKeep;
     public final ForgeConfigSpec.BooleanValue backupSingleplayer;
+    public final ForgeConfigSpec.IntValue shopRobSeconds;
+    public final ForgeConfigSpec.IntValue shopRobLoot;
+    public final ForgeConfigSpec.IntValue atmRobSeconds;
+    public final ForgeConfigSpec.IntValue atmRobLoot;
+    public final ForgeConfigSpec.IntValue robCooldownMinutes;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -139,6 +144,24 @@ public final class CityConfig {
         hospitalBill = builder
                 .comment("Сколько стоит лечение после смерти (со счёта; нет денег — бесплатно).")
                 .defineInRange("hospitalBill", 200, 0, 1_000_000);
+        builder.pop();
+
+        builder.comment("Ограбления: касса магазина и банкомат").push("crime");
+        shopRobSeconds = builder
+                .comment("Сколько секунд стоять у кассы, пока продавец не отдаст выручку.")
+                .defineInRange("shopRobSeconds", 30, 5, 600);
+        shopRobLoot = builder
+                .comment("Сколько может быть в кассе: выпадает от половины до этой суммы.")
+                .defineInRange("shopRobLoot", 4000, 0, 1_000_000);
+        atmRobSeconds = builder
+                .comment("Сколько секунд вскрывать банкомат отмычкой.")
+                .defineInRange("atmRobSeconds", 45, 5, 600);
+        atmRobLoot = builder
+                .comment("Сколько может быть в банкомате: от половины до этой суммы.")
+                .defineInRange("atmRobLoot", 9000, 0, 1_000_000);
+        robCooldownMinutes = builder
+                .comment("Через сколько минут ограбленная касса или банкомат снова с деньгами.")
+                .defineInRange("robCooldownMinutes", 20, 0, 1440);
         builder.pop();
 
         builder.comment("Подработки").push("jobs");
