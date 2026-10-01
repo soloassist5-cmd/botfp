@@ -1,11 +1,11 @@
 {
-  "generated": "2026-09-29T17:58:03Z",
+  "generated": "2026-10-01T15:08:47Z",
   "pack_version": "1.0.0",
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 56,
-  "total_size": 286166046,
+  "mod_count": 59,
+  "total_size": 289484810,
   "mods": [
     {
       "slug": "cameracraft",
@@ -29,6 +29,29 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/cameracraft"
+    },
+    {
+      "slug": "diligentstalker",
+      "title": "Diligent Stalker",
+      "project_id": "cYG2StiC",
+      "version_id": "1AIlFjBU",
+      "version_number": "1.1.1",
+      "version_type": "release",
+      "filename": "diligentstalker-forge-1.20.1-1.1.1.jar",
+      "url": "https://cdn.modrinth.com/data/cYG2StiC/versions/1AIlFjBU/diligentstalker-forge-1.20.1-1.1.1.jar",
+      "size": 152548,
+      "sha1": "66883e7dbc20609c48f6bcb5af7962f5cdad3804",
+      "sha512": "b70ac8aff86b085a57df6aa00c2db3c358b3e596bc2b08f56e73972ab5f2d13ec62d5f8d74fafffa256d964fe58042e65677beb3c477f65220b96d7b09236881",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "core",
+      "note": "Дрон-камера с удалённым управлением",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/diligentstalker"
     },
     {
       "slug": "easy-npc-config-ui",
@@ -98,6 +121,29 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/elite-x-quality-guns"
+    },
+    {
+      "slug": "fpvdrones",
+      "title": "FPV Drones",
+      "project_id": "HZmTdhEw",
+      "version_id": "pJb5Xagl",
+      "version_number": "1.1.4",
+      "version_type": "release",
+      "filename": "FPVtoMinecraft-1.20.1-V1.1.4.jar",
+      "url": "https://cdn.modrinth.com/data/HZmTdhEw/versions/pJb5Xagl/FPVtoMinecraft-1.20.1-V1.1.4.jar",
+      "size": 2128007,
+      "sha1": "59036cc0656263e2af913453f1178c36fe8ed13c",
+      "sha512": "d11c0e2d03c56b8268d8b691c479977cbb0b123c0ef626569a9d9cd368f456b9731813c32fe989ccd4ea6e779393db31d4cff56fcc920592e444614924fee828",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "core",
+      "note": "Дроны с пультом и FPV-очками: полёты, гонки, груз",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/fpvdrones"
     },
     {
       "slug": "guard-villagers",
@@ -654,6 +700,29 @@
       "optional": false,
       "required_by": "rechiseled",
       "page": "https://modrinth.com/mod/fusion-connected-textures"
+    },
+    {
+      "slug": "geckolib",
+      "title": "Geckolib",
+      "project_id": "8BmcQJ2H",
+      "version_id": "aC5KMoNg",
+      "version_number": "4.8.4",
+      "version_type": "release",
+      "filename": "geckolib-forge-1.20.1-4.8.4.jar",
+      "url": "https://cdn.modrinth.com/data/8BmcQJ2H/versions/aC5KMoNg/geckolib-forge-1.20.1-4.8.4.jar",
+      "size": 1038209,
+      "sha1": "50e1407869ef0e909e3bdda9328b8bd7db03fdc0",
+      "sha512": "443a321a293e3cb92fbbc3c97a38b179a45d1db703cd7bdb123270a9e04e7b7d67d5b06cd8e77a6d4d9139e033e901b9660cccf53ad5f9beaae6d06eae68febf",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Библиотека-зависимость",
+      "optional": false,
+      "required_by": "fpvdrones",
+      "page": "https://modrinth.com/mod/geckolib"
     },
     {
       "slug": "mezzconfig",

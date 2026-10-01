@@ -62,7 +62,12 @@ public final class DeviceServer {
 
     /** Устройство, с которым сейчас работает игрок. */
     public record Device(DeviceModel model, CompoundTag state, CompoundTag ctx,
-                         PcCaseBlockEntity computer) {
+                         PcCaseBlockEntity computer,
+                         dev.lscity.citylife.pc.LaptopBlockEntity laptop) {
+
+        Device(DeviceModel model, CompoundTag state, CompoundTag ctx, PcCaseBlockEntity computer) {
+            this(model, state, ctx, computer, null);
+        }
 
         public int sim() {
             return DeviceState.sim(state);
@@ -75,6 +80,9 @@ public final class DeviceServer {
         void changed() {
             if (computer != null) {
                 computer.deviceChanged();
+            }
+            if (laptop != null) {
+                laptop.setChanged();
             }
         }
     }
@@ -110,7 +118,7 @@ public final class DeviceServer {
                     .getValue(dev.lscity.citylife.pc.LaptopBlock.OPEN)) {
                 return null;
             }
-            return new Device(item.model(), laptop.device(), ctx, null);
+            return new Device(item.model(), laptop.device(), ctx, null, laptop);
         }
         if (ctx.contains("pc")) {
             BlockPos pos = BlockPos.of(ctx.getLong("pc"));
@@ -165,6 +173,10 @@ public final class DeviceServer {
         ListTag apps = new ListTag();
         DeviceState.apps(device.model(), device.state()).forEach(a -> apps.add(StringTag.valueOf(a)));
         tag.put("apps", apps);
+        // Что можно удалить с рабочего стола: только доставленное из магазина.
+        ListTag removable = new ListTag();
+        DeviceState.installed(device.state()).forEach(a -> removable.add(StringTag.valueOf(a)));
+        tag.put("removable", removable);
         ListTag store = new ListTag();
         List<String> installed = DeviceState.installed(device.state());
         for (String app : Devices.STORE_APPS) {

@@ -17,6 +17,11 @@ public final class ClientSetup {
     }
 
     @SubscribeEvent
+    public static void onKeys(net.minecraftforge.client.event.RegisterKeyMappingsEvent event) {
+        event.register(Keys.VEHICLE);
+    }
+
+    @SubscribeEvent
     public static void onRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
         // Сиденье невидимо: рисовать нечего.
         event.registerEntityRenderer(Registration.SEAT.get(),

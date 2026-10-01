@@ -37,6 +37,21 @@ public abstract class DeviceApp {
         return false;
     }
 
+    /** Правый клик (на телефоне — долгое нажатие): меню значка и т.п. */
+    public boolean rightClick(double mx, double my, int[] area) {
+        return false;
+    }
+
+    /** Палец ведут по экрану: прокрутка списка перетаскиванием. */
+    public boolean drag(double mx, double my, double dy, int[] area) {
+        return false;
+    }
+
+    /** Палец отпустили. */
+    public boolean release(double mx, double my, int[] area) {
+        return false;
+    }
+
     public boolean key(int code) {
         return false;
     }

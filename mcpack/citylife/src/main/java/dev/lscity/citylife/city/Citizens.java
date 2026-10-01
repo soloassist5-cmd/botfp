@@ -11,6 +11,7 @@ import dev.lscity.citylife.economy.Money;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -49,7 +50,9 @@ import java.util.UUID;
  * варианты в чате (как дела, дорога до банка или больницы, попросить
  * денег). Проходя мимо, здороваются; от вооружённого шарахаются.
  * Нападение: прохожий кричит и убегает, соседи тоже; ударившему — звезда.
- * Смерть: падают наличные из кошелька, убийце — две звезды и тревога 112.
+ * Смерть: тело остаётся лежать, в кармане — наличные (у полицейского ещё
+ * пистолет и патроны); клик по телу — забрать. Убийце — звёзды и тревога 112.
+ * Прохожих можно и сбить машиной. Продавцы и прочие стоящие жители бессмертны.
  */
 @Mod.EventBusSubscriber(modid = CityLife.MOD_ID)
 public final class Citizens {
@@ -120,6 +123,19 @@ public final class Citizens {
     private static final Map<UUID, Long> GREETED = new HashMap<>();
     /** Кто у кого просил денег (игрок -> время): раз в 5 минут. */
     private static final Map<UUID, Long> BEGGED = new HashMap<>();
+
+    public static final String CORPSE_TAG = "citylife_corpse";
+    /** Тело лежит 5 минут, потом его увозят. */
+    private static final long CORPSE_TICKS = 20L * 300;
+
+    /** Что лежит в карманах у тела, и когда его уберут. */
+    private record Body(java.util.List<ItemStack> loot, long until) {
+    }
+
+    private static final Map<UUID, Body> BODIES = new HashMap<>();
+    /** Кого из прохожих машина уже задела (чтобы не бить каждый тик). */
+    private static final Map<UUID, Long> HIT = new HashMap<>();
+    private static final Map<UUID, Vec3> LAST_POS = new HashMap<>();
 
     /** Чем закончился последний ответ прохожего — для автотестов. */
     public static volatile String lastOutcome = "";
@@ -363,8 +379,9 @@ public final class Citizens {
         if (!(victim.level() instanceof ServerLevel level) || !isWalker(victim)) {
             return;
         }
-        long cash = dropCash(level, victim);
-        CityLife.LOG.info("City Life: прохожий {} погиб, выпало {} ₽", name(victim).getString(), cash);
+        Entity body = corpse(level, victim);
+        CityLife.LOG.info("City Life: прохожий {} погиб, тело {}", name(victim).getString(),
+                body == null ? "не создалось" : body.getUUID());
         if (event.getSource().getEntity() instanceof ServerPlayer killer) {
             boolean officer = victim.getTags().contains(PATROL_TAG);
             Wanted.crime(killer, officer ? 3 : 2, officer ? "citylife.wanted.kill_officer"
@@ -374,20 +391,103 @@ public final class Citizens {
         }
     }
 
-    /** Кошелёк прохожего падает на землю наличными. Возвращает сумму. */
-    public static long dropCash(ServerLevel level, Entity victim) {
+    /** Сколько наличных в кошельке у прохожего: от 10% до максимума из настроек. */
+    public static long wallet(RandomSource random) {
         int max = CityConfig.CONFIG.citizenCashMax.get();
-        if (max <= 0) {
-            return 0;
+        return max <= 0 ? 0 : Math.max(10, (long) (max * (0.1D + 0.9D * random.nextDouble())) / 10 * 10);
+    }
+
+    /**
+     * Тело на месте гибели: тот же скин, лежит (поза Easy NPC «SLEEPING»),
+     * бессмертно и неподвижно. В карманах — наличные, у полицейского ещё
+     * пистолет и пара обойм.
+     */
+    public static Entity corpse(ServerLevel level, Entity victim) {
+        java.util.List<ItemStack> loot = new java.util.ArrayList<>(Money.stacks(wallet(level.random)));
+        if (victim.getTags().contains(PATROL_TAG)) {
+            loot.add(Police.pistol());
+            loot.add(Police.ammo(17 + level.random.nextInt(18)));
         }
-        long cash = Math.max(10, (long) (max * (0.1D + 0.9D * level.random.nextDouble())) / 10 * 10);
-        for (ItemStack stack : Money.stacks(cash)) {
-            ItemEntity item = new ItemEntity(level, victim.getX(), victim.getY() + 0.5D,
-                    victim.getZ(), stack);
-            item.setDefaultPickUpDelay();
-            level.addFreshEntity(item);
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", "easy_npc:humanoid");
+        tag.putString("CustomName", Component.Serializer.toJson(Component.literal(
+                Component.translatable("citylife.citizen.body", name(victim)).getString())));
+        tag.putBoolean("CustomNameVisible", false);
+        tag.putBoolean("Invulnerable", true);
+        tag.putBoolean("NoAI", true);
+        CompoundTag model = new CompoundTag();
+        model.putString("Pose", "VANILLA");
+        model.putString("DefaultPose", "SLEEPING");
+        tag.put("ModelData", model);
+        CompoundTag saved = victim.saveWithoutId(new CompoundTag());
+        if (saved.contains("SkinData")) {
+            tag.put("SkinData", saved.getCompound("SkinData"));
         }
-        return cash;
+        net.minecraft.nbt.ListTag tags = new net.minecraft.nbt.ListTag();
+        for (String t : new String[]{"citylife_npc", CORPSE_TAG,
+                dev.lscity.citylife.trade.ShopCatalog.GEN_TAG}) {
+            tags.add(net.minecraft.nbt.StringTag.valueOf(t));
+        }
+        tag.put("Tags", tags);
+        Entity body = net.minecraft.world.entity.EntityType.loadEntityRecursive(tag, level, e -> {
+            e.moveTo(victim.getX(), victim.getY(), victim.getZ(), victim.getYRot(), 0F);
+            return e;
+        });
+        if (body == null) {
+            // Easy NPC не создал тело — деньги хотя бы не пропадут.
+            for (ItemStack stack : loot) {
+                level.addFreshEntity(new ItemEntity(level, victim.getX(), victim.getY() + 0.3D,
+                        victim.getZ(), stack));
+            }
+            return null;
+        }
+        body.setPose(net.minecraft.world.entity.Pose.SLEEPING);
+        BODIES.put(body.getUUID(), new Body(loot, level.getGameTime() + CORPSE_TICKS));
+        level.addFreshEntity(body);
+        return body;
+    }
+
+    public static boolean isCorpse(Entity entity) {
+        return entity.getTags().contains(CORPSE_TAG);
+    }
+
+    /** Что лежит в карманах у тела — для автотестов. */
+    public static java.util.List<ItemStack> lootOf(Entity body) {
+        Body b = BODIES.get(body.getUUID());
+        return b == null ? java.util.List.of() : b.loot();
+    }
+
+    /** Клик по телу: всё из карманов — игроку, тело остаётся до приезда труповозки. */
+    public static void loot(ServerPlayer player, Entity body) {
+        Body b = BODIES.get(body.getUUID());
+        if (b == null || b.loot().isEmpty()) {
+            lastOutcome = "corpse:empty";
+            player.displayClientMessage(Component.translatable("citylife.citizen.body_empty")
+                    .withStyle(ChatFormatting.GRAY), true);
+            return;
+        }
+        long cash = 0;
+        for (ItemStack stack : b.loot()) {
+            cash += Money.value(stack) * stack.getCount();
+            if (!player.getInventory().add(stack.copy())) {
+                player.drop(stack.copy(), false);
+            }
+        }
+        b.loot().clear();
+        lastOutcome = "corpse:looted";
+        player.displayClientMessage(Component.translatable("citylife.citizen.body_looted",
+                Money.format(cash)).withStyle(ChatFormatting.GOLD), true);
+        player.level().playSound(null, body.blockPosition(), SoundEvents.ARMOR_EQUIP_LEATHER,
+                SoundSource.PLAYERS, 0.8F, 1.0F);
+    }
+
+    /** Тела не переживают перезапуск: карманы хранятся только в памяти. */
+    @SubscribeEvent
+    public static void onJoin(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide() && isCorpse(event.getEntity())
+                && !BODIES.containsKey(event.getEntity().getUUID())) {
+            event.setCanceled(true);
+        }
     }
 
     /** У прохожих и патрульных ничего, кроме кошелька, не выпадает (пистолет тоже). */
@@ -400,16 +500,82 @@ public final class Citizens {
 
     // --- город вокруг -----------------------------------------------------------------
 
+    /**
+     * Машина сбивает прохожего: урон по скорости, тело отбрасывает вперёд.
+     * Водитель отвечает как за удар — звезда, а за насмерть — убийство.
+     */
+    private static void carHits(MinecraftServer server, ServerLevel level, long now) {
+        for (ServerPlayer driver : server.getPlayerList().getPlayers()) {
+            Entity car = driver.getVehicle();
+            if (car == null || driver.level() != level
+                    || !dev.lscity.citylife.vehicle.Garage.isVehicle(car)) {
+                LAST_POS.remove(driver.getUUID());
+                continue;
+            }
+            Vec3 pos = car.position();
+            Vec3 last = LAST_POS.put(driver.getUUID(), pos);
+            if (last == null) {
+                continue;
+            }
+            Vec3 move = pos.subtract(last).multiply(1, 0, 1);
+            hitWalkers(level, driver, car, move.length() / 2.0D, move, now);
+        }
+    }
+
+    /** Сбить прохожих на пути машины; speed — блоков за тик. Возвращает, сколько задето. */
+    public static int hitWalkers(ServerLevel level, ServerPlayer driver, Entity car, double speed,
+                                 Vec3 move, long now) {
+        if (speed < 0.2D) {
+            return 0;
+        }
+        int hits = 0;
+        for (Mob walker : level.getEntitiesOfClass(Mob.class, car.getBoundingBox().inflate(0.6D),
+                Citizens::isWalker)) {
+            Long last = HIT.get(walker.getUUID());
+            if (last != null && now - last < 20) {
+                continue;
+            }
+            HIT.put(walker.getUUID(), now);
+            walker.hurt(level.damageSources().playerAttack(driver), (float) Math.min(40, speed * 30));
+            Vec3 push = move.lengthSqr() > 1.0E-4D ? move.normalize().scale(1.6D) : Vec3.ZERO;
+            if (walker.isAlive()) {
+                walker.moveTo(walker.getX() + push.x, walker.getY(), walker.getZ() + push.z);
+            }
+            level.playSound(null, walker.blockPosition(), SoundEvents.PLAYER_HURT,
+                    SoundSource.NEUTRAL, 1.0F, 0.8F);
+            hits++;
+        }
+        return hits;
+    }
+
     /** Раз в 2 секунды: прохожие здороваются с проходящими и боятся оружия. */
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.getServer() == null
-                || event.getServer().overworld().getGameTime() % 40 != 0) {
+        if (event.phase != TickEvent.Phase.END || event.getServer() == null) {
             return;
         }
         MinecraftServer server = event.getServer();
         ServerLevel level = server.overworld();
         long now = level.getGameTime();
+        if (now % 2 == 0) {
+            carHits(server, level, now);
+        }
+        if (now % 40 != 0) {
+            return;
+        }
+        // Труповозка: тела старше 5 минут убираем.
+        for (var it = BODIES.entrySet().iterator(); it.hasNext(); ) {
+            var entry = it.next();
+            if (now < entry.getValue().until()) {
+                continue;
+            }
+            Entity body = level.getEntity(entry.getKey());
+            if (body != null) {
+                body.discard();
+            }
+            it.remove();
+        }
+        HIT.entrySet().removeIf(e -> now - e.getValue() > 200);
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.level() != level || player.isSpectator()) {
                 continue;

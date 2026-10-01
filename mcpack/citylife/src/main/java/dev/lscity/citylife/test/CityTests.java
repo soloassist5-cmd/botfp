@@ -787,11 +787,20 @@ public final class CityTests {
             if (thief.startRiding(vehicle, true)) {
                 h.fail("чужой сел в запертую машину");
             }
-            if (!owner.startRiding(vehicle, true)) {
-                h.fail("хозяин не сел в свою машину");
+            if (owner.startRiding(vehicle, true)) {
+                h.fail("хозяин сел в запертую машину, не открыв её");
             }
             owner.stopRiding();
             dev.lscity.citylife.vehicle.Garage.setLocked(owner, car, false);
+            if (!owner.startRiding(vehicle, true)) {
+                h.fail("хозяин не сел в свою открытую машину");
+            }
+            var panel = dev.lscity.citylife.vehicle.Garage.panel(owner);
+            if (!vehicle.getUUID().toString().equals(panel.getString("riding"))
+                    || panel.getList("cars", 10).isEmpty()) {
+                h.fail("окно «Мой транспорт» не видит машину, в которой сидит хозяин");
+            }
+            owner.stopRiding();
             life.setWanted(thief.getUUID(), 0, 0);
             if (!thief.startRiding(vehicle, true)) {
                 h.fail("в открытую машину не сесть");
@@ -1076,18 +1085,33 @@ public final class CityTests {
             if (life.wanted(killer.getUUID()) < 2) {
                 h.fail("за убийство прохожего нет розыска");
             }
-            long cash = h.getLevel().getEntitiesOfClass(ItemEntity.class,
-                    walker.getBoundingBox().inflate(3)).stream()
-                    .mapToLong(e -> dev.lscity.citylife.economy.Money.value(e.getItem())
-                            * e.getItem().getCount()).sum();
-            if (cash <= 0) {
-                h.fail("из прохожего не выпали деньги");
+            Entity body = h.getLevel().getEntitiesOfClass(Entity.class,
+                    walker.getBoundingBox().inflate(2), dev.lscity.citylife.city.Citizens::isCorpse)
+                    .stream().findFirst().orElse(null);
+            if (body == null) {
+                h.fail("тело не осталось на месте гибели");
+                return;
             }
+            if (h.getLevel().getEntitiesOfClass(ItemEntity.class, walker.getBoundingBox().inflate(3))
+                    .stream().anyMatch(e -> dev.lscity.citylife.economy.Money.value(e.getItem()) > 0)) {
+                h.fail("деньги рассыпались по земле, а должны лежать на теле");
+            }
+            long cashBefore = dev.lscity.citylife.economy.Money.cash(killer);
+            if (!"corpse".equals(click(killer, body))) {
+                h.fail("клик по телу не обыскал его: " + ShopHandler.lastOutcome);
+            }
+            if (dev.lscity.citylife.economy.Money.cash(killer) <= cashBefore) {
+                h.fail("в карманах тела не было денег");
+            }
+            body.hurt(h.getLevel().damageSources().playerAttack(killer), 1000F);
+            if (!body.isAlive()) {
+                h.fail("тело можно убить ещё раз");
+            }
+            body.discard();
         } finally {
             life.setWanted(killer.getUUID(), 0, 0);
             Emergency.cancelAt(walker.position(), 16);
-            h.getLevel().getEntitiesOfClass(ItemEntity.class, walker.getBoundingBox().inflate(4))
-                    .forEach(Entity::discard);
+            killer.getInventory().clearContent();
             walker.discard();
         }
         h.succeed();
@@ -1233,5 +1257,166 @@ public final class CityTests {
                 h.fail("сиденье осталось после того, как встали");
             }
         });
+    }
+
+    // --- телефон ------------------------------------------------------------------
+
+    /** Приложение из магазина ставится и удаляется; встроенное удалить нельзя. */
+    @SelfTest
+    public static void phoneAppRemove(TestKit h) {
+        FakePlayer owner = player(h, "PhoneOwner");
+        var item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
+                new net.minecraft.resources.ResourceLocation("citylife", "smartphone"));
+        if (item == null) {
+            h.fail("нет предмета citylife:smartphone");
+            return;
+        }
+        ItemStack phone = new ItemStack(item);
+        owner.setItemInHand(InteractionHand.MAIN_HAND, phone);
+        try {
+            CompoundTag args = new CompoundTag();
+            args.put("ctx", dev.lscity.citylife.net.DeviceServer.handContext(InteractionHand.MAIN_HAND));
+            args.putString("app", "tetris");
+            // Магазину нужен интернет: без SIM телефон оффлайн — вставим номер.
+            dev.lscity.citylife.device.DeviceState.setSim(phone.getOrCreateTag(), 4821);
+            dev.lscity.citylife.net.DeviceServer.handle(owner, "app_install", args);
+            var state = owner.getMainHandItem().getOrCreateTag();
+            if (!dev.lscity.citylife.device.DeviceState.installed(state).contains("tetris")) {
+                h.fail("приложение не установилось");
+            }
+            dev.lscity.citylife.net.DeviceServer.handle(owner, "app_remove", args);
+            if (dev.lscity.citylife.device.DeviceState.installed(state).contains("tetris")) {
+                h.fail("приложение не удалилось");
+            }
+            args.putString("app", "bank");
+            dev.lscity.citylife.net.DeviceServer.handle(owner, "app_remove", args);
+            if (!dev.lscity.citylife.device.DeviceState.apps(dev.lscity.citylife.device.Devices.LS_PHONE,
+                    state).contains("bank")) {
+                h.fail("встроенное приложение пропало");
+            }
+        } finally {
+            owner.getInventory().clearContent();
+        }
+        h.succeed();
+    }
+
+    // --- мир ------------------------------------------------------------------
+
+    /** Гравий на крыше в старом мире заменяется туфом и больше не падает. */
+    @SelfTest
+    public static void gravelRoofFixed(TestKit h) {
+        BlockPos roof = h.absolutePos(new BlockPos(4, 4, 4));
+        h.getLevel().setBlock(roof, Blocks.GRAVEL.defaultBlockState(), 2 | 16);
+        dev.lscity.citylife.city.WorldFixes.fix(h.getLevel(), h.getLevel().getChunkAt(roof));
+        if (!h.getLevel().getBlockState(roof).is(Blocks.TUFF)) {
+            h.fail("гравий над пустотой не заменён: " + h.getLevel().getBlockState(roof));
+        }
+        h.getLevel().setBlock(roof, Blocks.AIR.defaultBlockState(), 2);
+        h.succeed();
+    }
+
+    /** Сбитый машиной прохожий получает урон по скорости; продавца машина не убьёт. */
+    @SelfTest
+    public static void carHitsWalker(TestKit h) {
+        FakePlayer driver = player(h, "Driver");
+        Entity walker = dev.lscity.citylife.city.Pedestrians.spawnWalker(h.getLevel(),
+                h.absolutePos(new BlockPos(9, 1, 8)), h.getLevel().getRandom());
+        Entity clerk = npc(h, new BlockPos(12, 1, 8), "Продавец", "citylife_npc", "citylife_clerk",
+                ShopCatalog.GEN_TAG);
+        LifeData life = LifeData.get(h.getLevel().getServer());
+        try {
+            if (!(walker instanceof net.minecraft.world.entity.LivingEntity living)) {
+                h.fail("прохожий не создался");
+                return;
+            }
+            float before = living.getHealth();
+            int hits = dev.lscity.citylife.city.Citizens.hitWalkers(h.getLevel(), driver, walker,
+                    0.5D, new Vec3(1, 0, 0), h.getLevel().getGameTime());
+            if (hits != 1 || living.getHealth() >= before) {
+                h.fail("машина не сбила прохожего: ударов " + hits);
+            }
+            clerk.hurt(h.getLevel().damageSources().playerAttack(driver), 1000F);
+            if (!clerk.isAlive()) {
+                h.fail("продавца можно убить");
+            }
+        } finally {
+            life.setWanted(driver.getUUID(), 0, 0);
+            walker.discard();
+            clerk.discard();
+        }
+        h.succeed();
+    }
+
+    // --- касса ----------------------------------------------------------------
+
+    /** Касса встаёт на прилавок у продавца; картой платят со счёта, чужая карта не проходит. */
+    @SelfTest
+    public static void checkoutPaysByCard(TestKit h) {
+        FakePlayer buyer = player(h, "Shopper");
+        FakePlayer stranger = player(h, "CardThief");
+        String role = shopRole();
+        // Продавец за прилавком: прилавок — блок кварца перед ним, за прилавком проход.
+        Entity clerk = npc(h, new BlockPos(8, 1, 10), "Тест " + role, "citylife_npc",
+                "citylife_" + role, ShopCatalog.GEN_TAG);
+        h.setBlock(new BlockPos(8, 1, 9), Blocks.QUARTZ_BLOCK);
+        CityData bank = CityData.get(h.getLevel().getServer());
+        try {
+            BlockPos register = dev.lscity.citylife.trade.Registers.place(h.getLevel(),
+                    (net.minecraft.world.entity.Mob) clerk);
+            if (register == null || !(h.getLevel().getBlockState(register).getBlock()
+                    instanceof dev.lscity.citylife.block.CashRegisterBlock)) {
+                h.fail("касса не встала на прилавок");
+            }
+            if (dev.lscity.citylife.block.CashRegisterBlock.nearestClerk(h.getLevel(), register) != clerk) {
+                h.fail("касса не нашла своего продавца");
+            }
+            var shop = ShopHandler.shopOf(clerk);
+            var line = dev.lscity.citylife.trade.Checkout.lines(shop).get(0);
+            ListTag cart = new ListTag();
+            CompoundTag entry = new CompoundTag();
+            entry.putInt("i", line.index());
+            entry.putInt("n", 2);
+            cart.add(entry);
+            buyer.moveTo(clerk.getX(), clerk.getY(), clerk.getZ() - 2);
+            stranger.moveTo(clerk.getX(), clerk.getY(), clerk.getZ() - 2);
+            bank.setBalance(buyer.getUUID(), line.price() * 3);
+            var noCard = dev.lscity.citylife.trade.Checkout.pay(buyer, clerk, cart, "card");
+            if (noCard.ok()) {
+                h.fail("оплата картой прошла без карты");
+            }
+            ItemStack card = dev.lscity.citylife.economy.BankCardItem.issue(Registration.CARD_MIR.get(), buyer);
+            buyer.getInventory().add(card.copy());
+            var paid = dev.lscity.citylife.trade.Checkout.pay(buyer, clerk, cart, "card");
+            if (!paid.ok() || bank.balance(buyer.getUUID()) != line.price()) {
+                h.fail("картой не списалось: " + paid.message() + ", на счёте "
+                        + bank.balance(buyer.getUUID()));
+            }
+            if (buyer.getInventory().items.stream().noneMatch(st -> ItemStack.isSameItem(st, line.goods()))) {
+                h.fail("товар не выдан после оплаты картой");
+            }
+            var broke = dev.lscity.citylife.trade.Checkout.pay(buyer, clerk, cart, "card");
+            if (broke.ok()) {
+                h.fail("оплата прошла при нехватке денег на счёте");
+            }
+            stranger.getInventory().add(card.copy());
+            bank.setBalance(stranger.getUUID(), 0);
+            var stolen = dev.lscity.citylife.trade.Checkout.pay(stranger, clerk, cart, "card");
+            if (stolen.ok()) {
+                h.fail("терминал принял чужую карту");
+            }
+            dev.lscity.citylife.economy.Money.give(stranger, line.price() * 2);
+            var cash = dev.lscity.citylife.trade.Checkout.pay(stranger, clerk, cart, "cash");
+            if (!cash.ok() || dev.lscity.citylife.economy.Money.cash(stranger) != 0) {
+                h.fail("наличными не оплатилось: " + cash.message());
+            }
+            if (register != null) {
+                h.getLevel().setBlock(register, Blocks.AIR.defaultBlockState(), 2);
+            }
+        } finally {
+            buyer.getInventory().clearContent();
+            stranger.getInventory().clearContent();
+            clerk.discard();
+        }
+        h.succeed();
     }
 }

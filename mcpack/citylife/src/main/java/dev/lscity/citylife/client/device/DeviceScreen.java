@@ -258,12 +258,40 @@ public class DeviceScreen extends Screen {
             open("home");
             return true;
         }
+        if (button == 1) {
+            return app.rightClick(mx, my, contentArea());
+        }
         return app.click(mx, my, contentArea());
+    }
+
+    @Override
+    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        return (button == 0 && app.drag(mx, my, dy, contentArea()))
+                || super.mouseDragged(mx, my, button, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(double mx, double my, int button) {
+        return (button == 0 && app.release(mx, my, contentArea()))
+                || super.mouseReleased(mx, my, button);
     }
 
     @Override
     public boolean mouseScrolled(double mx, double my, double delta) {
         return app.scroll(delta) || super.mouseScrolled(mx, my, delta);
+    }
+
+    /** Полоса прокрутки справа от области: где мы в длинном списке. */
+    public void scrollbar(GuiGraphics g, int[] area, int offset, int content) {
+        if (content <= area[3]) {
+            return;
+        }
+        int track = area[3];
+        int thumb = Math.max(12, track * area[3] / content);
+        int y = area[1] + (track - thumb) * offset / Math.max(1, content - area[3]);
+        int x = area[0] + area[2] + 3;
+        g.fill(x, area[1], x + 2, area[1] + track, 0x22FFFFFF);
+        g.fill(x, y, x + 2, y + thumb, 0xAAFFFFFF);
     }
 
     @Override

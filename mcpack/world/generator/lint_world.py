@@ -241,6 +241,14 @@ def lint_region(blocks: np.ndarray, palette: Palette, ox: int, oz: int,
     mask[ground] = pit
     report("pit", mask)
 
+    # Сыпучие блоки над пустотой: гравий, песок, бетонный порошок упадут
+    # от первого же касания (так рушились потолки).
+    falling = [i for i, n in enumerate(names)
+               if n.split(":", 1)[-1] in ("gravel", "sand", "red_sand")
+               or n.endswith("_concrete_powder")]
+    if falling:
+        report("falling_over_air", np.isin(blocks, falling) & shift(air, -1, 0, 0))
+
     # Висящие блоки: все шесть соседей — воздух.
     alone = ~air
     for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
@@ -307,7 +315,8 @@ def main() -> int:
     print()
     total = 0
     for kind in ("sign_unsupported", "sign_floating", "lantern_floating", "door_blocked",
-                 "door_hole", "door_no_floor", "pit", "floating_block", "dark_room"):
+                 "door_hole", "door_no_floor", "pit", "floating_block", "falling_over_air",
+                 "dark_room"):
         items = found.get(kind, [])
         total += len(items) if kind != "dark_room" else 0
         example = "  ".join(f"{x},{y},{z}" for x, y, z in items[:args.examples])

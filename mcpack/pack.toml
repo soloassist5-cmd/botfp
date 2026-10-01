@@ -81,6 +81,21 @@ side  = "both"
 group = "core"
 note = "Машины целиком в ящике: вскрыл ключом — поехал. 28 видов техники"
 
+# Дроны. FPV Drones — дрон с пультом и FPV-очками: настоящая физика полёта,
+# батарея, дальность сигнала, полезная нагрузка. Diligent Stalker — дрон-камера
+# с удалённым управлением для слежки сверху.
+[[mods]]
+slug = "fpvdrones"
+side  = "both"
+group = "core"
+note = "Дроны с пультом и FPV-очками: полёты, гонки, груз"
+
+[[mods]]
+slug = "diligentstalker"
+side  = "both"
+group = "core"
+note = "Дрон-камера с удалённым управлением"
+
 [[mods]]
 slug = "traffic-control-+-roads-mod-by-teerth"
 side  = "both"

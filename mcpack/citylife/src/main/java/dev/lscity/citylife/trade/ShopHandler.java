@@ -62,6 +62,12 @@ public final class ShopHandler {
         }
         dev.lscity.citylife.cmd.CityCommands.note("role=" + role);
 
+        // Тело погибшего прохожего: обыскать карманы.
+        if (dev.lscity.citylife.city.Citizens.isCorpse(target)) {
+            lastOutcome = "corpse";
+            dev.lscity.citylife.city.Citizens.loot(player, target);
+            return;
+        }
         // Прохожий: остановится и поговорит.
         if (dev.lscity.citylife.city.Citizens.isWalker(target)) {
             lastOutcome = "citizen";
@@ -94,7 +100,10 @@ public final class ShopHandler {
             CityTrader trader = new CityTrader(target, shop);
             if (trader.hasGoods()) {
                 lastOutcome = "shop:" + role;
-                trader.open(player);
+                // Касса: корзина и оплата картой; нечего продать за деньги — старое окно обмена.
+                if (!Checkout.open(player, target)) {
+                    trader.open(player);
+                }
                 dev.lscity.citylife.cmd.CityCommands.note("shop=" + shop.title());
                 return;
             }

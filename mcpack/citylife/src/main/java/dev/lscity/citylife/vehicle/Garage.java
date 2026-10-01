@@ -145,13 +145,20 @@ public final class Garage {
         }
         Entity vehicle = event.getEntityBeingMounted();
         GarageData.Car car = GarageData.get(player.server).car(vehicle.getUUID());
-        if (car == null || car.allows(player.getUUID())) {
+        if (car == null) {
             return;
         }
+        // Запертая машина не пускает никого — и хозяина тоже, пока он её не откроет.
         if (car.locked) {
             event.setCanceled(true);
-            player.displayClientMessage(Component.translatable("citylife.car.locked_by",
-                    car.ownerName).withStyle(ChatFormatting.RED), true);
+            player.displayClientMessage(car.allows(player.getUUID())
+                    ? Component.translatable("citylife.car.locked_own", model(car))
+                    .withStyle(ChatFormatting.YELLOW)
+                    : Component.translatable("citylife.car.locked_by", car.ownerName)
+                    .withStyle(ChatFormatting.RED), true);
+            return;
+        }
+        if (car.allows(player.getUUID())) {
             return;
         }
         if (vehicle.getPassengers().isEmpty()) {
@@ -349,6 +356,71 @@ public final class Garage {
             list.add(entry);
         }
         return list;
+    }
+
+    // --- окно «Мой транспорт» (клавиша K) ---------------------------------------------
+
+    /** Снимок для окна: машины игрока, на какой он сидит, кто рядом (дать ключ). */
+    public static CompoundTag panel(ServerPlayer player) {
+        CompoundTag tag = new CompoundTag();
+        tag.put("cars", snapshot(player));
+        if (player.getVehicle() != null) {
+            tag.putString("riding", player.getVehicle().getUUID().toString());
+        }
+        ListTag people = new ListTag();
+        for (ServerPlayer other : player.server.getPlayerList().getPlayers()) {
+            if (other != player && other.level() == player.level() && other.distanceTo(player) < 64) {
+                CompoundTag p = new CompoundTag();
+                p.putString("name", other.getGameProfile().getName());
+                p.putUUID("id", other.getUUID());
+                people.add(p);
+            }
+        }
+        tag.put("people", people);
+        return tag;
+    }
+
+    /** Кнопки окна: garage_open, garage_lock, garage_unlock, garage_route, garage_horn, garage_trust. */
+    public static void handle(ServerPlayer player, String action, CompoundTag args) {
+        GarageData.Car car = args.contains("id") ? byId(player, args.getString("id")) : null;
+        switch (action) {
+            case "garage_lock", "garage_unlock" -> {
+                if (car != null) {
+                    setLocked(player, car, "garage_lock".equals(action));
+                }
+            }
+            case "garage_route" -> {
+                if (car != null) {
+                    route(player, car);
+                }
+            }
+            case "garage_horn" -> {
+                Entity vehicle = car == null ? null : find(player.server, car);
+                if (vehicle != null) {
+                    vehicle.level().playSound(null, vehicle.blockPosition(),
+                            SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), SoundSource.NEUTRAL, 3.0F, 1.2F);
+                    ((ServerLevel) vehicle.level()).sendParticles(
+                            net.minecraft.core.particles.ParticleTypes.END_ROD, vehicle.getX(),
+                            vehicle.getY() + 2.2D, vehicle.getZ(), 12, 0.3D, 0.6D, 0.3D, 0.02D);
+                    player.displayClientMessage(Component.translatable("citylife.car.horn",
+                            model(car), (int) player.distanceTo(vehicle)).withStyle(ChatFormatting.AQUA),
+                            true);
+                } else if (car != null) {
+                    player.displayClientMessage(Component.translatable("citylife.car.too_far")
+                            .withStyle(ChatFormatting.GRAY), true);
+                }
+            }
+            case "garage_trust" -> {
+                ServerPlayer friend = args.hasUUID("friend")
+                        ? player.server.getPlayerList().getPlayer(args.getUUID("friend")) : null;
+                if (car != null && friend != null) {
+                    trust(player, car, friend, !car.trusted.contains(friend.getUUID()));
+                }
+            }
+            default -> {
+            }
+        }
+        dev.lscity.citylife.net.Net.sendPanel(player, "garage", panel(player), "garage_open".equals(action));
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {

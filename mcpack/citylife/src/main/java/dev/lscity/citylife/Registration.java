@@ -196,6 +196,12 @@ public final class Registration {
                     .requiresCorrectToolForDrops()
                     .noOcclusion()));
 
+    public static final RegistryObject<Block> CASH_REGISTER = BLOCKS.register("cash_register",
+            () -> new dev.lscity.citylife.block.CashRegisterBlock(BlockBehaviour.Properties.of()
+                    .strength(2.0F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Item> CASH_REGISTER_ITEM = ITEMS.register("cash_register",
+            () -> new BlockItem(CASH_REGISTER.get(), new Item.Properties()));
+
     public static final RegistryObject<Item> ATM_ITEM = ITEMS.register("atm",
             () -> new BlockItem(ATM.get(), new Item.Properties()));
 
@@ -214,6 +220,7 @@ public final class Registration {
                         output.accept(SMART_LOCK_ITEM.get());
                         output.accept(LOCKPICK.get());
                         output.accept(ATM_ITEM.get());
+                        output.accept(CASH_REGISTER_ITEM.get());
                         output.accept(item("pickup_point"));
                         output.accept(CARD_MIR.get());
                         output.accept(CARD_MASTERCARD.get());

@@ -38,7 +38,9 @@ DISTRICT_FLOORS = {
     "eastside": (1, 3),
 }
 
-ROOF_FINISH = [B.CONCRETE_GRAY, B.GRAVEL, B.CONCRETE_LIGHT, "minecraft:smooth_stone",
+# Без гравия: крыша в один блок, и гравий осыпался внутрь от любого касания.
+# Туф выглядит так же, но не падает.
+ROOF_FINISH = [B.CONCRETE_GRAY, "minecraft:tuff", B.CONCRETE_LIGHT, "minecraft:smooth_stone",
                B.DEEPSLATE_TILES]
 
 

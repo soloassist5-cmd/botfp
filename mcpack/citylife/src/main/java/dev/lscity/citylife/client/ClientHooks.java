@@ -47,6 +47,24 @@ public final class ClientHooks {
             HudOverlay.update(packet.snapshot());
             return;
         }
+        if ("checkout".equals(packet.kind())) {
+            if (minecraft.screen instanceof dev.lscity.citylife.client.screen.CheckoutScreen screen) {
+                screen.update(packet.snapshot());
+            } else if (packet.open()) {
+                minecraft.setScreen(
+                        new dev.lscity.citylife.client.screen.CheckoutScreen(packet.snapshot()));
+            }
+            return;
+        }
+        if ("garage".equals(packet.kind())) {
+            if (minecraft.screen instanceof dev.lscity.citylife.client.screen.VehicleScreen screen) {
+                screen.update(packet.snapshot());
+            } else if (packet.open()) {
+                minecraft.setScreen(
+                        new dev.lscity.citylife.client.screen.VehicleScreen(packet.snapshot()));
+            }
+            return;
+        }
         if ("realty".equals(packet.kind())) {
             if (minecraft.screen instanceof dev.lscity.citylife.client.screen.RealtyScreen screen) {
                 screen.update(packet.snapshot());

@@ -66,6 +66,18 @@ public final class Police {
         }
     }
 
+    /** Патроны 9 мм к пистолету полицейского. */
+    public static ItemStack ammo(int count) {
+        try {
+            ItemStack stack = ItemStack.of(TagParser.parseTag(
+                    "{id:\"tacz:ammo\",Count:1b,tag:{AmmoId:\"tacz:9mm\"}}"));
+            stack.setCount(Math.max(1, Math.min(64, count)));
+            return stack;
+        } catch (Exception error) {
+            return ItemStack.EMPTY;
+        }
+    }
+
     /** HandItems для NBT сущности: пистолет в правой, левая пустая. */
     public static ListTag handItems() {
         ListTag hands = new ListTag();

@@ -1,11 +1,8 @@
 {
  "mc": "1.20.1",
- "found": 40,
+ "found": 44,
  "missing": [
   "CameraCraft",
-  "Immersive Vehicles",
-  "Immersive Vehicles - Official Content Pack [OCP] - Planes & Cars",
-  "Lightman's Currency",
   "Chipped",
   "FramedBlocks",
   "Macaw's Fences and Walls",
@@ -18,10 +15,20 @@
   "Entity Culling",
   "FerriteCore",
   "Memory Leak Fix",
-  "Not Enough Animations",
+  "PrismProtect",
   "Simple Voice Chat"
  ],
  "mods": [
+  {
+   "slug": "diligentstalker",
+   "title": "Diligent Stalker",
+   "filename": "diligentstalker-forge-1.20.1-1.1.1.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1256172,
+   "fileID": 7328075,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/diligentstalker"
+  },
   {
    "slug": "easy-npc-config-ui",
    "title": "Easy NPC: Config UI",
@@ -53,6 +60,16 @@
    "cf_url": "https://www.curseforge.com/minecraft/mc-mods/elite-x-quality-guns"
   },
   {
+   "slug": "fpvdrones",
+   "title": "FPV Drones",
+   "filename": "FPVtoMinecraft-1.20.1-V1.1.4.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1483366,
+   "fileID": 8187486,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/fpvdrones"
+  },
+  {
    "slug": "guard-villagers",
    "title": "Guard Villagers",
    "filename": "guardvillagers-1.20.1-1.6.19.jar",
@@ -81,6 +98,16 @@
    "projectID": 1122568,
    "fileID": 5842423,
    "cf_url": "https://www.curseforge.com/minecraft/mc-mods/more-protectables"
+  },
+  {
+   "slug": "mrcrayfishs-vehicle-unofficial",
+   "title": "MrCrayfish's Vehicle Unofficial",
+   "filename": "Vehicle-Unofficial-1.20.1.20260413.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 1511699,
+   "fileID": 7921233,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/mrcrayfishs-vehicle-unofficial"
   },
   {
    "slug": "security-craft",
@@ -203,6 +230,16 @@
    "cf_url": "https://www.curseforge.com/minecraft/mc-mods/athena"
   },
   {
+   "slug": "framework",
+   "title": "Framework",
+   "filename": "framework-forge-1.20.1-0.8.0.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 549225,
+   "fileID": 7573740,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/framework"
+  },
+  {
    "slug": "fusion-connected-textures",
    "title": "Fusion (Connected Textures)",
    "filename": "fusion-1.3.15b-forge-mc1.20.1.jar",
@@ -211,6 +248,16 @@
    "projectID": 854949,
    "fileID": 8942772,
    "cf_url": "https://www.curseforge.com/minecraft/mc-mods/fusion-connected-textures"
+  },
+  {
+   "slug": "geckolib",
+   "title": "Geckolib",
+   "filename": "geckolib-forge-1.20.1-4.8.4.jar",
+   "side": "both",
+   "optional": false,
+   "projectID": 388172,
+   "fileID": 8285794,
+   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/geckolib"
   },
   {
    "slug": "mezzconfig",
@@ -321,16 +368,6 @@
    "projectID": 316582,
    "fileID": 7018272,
    "cf_url": "https://www.curseforge.com/minecraft/mc-mods/corpse"
-  },
-  {
-   "slug": "first-person-model",
-   "title": "First-person Model",
-   "filename": "firstperson-forge-2.7.3-mc1.20.1.jar",
-   "side": "client",
-   "optional": false,
-   "projectID": 333287,
-   "fileID": 8990468,
-   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/first-person-model"
   },
   {
    "slug": "jade",

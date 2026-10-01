@@ -82,8 +82,10 @@ def in_range(version: str, spec: str) -> bool:
         high_inclusive = part[-1] == "]"
         body = part[1:-1]
         if "," not in body:
-            # [1.20.1] — точное совпадение.
-            return compare(version, body.strip()) == 0
+            # [1.20.1] — точное совпадение; не совпало — смотрим следующий диапазон.
+            if compare(version, body.strip()) == 0:
+                return True
+            continue
         low, high = (piece.strip() for piece in body.split(",", 1))
         if low:
             check = compare(version, low)

@@ -248,7 +248,12 @@ def draw_pier(canvas: RegionCanvas, terrain: Terrain) -> None:
     deck = SEA_LEVEL + 2
     for x in range(x_lo, x_hi + 1):
         canvas.fill(x, deck, PIER_Z - half, x, deck, PIER_Z + half, B.SPRUCE_PLANKS)
-        canvas.fill(x, deck + 1, PIER_Z - half, x, deck + 3, PIER_Z + half, B.AIR)
+        # Над палубой — открытое небо: там, где пирс проходит сквозь пляж,
+        # вырезаем песок до поверхности, иначе он висел над проходом и
+        # осыпался от первого касания.
+        for z in range(PIER_Z - half, PIER_Z + half + 1):
+            top = max(deck + 3, terrain.height(x, z))
+            canvas.column(x, z, deck + 1, top, B.AIR)
         canvas.set(x, deck + 1, PIER_Z - half, B.fence("spruce"))
         canvas.set(x, deck + 1, PIER_Z + half, B.fence("spruce"))
         if x % 6 == 0:

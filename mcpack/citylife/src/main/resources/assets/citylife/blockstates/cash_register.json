@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "citylife:block/cash_register",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "citylife:block/cash_register",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "citylife:block/cash_register",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "citylife:block/cash_register",
+      "y": 270
+    }
+  }
+}

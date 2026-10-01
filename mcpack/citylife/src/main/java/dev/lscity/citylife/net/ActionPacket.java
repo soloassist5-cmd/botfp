@@ -35,6 +35,10 @@ public record ActionPacket(String action, CompoundTag args) {
                     AtmServer.sync(player,
                             net.minecraft.core.BlockPos.of(packet.args().getLong("pos")));
                 }
+            } else if (packet.action().startsWith("checkout_")) {
+                dev.lscity.citylife.trade.Checkout.handle(player, packet.action(), packet.args());
+            } else if (packet.action().startsWith("garage_")) {
+                dev.lscity.citylife.vehicle.Garage.handle(player, packet.action(), packet.args());
             } else if (packet.action().startsWith("realty_")) {
                 dev.lscity.citylife.estate.EstateServer.handle(player, packet.action(),
                         packet.args());
