@@ -181,14 +181,18 @@ foreach ($m in $entries) {
         if (Test-Path -LiteralPath $local) {
             $localHash = (Get-FileHash -LiteralPath $local -Algorithm SHA512).Hash
             if ($localHash -ieq $m.Sha512) {
-                Copy-Item -LiteralPath $local -Destination $jarPath -Force
+                # .NET copy: Copy-Item may read [ ] in the target name as a wildcard.
+                [System.IO.File]::Copy($local, $jarPath, $true)
                 Write-Host ("  * " + $m.FileName + " " + (T 'install.from_bundle'))
                 continue
             }
             Write-Warn ((T 'install.local_hash_mismatch') -f $m.FileName)
         }
     }
-    $tmp = "$jarPath.part"
+    # The download goes to a plain name: Windows PowerShell 5.1 reads [ ] in
+    # -OutFile as a wildcard, so '[1.20.1] SecurityCraft ...jar' never downloads.
+    $tmp = Join-Path $TargetMods '.lscity-download.part'
+    Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
     Write-Progress -Activity (T 'install.progress') -Status $m.FileName `
                    -PercentComplete ([int](100 * $i / [Math]::Max($entries.Count, 1)))
     $downloaded = $false
@@ -209,7 +213,7 @@ foreach ($m in $entries) {
         $failed.Add($m.FileName); Remove-Item -LiteralPath $tmp -Force
         continue
     }
-    Move-Item -LiteralPath $tmp -Destination $jarPath -Force
+    [System.IO.File]::Move($tmp, $jarPath)
     Write-Host ("  + " + $m.FileName)
 }
 Write-Progress -Activity (T 'install.progress') -Completed
