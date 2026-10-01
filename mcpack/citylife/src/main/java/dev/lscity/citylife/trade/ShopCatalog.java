@@ -15,7 +15,7 @@ import java.util.Map;
 public final class ShopCatalog {
 
     /** Поколение городских жителей: тег, без которого житель считается устаревшим. */
-    public static final String GEN_TAG = "lsgen_2";
+    public static final String GEN_TAG = "lsgen_3";
 
     public static final Map<String, Shop> BY_ROLE = Map.ofEntries(
             Map.entry("ammo_seller", new Shop("Патроны", List.of(

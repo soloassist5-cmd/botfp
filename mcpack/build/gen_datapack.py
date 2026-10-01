@@ -33,7 +33,7 @@ NPC_ENTITY = "easy_npc:humanoid"
 # мод убирает жителей прошлых поколений, как только их чанк загрузится,
 # а датапак один раз расставляет новых — в том числе в старых мирах.
 # Дома, деньги и постройки игроков при этом не трогаются.
-NPC_GEN = 2
+NPC_GEN = 3
 GEN_TAG = f"lsgen_{NPC_GEN}"
 
 # Роль -> скин из citylife/tools/gen_skins.py.
@@ -64,7 +64,7 @@ ROLE_SKIN = {
     "firefighter": "firefighter",
     "mechanic": "mechanic",
 }
-CITIZEN_SKINS = ["citizen_a", "citizen_b", "citizen_c", "citizen_d"]
+CITIZEN_SKINS = [f"man_{i}" for i in range(1, 9)] + [f"woman_{i}" for i in range(1, 9)]
 
 # Профессия жителя подбирается под роль: от неё зависит одежда и звуки.
 ROLE_PROFESSION = {

@@ -629,5 +629,20 @@
   "citylife.rob.news": "ТРЕВОГА: ограбление — %s, x%s z%s",
   "citylife.rob.owner": "Ваш бизнес «%s» грабят: касса «%s». Полиция уже едет.",
   "citylife.rob.owner_from": "Охрана бизнеса",
-  "citylife.rob.seized": "Полиция изъяла награбленное: %s."
+  "citylife.rob.seized": "Полиция изъяла награбленное: %s.",
+  "citylife.wanted.assault_citizen": "нападение на прохожего",
+  "citylife.wanted.murder_citizen": "убийство прохожего",
+  "citylife.wanted.assault_officer": "нападение на полицейского",
+  "citylife.wanted.kill_officer": "убийство полицейского",
+  "citylife.citizen.alarm_place": "убийство на улице",
+  "citylife.citizen.chat": "Как дела?",
+  "citylife.citizen.way": "Где %s?",
+  "citylife.citizen.beg": "Дай денег",
+  "citylife.citizen.bye": "Пока",
+  "citylife.citizen.gone": "Прохожий уже ушёл.",
+  "citylife.police.warn": "Полиция! Брось оружие! Убери его, или стреляю!",
+  "citylife.sit.hint": "Вы сели. Встать — Shift.",
+  "citylife.sit.taken": "Здесь уже сидят.",
+  "citylife.sit.cannot": "Сесть можно, только стоя на земле.",
+  "entity.citylife.seat": "Сиденье"
 }

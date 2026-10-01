@@ -121,7 +121,11 @@ class Person:
     def __init__(self, **kw):
         self.tone = kw.get("tone", 1)
         self.hair = kw.get("hair", "dark")
-        self.style = kw.get("style", "short")      # short, long, buzz, bald, bun, curly
+        self.style = kw.get("style", "short")      # short, long, bob, ponytail, buzz, bald, bun, curly
+        self.female = kw.get("female", False)       # ресницы, губы, без щетины
+        self.glasses = kw.get("glasses", None)      # цвет оправы
+        self.skirt = kw.get("skirt", None)          # цвет юбки (у платья — цвет платья)
+        self.legwear = kw.get("legwear", None)      # колготки; None — голые ноги
         self.beard = kw.get("beard", False)
         self.eyes = kw.get("eyes", 0)
         self.top = kw.get("top", "tee")             # tee, shirt, suit, uniform, coat, hoodie, overall
@@ -145,11 +149,15 @@ def draw(person: Person, seed: int):
     hair = HAIR[person.hair]
     hair_dark = shade(hair, 0.75)
     eye = EYES[person.eyes % len(EYES)]
-    lips = mix(tone, (170, 70, 70), 0.35)
+    lips = mix(tone, (196, 70, 92), 0.6) if person.female else mix(tone, (170, 70, 70), 0.35)
+    brow = shade(hair if person.style != "bald" else (60, 50, 40), 0.7 if person.female else 0.85)
 
     # --- голова -----------------------------------------------------------------
-    long_hair = person.style in ("long", "bun", "curly")
-    fringe = {"short": 1, "long": 2, "curly": 2, "bun": 1, "buzz": 0, "bald": 0}[person.style]
+    long_hair = person.style in ("long", "bob", "ponytail", "bun", "curly")
+    fringe = {"short": 1, "long": 2, "bob": 2, "ponytail": 1, "curly": 2, "bun": 1, "buzz": 0,
+              "bald": 0}[person.style]
+    # Сколько рядов волосы закрывают по краям лица: у длинных — до подбородка.
+    frame = {"long": 8, "bob": 6, "curly": 5}.get(person.style, 0)
     has_hair = person.style != "bald"
 
     def head(face, u, v, w, h):
@@ -160,10 +168,18 @@ def draw(person: Person, seed: int):
         if face == "front":
             if has_hair and v < fringe:
                 return hair if (u + v) % 3 else hair_dark
-            if person.style == "long" and (u == 0 or u == 7) and v < 6:
-                return hair
-            if v == 3 and u in (1, 2, 5, 6):                      # брови
-                return shade(hair if has_hair else (60, 50, 40), 0.85)
+            if frame and (u == 0 or u == 7) and v < frame:
+                return hair if v % 3 else hair_dark
+            if person.glasses and v == 4 and u in (0, 3, 4, 7):  # оправа
+                return person.glasses
+            if person.glasses and v == 3 and u in (1, 2, 5, 6):
+                return person.glasses
+            if person.female and v == 3 and u in (1, 6):          # ресницы
+                return (34, 26, 28)
+            if person.female and v == 2 and u in (2, 5):          # тонкие брови
+                return brow
+            if not person.female and v == 3 and u in (1, 2, 5, 6):  # брови
+                return brow
             if v == 4 and u in (1, 6):                            # белки
                 return (242, 242, 246)
             if v == 4 and u in (2, 5):                            # радужка
@@ -172,6 +188,8 @@ def draw(person: Person, seed: int):
                 return shade(tone, 0.88)
             if v == 6 and u in (3, 4):                            # рот
                 return lips
+            if person.female and v == 6 and u in (2, 5):
+                return mix(tone, lips, 0.4)
             if person.beard and (v == 7 or (v == 6 and u in (1, 2, 5, 6)) or
                                  (v == 5 and u in (0, 7))):
                 return shade(hair, 0.9)
@@ -254,6 +272,19 @@ def draw(person: Person, seed: int):
             if face == "back" and 1 <= v <= 3 and 2 <= u <= 5:
                 return hair_dark
             return None
+        if person.style in ("long", "bob"):
+            # Объём причёски: волосы лежат поверх головы, по бокам и на затылке.
+            if face == "top":
+                return hair if (u * 3 + v) % 5 else hair_dark
+            if face == "front":
+                return hair if (u in (0, 7) and v < frame) or v == 0 else None
+            if face in ("left", "right", "back"):
+                return hair if v < frame else None
+            return None
+        if person.style == "ponytail":
+            if face == "back" and v >= 2 and 3 <= u <= 4:
+                return hair_dark if v % 2 else hair
+            return None
         if person.style == "curly":
             if face == "top" or (face in ("left", "right", "back") and v < 5):
                 return hair if (u + v) % 2 else hair_dark
@@ -272,6 +303,12 @@ def draw(person: Person, seed: int):
             return shade(jacket or shirt, 1.0)
         if face == "bottom":
             return person.pants
+        if person.top == "dress":
+            if face == "front" and v == 0 and 2 <= u <= 5:
+                return tone                                       # вырез
+            if v == 6:
+                return shade(shirt, 0.85)                         # талия
+            return shirt
         if v == belt_row and person.belt and person.top not in ("coat", "overall"):
             if face == "front" and u in (3, 4):
                 return (196, 180, 120)                            # пряжка
@@ -333,6 +370,20 @@ def draw(person: Person, seed: int):
         return jacket if person.top == "suit" else shirt
 
     s.paint("body", body)
+    if person.style in ("long", "ponytail"):
+        reach = 6 if person.style == "long" else 4
+        lo, hi = (0, 7) if person.style == "long" else (3, 4)
+
+        def hair_back(face, u, v, w, h):
+            if face == "back" and v < reach and lo <= u <= hi:
+                return hair if (u + v) % 3 else hair_dark
+            if person.style == "long" and face in ("left", "right") and v < 2:
+                return hair                                      # пряди на плечах
+            if person.style == "long" and face == "front" and u in (0, 7) and v < 4:
+                return hair if v % 2 else hair_dark              # пряди спереди
+            return None
+
+        s.paint("jacket", hair_back, noise=0.03)
     if person.badge == "medic":
         # Красный крест на груди.
         fx, fy, _, _ = faces("body")["front"]
@@ -370,9 +421,15 @@ def draw(person: Person, seed: int):
     # --- ноги -----------------------------------------------------------------------
     pants = person.pants
 
+    skirt = person.skirt or (shirt if person.top == "dress" else None)
+
     def leg(face, u, v, w, h):
         if face == "top":
-            return pants
+            return skirt or pants
+        if skirt and v < 5 and face in SIDES:
+            return skirt if v < 4 else shade(skirt, 0.85)         # подол
+        if skirt and face in SIDES and v < 10:
+            return person.legwear or tone
         if face == "bottom":
             return shade(person.shoes, 0.8)
         if v >= 10:
@@ -400,16 +457,54 @@ def draw(person: Person, seed: int):
 
 NAVY = (30, 42, 78)
 PEOPLE = {
-    "citizen_a": Person(tone=1, hair="brown", style="short", top="hoodie", shirt=(70, 104, 150),
-                        pants=(52, 64, 94), shoes=(220, 220, 224), sleeves="long", eyes=0),
-    "citizen_b": Person(tone=3, hair="black", style="long", top="tee", shirt=(176, 70, 84),
-                        pants=(44, 50, 70), shoes=(40, 36, 34), sleeves="short", eyes=1),
-    "citizen_c": Person(tone=0, hair="blond", style="bun", top="shirt", shirt=(96, 150, 110),
-                        pants=(150, 128, 96), shoes=(84, 56, 36), sleeves="short", eyes=2),
-    "citizen_d": Person(tone=4, hair="black", style="curly", beard=True, top="tee",
-                        shirt=(226, 176, 70), pants=(58, 60, 64), shoes=(30, 30, 32),
-                        sleeves="short", eyes=1),
-    "shopkeeper": Person(tone=2, hair="auburn", style="bun", top="shirt", shirt=(240, 240, 244),
+    # Прохожие: мужчины (man_*) и женщины (woman_*). Мод подбирает имя под пол.
+    "man_1": Person(tone=1, hair="brown", style="short", top="hoodie", shirt=(70, 104, 150),
+                    pants=(52, 64, 94), shoes=(220, 220, 224), sleeves="long", eyes=0),
+    "man_2": Person(tone=4, hair="black", style="buzz", beard=True, top="tee",
+                    shirt=(226, 176, 70), pants=(58, 60, 64), shoes=(30, 30, 32),
+                    sleeves="short", eyes=1),
+    "man_3": Person(tone=0, hair="blond", style="short", top="shirt", shirt=(214, 222, 236),
+                    pants=(150, 128, 96), shoes=(84, 56, 36), sleeves="short", eyes=2,
+                    glasses=(36, 36, 40)),
+    "man_4": Person(tone=2, hair="dark", style="short", beard=True, top="suit",
+                    shirt=(236, 236, 240), jacket=(64, 70, 80), tie=(40, 70, 130),
+                    pants=(52, 56, 66), shoes=(28, 22, 20), eyes=1),
+    "man_5": Person(tone=3, hair="black", style="curly", top="tee", shirt=(46, 46, 52),
+                    pants=(64, 92, 140), shoes=(200, 60, 60), sleeves="short", eyes=3),
+    "man_6": Person(tone=1, hair="grey", style="short", beard=True, top="shirt",
+                    shirt=(120, 60, 64), pants=(70, 66, 58), shoes=(60, 44, 32), eyes=0,
+                    glasses=(120, 90, 50)),
+    "man_7": Person(tone=5, hair="black", style="buzz", top="hoodie", shirt=(60, 120, 80),
+                    pants=(40, 40, 46), shoes=(240, 240, 240), sleeves="long", eyes=1,
+                    hat="cap", hat_colour=(30, 30, 34)),
+    "man_8": Person(tone=0, hair="auburn", style="short", top="tee", shirt=(236, 236, 236),
+                    pants=(48, 70, 120), shoes=(36, 34, 34), sleeves="short", eyes=2),
+    "woman_1": Person(female=True, tone=1, hair="blond", style="long", top="tee",
+                      shirt=(220, 96, 120), pants=(56, 76, 128), shoes=(240, 240, 244),
+                      sleeves="short", eyes=0),
+    "woman_2": Person(female=True, tone=3, hair="black", style="long", top="dress",
+                      shirt=(150, 40, 60), shoes=(30, 24, 24), sleeves="short", eyes=1,
+                      belt=None),
+    "woman_3": Person(female=True, tone=0, hair="auburn", style="bob", top="shirt",
+                      shirt=(236, 236, 240), skirt=(40, 44, 60),
+                      shoes=(24, 20, 20), sleeves="long", eyes=2),
+    "woman_4": Person(female=True, tone=4, hair="black", style="curly", top="tee",
+                      shirt=(240, 200, 70), pants=(50, 50, 58), shoes=(236, 236, 236),
+                      sleeves="short", eyes=1),
+    "woman_5": Person(female=True, tone=2, hair="brown", style="ponytail", top="hoodie",
+                      shirt=(150, 120, 200), pants=(46, 46, 54), shoes=(250, 250, 250),
+                      sleeves="long", eyes=2),
+    "woman_6": Person(female=True, tone=1, hair="dark", style="long", top="suit",
+                      shirt=(236, 236, 240), jacket=(40, 44, 70), skirt=(40, 44, 70),
+                      legwear=(214, 180, 150), shoes=(20, 18, 18), eyes=0,
+                      glasses=(30, 30, 34)),
+    "woman_7": Person(female=True, tone=5, hair="black", style="bun", top="dress",
+                      shirt=(46, 140, 120), shoes=(200, 170, 60), sleeves="short", eyes=3,
+                      belt=None),
+    "woman_8": Person(female=True, tone=0, hair="grey", style="bob", top="shirt",
+                      shirt=(150, 190, 220), pants=(120, 110, 100), shoes=(90, 60, 40),
+                      sleeves="long", eyes=2, glasses=(140, 110, 70)),
+    "shopkeeper": Person(female=True, tone=2, hair="auburn", style="bun", top="shirt", shirt=(240, 240, 244),
                          apron=(46, 120, 196), pants=(52, 56, 70), eyes=2),
     "banker": Person(tone=0, hair="grey", style="short", top="suit", shirt=(236, 236, 240),
                      jacket=(34, 38, 52), tie=(170, 40, 50), pants=(30, 34, 46),
@@ -417,7 +512,7 @@ PEOPLE = {
     "police": Person(tone=2, hair="dark", style="buzz", top="uniform", shirt=NAVY,
                      pants=(26, 32, 56), shoes=(18, 18, 20), hat="police", hat_colour=NAVY,
                      badge="police", belt=(20, 20, 22), eyes=1),
-    "medic": Person(tone=1, hair="brown", style="bun", top="coat", shirt=(242, 246, 250),
+    "medic": Person(female=True, tone=1, hair="brown", style="bun", top="coat", shirt=(242, 246, 250),
                     pants=(120, 190, 200), shoes=(236, 236, 240), hat="medic", badge="medic",
                     eyes=2),
     "firefighter": Person(tone=3, hair="black", style="short", beard=True, top="uniform",
@@ -434,12 +529,12 @@ PEOPLE = {
                         jacket=(40, 40, 46), tie=(20, 20, 24), pants=(30, 30, 36), eyes=3),
     "cook": Person(tone=2, hair="dark", style="short", top="coat", shirt=(246, 246, 244),
                    tie=(200, 60, 60), pants=(60, 62, 72), hat="chef", eyes=1),
-    "clerk": Person(tone=0, hair="auburn", style="long", top="shirt", shirt=(150, 170, 206),
+    "clerk": Person(female=True, tone=0, hair="auburn", style="long", top="shirt", shirt=(150, 170, 206),
                     pants=(52, 56, 70), badge="name", eyes=2),
     "gunsmith": Person(tone=2, hair="grey", style="buzz", beard=True, top="uniform",
                        shirt=(92, 100, 70), pants=(66, 64, 52), shoes=(40, 34, 28),
                        apron=(100, 70, 44), eyes=3),
-    "realtor": Person(tone=1, hair="blond", style="bun", top="suit", shirt=(236, 236, 240),
+    "realtor": Person(female=True, tone=1, hair="blond", style="bun", top="suit", shirt=(236, 236, 240),
                       jacket=(70, 80, 120), pants=(52, 58, 84), shoes=(30, 26, 26), eyes=0),
     "dealer": Person(tone=4, hair="black", style="buzz", top="suit", shirt=(236, 236, 240),
                      jacket=(52, 54, 64), tie=(214, 176, 60), pants=(40, 42, 52), eyes=1),

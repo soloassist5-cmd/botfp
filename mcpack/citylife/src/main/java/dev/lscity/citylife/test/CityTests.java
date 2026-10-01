@@ -1022,4 +1022,216 @@ public final class CityTests {
         }
         h.succeed();
     }
+
+    // --- горожане -----------------------------------------------------------------
+
+    /** Имя прохожего подходит к скину: по полу и происхождению; есть и патрульные. */
+    @SelfTest
+    public static void citizenNamesFit(TestKit h) {
+        var random = net.minecraft.util.RandomSource.create(7);
+        boolean women = false, men = false, patrol = false;
+        for (int i = 0; i < 400; i++) {
+            var look = dev.lscity.citylife.city.Citizens.pick(random);
+            if (!dev.lscity.citylife.city.Citizens.fits(look)) {
+                h.fail("имя не подходит к скину: " + look.name() + " / " + look.skin());
+            }
+            women |= look.skin().startsWith("woman_");
+            men |= look.skin().startsWith("man_");
+            patrol |= look.patrol();
+        }
+        if (!women || !men || !patrol) {
+            h.fail("не все виды прохожих: женщины " + women + ", мужчины " + men
+                    + ", патрульные " + patrol);
+        }
+        h.succeed();
+    }
+
+    /** Прохожего можно ранить и убить: он убегает, падают деньги, убийце — розыск. */
+    @SelfTest
+    public static void citizenDiesDropsCash(TestKit h) {
+        FakePlayer killer = player(h, "Killer");
+        LifeData life = LifeData.get(h.getLevel().getServer());
+        Entity walker = dev.lscity.citylife.city.Pedestrians.spawnWalker(h.getLevel(),
+                h.absolutePos(new BlockPos(9, 1, 8)), h.getLevel().getRandom());
+        if (!(walker instanceof net.minecraft.world.entity.LivingEntity living)) {
+            h.fail("прохожий не создался");
+            return;
+        }
+        try {
+            float before = living.getHealth();
+            living.hurt(h.getLevel().damageSources().playerAttack(killer), 2F);
+            if (living.getHealth() >= before) {
+                h.fail("прохожий не получает урон (Easy NPC неуязвим)");
+            }
+            if (!dev.lscity.citylife.city.Pedestrians.fleeing(walker)) {
+                h.fail("раненый прохожий не убегает");
+            }
+            if (life.wanted(killer.getUUID()) < 1) {
+                h.fail("за нападение на прохожего нет звезды");
+            }
+            living.hurt(h.getLevel().damageSources().playerAttack(killer), 1000F);
+            if (living.isAlive()) {
+                h.fail("прохожий не умирает");
+            }
+            if (life.wanted(killer.getUUID()) < 2) {
+                h.fail("за убийство прохожего нет розыска");
+            }
+            long cash = h.getLevel().getEntitiesOfClass(ItemEntity.class,
+                    walker.getBoundingBox().inflate(3)).stream()
+                    .mapToLong(e -> dev.lscity.citylife.economy.Money.value(e.getItem())
+                            * e.getItem().getCount()).sum();
+            if (cash <= 0) {
+                h.fail("из прохожего не выпали деньги");
+            }
+        } finally {
+            life.setWanted(killer.getUUID(), 0, 0);
+            Emergency.cancelAt(walker.position(), 16);
+            h.getLevel().getEntitiesOfClass(ItemEntity.class, walker.getBoundingBox().inflate(4))
+                    .forEach(Entity::discard);
+            walker.discard();
+        }
+        h.succeed();
+    }
+
+    /** Двое идут навстречу по одной линии и расходятся, а не проходят сквозь. */
+    @SelfTest(timeout = 300)
+    public static void walkersPassEachOther(TestKit h) {
+        var level = h.getLevel();
+        Entity a = dev.lscity.citylife.city.Pedestrians.spawnWalker(level,
+                h.absolutePos(new BlockPos(1, 1, 8)), level.getRandom());
+        Entity b = dev.lscity.citylife.city.Pedestrians.spawnWalker(level,
+                h.absolutePos(new BlockPos(14, 1, 8)), level.getRandom());
+        if (a == null || b == null) {
+            h.fail("прохожие не создались");
+            return;
+        }
+        dev.lscity.citylife.city.Pedestrians.sendTo(a, h.absolutePos(new BlockPos(14, 1, 8)));
+        dev.lscity.citylife.city.Pedestrians.sendTo(b, h.absolutePos(new BlockPos(1, 1, 8)));
+        double[] closest = {Double.MAX_VALUE};
+        h.succeedWhen(() -> {
+            double dx = a.getX() - b.getX();
+            double dz = a.getZ() - b.getZ();
+            closest[0] = Math.min(closest[0], Math.sqrt(dx * dx + dz * dz));
+            if (closest[0] < 0.45D) {
+                a.discard();
+                b.discard();
+                throw new IllegalStateException("прохожие прошли друг сквозь друга: "
+                        + String.format("%.2f", closest[0]));
+            }
+            boolean passed = (a.getX() - b.getX()) * Math.signum(
+                    h.absolutePos(new BlockPos(14, 0, 0)).getX() - h.absolutePos(BlockPos.ZERO).getX()) > 1;
+            if (!passed) {
+                h.fail("ещё не разошлись, ближе всего " + String.format("%.2f", closest[0]));
+            }
+            a.discard();
+            b.discard();
+        });
+    }
+
+    /** Клик по прохожему — разговор с вариантами; дорогу до банка ставит в навигатор. */
+    @SelfTest
+    public static void citizenTalks(TestKit h) {
+        FakePlayer talker = player(h, "Talker");
+        Entity walker = dev.lscity.citylife.city.Pedestrians.spawnWalker(h.getLevel(),
+                h.absolutePos(new BlockPos(9, 1, 8)), h.getLevel().getRandom());
+        if (walker == null) {
+            h.fail("прохожий не создался");
+            return;
+        }
+        CityData bank = CityData.get(h.getLevel().getServer());
+        try {
+            if (!"citizen".equals(click(talker, walker))) {
+                h.fail("клик по прохожему не начал разговор: " + ShopHandler.lastOutcome);
+            }
+            if (!dev.lscity.citylife.city.Citizens.lastOutcome.startsWith("talk:")) {
+                h.fail("прохожий не ответил: " + dev.lscity.citylife.city.Citizens.lastOutcome);
+            }
+            dev.lscity.citylife.city.Citizens.answer(talker, walker, "way:bank");
+            Waypoint route = bank.route(talker.getUUID());
+            if (route == null || !"bank".equals(route.icon())) {
+                h.fail("прохожий не подсказал дорогу до банка");
+            }
+            dev.lscity.citylife.city.Citizens.answer(talker, walker, "chat");
+            if (!"chat".equals(dev.lscity.citylife.city.Citizens.lastOutcome)) {
+                h.fail("на «как дела» нет ответа");
+            }
+            talker.setItemInHand(InteractionHand.MAIN_HAND,
+                    new ItemStack(net.minecraft.world.item.Items.IRON_SWORD));
+            click(talker, walker);
+            if (!"scared".equals(dev.lscity.citylife.city.Citizens.lastOutcome)) {
+                h.fail("прохожий не испугался оружия");
+            }
+        } finally {
+            bank.setRoute(talker.getUUID(), null);
+            talker.getInventory().clearContent();
+            walker.discard();
+        }
+        h.succeed();
+    }
+
+    /** Полицейский окликает игрока с оружием, через 3 секунды стреляет; безоружного — нет. */
+    @SelfTest
+    public static void policeShootsArmed(TestKit h) {
+        FakePlayer gunman = player(h, "Gunman");
+        Entity cop = npc(h, new BlockPos(2, 1, 8), "Сержант Тест", "citylife_npc", "citylife_cop",
+                ShopCatalog.GEN_TAG);
+        try {
+            if (!(cop instanceof net.minecraft.world.entity.Mob officer)
+                    || !dev.lscity.citylife.city.Police.isOfficer(cop)) {
+                h.fail("постовой не считается полицейским");
+                return;
+            }
+            long now = h.getLevel().getGameTime();
+            int before = dev.lscity.citylife.city.Police.shotsAt(gunman);
+            dev.lscity.citylife.city.Police.check(officer, gunman, now);
+            if (dev.lscity.citylife.city.Police.shotsAt(gunman) != before) {
+                h.fail("стрелял в безоружного");
+            }
+            gunman.setItemInHand(InteractionHand.MAIN_HAND,
+                    new ItemStack(net.minecraft.world.item.Items.IRON_SWORD));
+            dev.lscity.citylife.city.Police.check(officer, gunman, now);
+            if (dev.lscity.citylife.city.Police.shotsAt(gunman) != before) {
+                h.fail("выстрелил без предупреждения");
+            }
+            if (officer.getMainHandItem().isEmpty()) {
+                h.fail("у полицейского нет пистолета в руке");
+            }
+            dev.lscity.citylife.city.Police.check(officer, gunman, now + 80);
+            if (dev.lscity.citylife.city.Police.shotsAt(gunman) != before + 1) {
+                h.fail("не выстрелил в того, кто не убрал оружие");
+            }
+            gunman.getInventory().clearContent();
+            dev.lscity.citylife.city.Police.check(officer, gunman, now + 200);
+            if (dev.lscity.citylife.city.Police.shotsAt(gunman) != before + 1) {
+                h.fail("стрелял после того, как оружие убрали");
+            }
+        } finally {
+            gunman.getInventory().clearContent();
+            cop.discard();
+        }
+        h.succeed();
+    }
+
+    // --- сидеть -------------------------------------------------------------------
+
+    /** Клик по ступеньке — сел на невидимое сиденье; встал — сиденье пропало. */
+    @SelfTest
+    public static void sitOnStairs(TestKit h) {
+        FakePlayer sitter = player(h, "Sitter");
+        BlockPos stairs = h.absolutePos(new BlockPos(8, 1, 6));
+        h.setBlock(new BlockPos(8, 1, 6), Blocks.OAK_STAIRS);
+        if (!rightClickCanceled(sitter, stairs)) {
+            h.fail("клик пустой рукой по ступеньке не посадил");
+        }
+        if (!(sitter.getVehicle() instanceof dev.lscity.citylife.sit.SeatEntity seat)) {
+            h.fail("игрок не сидит на сиденье");
+            return;
+        }
+        sitter.stopRiding();
+        h.succeedWhen(() -> {
+            if (seat.isAlive()) {
+                h.fail("сиденье осталось после того, как встали");
+            }
+        });
+    }
 }

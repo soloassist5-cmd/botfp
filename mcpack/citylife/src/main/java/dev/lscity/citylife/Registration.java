@@ -49,6 +49,17 @@ public final class Registration {
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CityLife.MOD_ID);
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(ForgeRegistries.MENU_TYPES, CityLife.MOD_ID);
+    public static final DeferredRegister<net.minecraft.world.entity.EntityType<?>> ENTITIES =
+            DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, CityLife.MOD_ID);
+
+    /** Невидимое сиденье для ступенек и /sit. */
+    public static final RegistryObject<net.minecraft.world.entity.EntityType<dev.lscity.citylife.sit.SeatEntity>>
+            SEAT = ENTITIES.register("seat", () -> net.minecraft.world.entity.EntityType.Builder
+            .<dev.lscity.citylife.sit.SeatEntity>of(dev.lscity.citylife.sit.SeatEntity::new,
+                    net.minecraft.world.entity.MobCategory.MISC)
+            .sized(0.01F, 0.01F).noSummon().clientTrackingRange(8).updateInterval(20)
+            .build("seat"));
+
     public static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CityLife.MOD_ID);
 
@@ -249,6 +260,7 @@ public final class Registration {
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
         MENUS.register(bus);
+        ENTITIES.register(bus);
         TABS.register(bus);
     }
 }

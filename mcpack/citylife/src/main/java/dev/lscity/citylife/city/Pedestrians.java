@@ -54,11 +54,6 @@ public final class Pedestrians {
 
     public static final String WALKER_TAG = "citylife_walker";
 
-    private static final String[] SKINS = {"citizen_a", "citizen_b", "citizen_c", "citizen_d",
-            "clerk", "realtor", "dealer", "shopkeeper"};
-    private static final String[] NAMES = {"Анна", "Максим", "Ольга", "Дэвид", "Мария", "Иван",
-            "Карлос", "Лиза", "Артём", "Джессика", "Павел", "Софья", "Майкл", "Ника", "Руслан",
-            "Эмили", "Денис", "Алина", "Хосе", "Виктор"};
 
     /**
      * Прохожий: куда идёт и по какому пути. Путь строит обычный поиск пути
@@ -75,6 +70,12 @@ public final class Pedestrians {
         /** Сам выбирает новую цель, когда дошёл (прохожие), или ждёт команды. */
         boolean wander = true;
         double speed = STEP;
+        /** До какого тика стоит на месте (разговаривает с игроком). */
+        long pauseUntil;
+        /** На кого смотрит, пока стоит. */
+        Entity listener;
+        /** Убегает: шагает быстрее, пока не добежит. */
+        boolean fleeing;
 
         Walker(UUID id) {
             this.id = id;
@@ -205,8 +206,12 @@ public final class Pedestrians {
                     continue;
                 }
             }
-            if (!w.wander) {
+            if (!w.wander || w.pauseUntil > level.getGameTime()) {
                 continue;
+            }
+            if (w.fleeing && (w.path == null || w.path.isDone())) {
+                w.fleeing = false;
+                w.speed = STEP;
             }
             if (w.path == null || w.path.isDone() || w.stuck > 40) {
                 BlockPos next = w.pinned && w.target != null && w.path == null ? w.target
@@ -224,12 +229,22 @@ public final class Pedestrians {
 
     /** Каждый тик: шаг к следующему узлу пути, лицом по ходу. */
     private static void step(ServerLevel level) {
+        long now = level.getGameTime();
         for (Walker w : WALKERS.values()) {
+            if (w.pauseUntil > now) {
+                Entity entity = level.getEntity(w.id);
+                if (entity instanceof Mob mob && w.listener != null && w.listener.isAlive()) {
+                    mob.lookAt(EntityAnchorArgument.Anchor.EYES, w.listener.getEyePosition());
+                    mob.setYHeadRot(mob.getYRot());
+                    mob.setYBodyRot(mob.getYRot());
+                }
+                continue;
+            }
             if (w.path == null || w.path.isDone()) {
                 continue;
             }
             Entity entity = level.getEntity(w.id);
-            if (entity == null) {
+            if (entity == null || !entity.isAlive()) {
                 continue;
             }
             Vec3 node = Vec3.atBottomCenterOf(w.path.getNextNodePos());
@@ -244,13 +259,108 @@ public final class Pedestrians {
             // По высоте — сразу на уровень узла: ступеньки и бордюры.
             double y = Math.abs(delta.y) > 0.01D ? node.y : pos.y;
             float yaw = (float) (Math.atan2(delta.z, delta.x) * 180.0D / Math.PI) - 90.0F;
-            entity.moveTo(pos.x + delta.x * k, y, pos.z + delta.z * k, yaw, 0F);
+            double nx = pos.x + delta.x * k;
+            double nz = pos.z + delta.z * k;
+            if (blocked(level, entity, nx, nz, delta.x / flat, delta.z / flat)) {
+                // Впереди человек: шаг вправо, как на тротуаре. Нет места — ждём.
+                double sx = pos.x - delta.z / flat * w.speed;
+                double sz = pos.z + delta.x / flat * w.speed;
+                if (!blocked(level, entity, sx, sz, delta.x / flat, delta.z / flat)
+                        && level.noCollision(entity, entity.getBoundingBox()
+                        .move(sx - pos.x, 0, sz - pos.z))) {
+                    entity.moveTo(sx, pos.y, sz, yaw, 0F);
+                }
+                w.stuck++;
+                continue;
+            }
+            entity.moveTo(nx, y, nz, yaw, 0F);
             entity.setYHeadRot(yaw);
             if (entity instanceof Mob mob) {
                 mob.setYBodyRot(yaw);
             }
             w.stuck = flat > 0.15D && k < 1.0D ? 0 : w.stuck + 1;
         }
+    }
+
+    /**
+     * Стоит ли кто-то (прохожий, житель, игрок) прямо на пути: ближе 0,7 блока
+     * к следующей точке и впереди по ходу. Люди больше не проходят друг сквозь
+     * друга.
+     */
+    static boolean blocked(ServerLevel level, Entity self, double x, double z, double dx, double dz) {
+        AABB box = new AABB(x - 0.8D, self.getY() - 0.5D, z - 0.8D, x + 0.8D, self.getY() + 1.5D,
+                z + 0.8D);
+        for (Entity other : level.getEntities(self, box, e -> e instanceof net.minecraft.world.entity
+                .LivingEntity && e.isAlive() && !e.isSpectator())) {
+            double ox = other.getX() - x;
+            double oz = other.getZ() - z;
+            double ahead = (other.getX() - self.getX()) * dx + (other.getZ() - self.getZ()) * dz;
+            if (ox * ox + oz * oz < 0.49D && ahead > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Остановить прохожего на ticks тиков лицом к собеседнику. */
+    public static void pause(Entity entity, Entity listener, int ticks) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w != null) {
+            w.pauseUntil = entity.level().getGameTime() + ticks;
+            w.listener = listener;
+        }
+    }
+
+    /** Разговор окончен: идёт дальше. */
+    public static void resume(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w != null) {
+            w.pauseUntil = 0;
+            w.listener = null;
+        }
+    }
+
+    /**
+     * Убежать от точки: к самой дальней от неё точке тротуара в 12–30 блоках,
+     * бегом. false — если уже бежит или это не прохожий.
+     */
+    public static boolean flee(Entity entity, Vec3 from) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w == null || w.fleeing || !(entity instanceof Mob mob) || !w.wander) {
+            return false;
+        }
+        BlockPos best = null;
+        double far = -1;
+        for (BlockPos p : points()) {
+            double d = Math.sqrt(p.distToCenterSqr(entity.position()));
+            if (d < 12 || d > 30) {
+                continue;
+            }
+            double away = p.distToCenterSqr(from);
+            if (away > far) {
+                far = away;
+                best = p;
+            }
+        }
+        if (best == null) {
+            Vec3 dir = entity.position().subtract(from).multiply(1, 0, 1);
+            if (dir.lengthSqr() < 1.0E-4D) {
+                dir = new Vec3(1, 0, 0);
+            }
+            best = BlockPos.containing(entity.position().add(dir.normalize().scale(16)));
+        }
+        w.pauseUntil = 0;
+        w.listener = null;
+        w.fleeing = true;
+        w.speed = 0.24D;
+        route(mob, w, best);
+        return true;
+    }
+
+    /** Убегает ли прохожий — для автотестов. */
+    public static boolean fleeing(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        return w != null && w.fleeing;
     }
 
     /**
@@ -345,22 +455,31 @@ public final class Pedestrians {
 
     /** Поставить прохожего в точку. Возвращает сущность или null. */
     public static Entity spawnWalker(ServerLevel level, BlockPos at, RandomSource random) {
+        Citizens.Look look = Citizens.pick(random);
         CompoundTag tag = new CompoundTag();
         tag.putString("id", "easy_npc:humanoid");
-        tag.putString("CustomName", Component.Serializer.toJson(
-                Component.literal(NAMES[random.nextInt(NAMES.length)])));
-        tag.putBoolean("CustomNameVisible", false);
-        tag.putBoolean("Invulnerable", true);
+        tag.putString("CustomName", Component.Serializer.toJson(Component.literal(look.name())));
+        tag.putBoolean("CustomNameVisible", look.patrol());
+        // Прохожие смертны: Easy NPC по умолчанию неуязвим и не даёт себя бить.
+        tag.putBoolean("Invulnerable", false);
+        tag.putFloat("Health", 20F);
+        CompoundTag combat = new CompoundTag();
+        combat.putBoolean("IsAttackableByPlayers", true);
+        combat.putBoolean("IsAttackableByMonsters", true);
+        combat.putBoolean("IsInvulnerable", false);
+        tag.put("EntityAttribute", combat);
         ListTag tags = new ListTag();
-        for (String t : new String[]{WALKER_TAG, "citylife_npc", "citylife_citizen",
-                ShopCatalog.GEN_TAG}) {
+        for (String t : new String[]{WALKER_TAG, "citylife_npc", ShopCatalog.GEN_TAG,
+                look.patrol() ? Citizens.PATROL_TAG : "citylife_citizen"}) {
             tags.add(StringTag.valueOf(t));
         }
         tag.put("Tags", tags);
+        if (look.patrol()) {
+            tag.put("HandItems", Police.handItems());
+        }
         CompoundTag skin = new CompoundTag();
         skin.putString("Type", "RESOURCE_LOCATION");
-        skin.putString("Texture", "citylife:textures/entity/npc/"
-                + SKINS[random.nextInt(SKINS.length)] + ".png");
+        skin.putString("Texture", "citylife:textures/entity/npc/" + look.skin() + ".png");
         skin.putString("Name", "");
         skin.putString("URL", "");
         tag.put("SkinData", skin);

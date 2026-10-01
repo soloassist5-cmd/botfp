@@ -47,6 +47,11 @@ public final class CityConfig {
     public final ForgeConfigSpec.IntValue atmRobSeconds;
     public final ForgeConfigSpec.IntValue atmRobLoot;
     public final ForgeConfigSpec.IntValue robCooldownMinutes;
+    public final ForgeConfigSpec.IntValue citizenCashMax;
+    public final ForgeConfigSpec.IntValue patrolPercent;
+    public final ForgeConfigSpec.BooleanValue policeShoot;
+    public final ForgeConfigSpec.IntValue policeRange;
+    public final ForgeConfigSpec.DoubleValue policeDamage;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -162,6 +167,21 @@ public final class CityConfig {
         robCooldownMinutes = builder
                 .comment("Через сколько минут ограбленная касса или банкомат снова с деньгами.")
                 .defineInRange("robCooldownMinutes", 20, 0, 1440);
+        citizenCashMax = builder
+                .comment("Сколько наличных может выпасть из убитого прохожего (от 10% до этой суммы).")
+                .defineInRange("citizenCashMax", 300, 0, 100_000);
+        patrolPercent = builder
+                .comment("Какая доля прохожих — патрульные полицейские с пистолетом, в процентах.")
+                .defineInRange("patrolPercent", 12, 0, 100);
+        policeShoot = builder
+                .comment("Полиция окликает игрока с оружием в руках и стреляет, если он его не убрал.")
+                .define("policeShoot", true);
+        policeRange = builder
+                .comment("С какого расстояния полиция замечает оружие, в блоках.")
+                .defineInRange("policeRange", 20, 4, 64);
+        policeDamage = builder
+                .comment("Урон одного попадания полицейского (20 — полное здоровье).")
+                .defineInRange("policeDamage", 4.0D, 0.0D, 40.0D);
         builder.pop();
 
         builder.comment("Подработки").push("jobs");

@@ -1,6 +1,6 @@
-# Заселение города жителями поколения 2. Вызывается достижением
-# citylife:hidden/populate_2: у нового поколения новое достижение, поэтому
+# Заселение города жителями поколения 3. Вызывается достижением
+# citylife:hidden/populate_3: у нового поколения новое достижение, поэтому
 # оно срабатывает и в старых мирах, где прежнее уже получено.
 # Расставить заново вручную: /function citylife:npc/spawn_all
-execute unless score #populated citylife_state matches 2 run function citylife:npc/spawn_all
-scoreboard players set #populated citylife_state 2
+execute unless score #populated citylife_state matches 3 run function citylife:npc/spawn_all
+scoreboard players set #populated citylife_state 3

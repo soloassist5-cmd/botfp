@@ -17,6 +17,13 @@ public final class ClientSetup {
     }
 
     @SubscribeEvent
+    public static void onRenderers(net.minecraftforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+        // Сиденье невидимо: рисовать нечего.
+        event.registerEntityRenderer(Registration.SEAT.get(),
+                net.minecraft.client.renderer.entity.NoopRenderer::new);
+    }
+
+    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> MenuScreens.register(Registration.PC_CASE_MENU.get(),
                 PcCaseScreen::new));

@@ -225,6 +225,8 @@ public final class CityCommands {
         event.getDispatcher().register(root);
         event.getDispatcher().register(house());
         dev.lscity.citylife.city.Emergency.register(event.getDispatcher());
+        dev.lscity.citylife.city.Citizens.register(event.getDispatcher());
+        dev.lscity.citylife.sit.Sitting.register(event.getDispatcher());
         dev.lscity.citylife.jobs.Jobs.register(event.getDispatcher());
         dev.lscity.citylife.phone.Calls.register(event.getDispatcher());
         dev.lscity.citylife.phone.Taxi.register(event.getDispatcher());

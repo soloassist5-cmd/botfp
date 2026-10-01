@@ -62,6 +62,13 @@ public final class ShopHandler {
         }
         dev.lscity.citylife.cmd.CityCommands.note("role=" + role);
 
+        // Прохожий: остановится и поговорит.
+        if (dev.lscity.citylife.city.Citizens.isWalker(target)) {
+            lastOutcome = "citizen";
+            dev.lscity.citylife.city.Citizens.talk(player, target);
+            return;
+        }
+
         // Риелтор и управдом ведут агентство недвижимости: каталог жилья,
         // а товары для дома — кнопкой в том же окне.
         if ("realtor".equals(role)) {

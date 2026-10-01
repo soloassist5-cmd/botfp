@@ -629,5 +629,20 @@
   "citylife.rob.news": "ALARM: robbery at %s, x%s z%s",
   "citylife.rob.owner": "Your business \"%s\" is being robbed: till \"%s\". The police are on the way.",
   "citylife.rob.owner_from": "Business security",
-  "citylife.rob.seized": "The police seized the stolen money: %s."
+  "citylife.rob.seized": "The police seized the stolen money: %s.",
+  "citylife.wanted.assault_citizen": "assaulting a passer-by",
+  "citylife.wanted.murder_citizen": "killing a passer-by",
+  "citylife.wanted.assault_officer": "assaulting a police officer",
+  "citylife.wanted.kill_officer": "killing a police officer",
+  "citylife.citizen.alarm_place": "street killing",
+  "citylife.citizen.chat": "How are you?",
+  "citylife.citizen.way": "Where is the %s?",
+  "citylife.citizen.beg": "Spare some cash",
+  "citylife.citizen.bye": "Bye",
+  "citylife.citizen.gone": "The passer-by has left.",
+  "citylife.police.warn": "Police! Drop the weapon! Put it away or I shoot!",
+  "citylife.sit.hint": "You sat down. Shift to stand up.",
+  "citylife.sit.taken": "Someone is already sitting here.",
+  "citylife.sit.cannot": "You can only sit while standing on the ground.",
+  "entity.citylife.seat": "Seat"
 }
