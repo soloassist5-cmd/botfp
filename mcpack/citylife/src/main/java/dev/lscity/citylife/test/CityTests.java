@@ -185,8 +185,11 @@ public final class CityTests {
     @SelfTest(timeout = 200)
     public static void walkerWalks(TestKit h) {
         BlockPos from = h.absolutePos(new BlockPos(2, 1, 2));
+        // Внешность фиксированная: случайный прохожий мог выйти патрульным,
+        // а патрульный ходит своим маршрутом.
         Entity walker = dev.lscity.citylife.city.Pedestrians.spawnWalker(h.getLevel(), from,
-                h.getLevel().getRandom());
+                h.getLevel().getRandom(), new dev.lscity.citylife.city.Citizens.Look("man_2",
+                        "Артём", false));
         if (!(walker instanceof net.minecraft.world.entity.Mob mob)) {
             h.fail("прохожий не создался");
             return;
@@ -1430,6 +1433,62 @@ public final class CityTests {
         }
         if (new java.util.HashSet<>(apps).size() != apps.size()) {
             h.fail("в списке программ компьютера есть повторы");
+        }
+        h.succeed();
+    }
+
+    /** Лифт: кнопки друг над другом — одна шахта, игрок выходит на полу выбранного этажа. */
+    @SelfTest
+    public static void elevatorRides(TestKit h) {
+        FakePlayer rider = player(h, "Rider");
+        var panel = Registration.ELEVATOR.get().defaultBlockState()
+                .setValue(dev.lscity.citylife.block.ElevatorBlock.FACING, net.minecraft.core.Direction.NORTH);
+        // Над площадкой могли остаться кнопки от прошлых прогонов: площадка
+        // чистится только до высоты 7, а лишняя кнопка — лишний этаж шахты.
+        for (int y = 8; y <= 16; y++) {
+            for (int x = 3; x <= 5; x++) {
+                for (int z = 2; z <= 4; z++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+                }
+            }
+        }
+        // Два этажа (площадка теста — до высоты 7): пол на 0 и 4, стена шахты
+        // сзади, кнопка на высоте груди.
+        for (int fy : new int[]{0, 4}) {
+            for (int x = 3; x <= 5; x++) {
+                for (int z = 2; z <= 4; z++) {
+                    h.setBlock(new BlockPos(x, fy, z), Blocks.STONE);
+                }
+            }
+            for (int y = fy + 1; y <= fy + 3; y++) {
+                h.setBlock(new BlockPos(4, y, 4), Blocks.STONE);
+                h.setBlock(new BlockPos(4, y, 3), Blocks.AIR);
+            }
+            h.setBlock(new BlockPos(4, fy + 2, 3), panel);
+        }
+        BlockPos ground = h.absolutePos(new BlockPos(4, 2, 3));
+        var floors = dev.lscity.citylife.building.Elevator.floors(h.getLevel(), ground);
+        if (floors.size() != 2) {
+            h.fail("кнопок в шахте " + floors.size() + ", нужно 2");
+        }
+        // Куда нет кнопки — не едет.
+        rider.moveTo(ground.getX() + 0.5, ground.getY() - 1, ground.getZ() - 0.5);
+        CompoundTag args = new CompoundTag();
+        args.putLong("pos", ground.asLong());
+        args.putInt("y", ground.getY() + 3);
+        double before = rider.getY();
+        dev.lscity.citylife.building.Elevator.handle(rider, "elevator_go", args);
+        if (rider.getY() != before) {
+            h.fail("лифт увёз туда, где нет кнопки");
+        }
+        args.putInt("y", ground.getY() + 4);
+        dev.lscity.citylife.building.Elevator.handle(rider, "elevator_go", args);
+        int expected = h.absolutePos(new BlockPos(4, 5, 2)).getY();
+        if ((int) Math.floor(rider.getY()) != expected) {
+            h.fail("лифт привёз на высоту " + rider.getY() + ", а пол второго этажа — " + expected
+                    + "; кнопки " + floors + ", игрок " + rider.blockPosition()
+                    + ", до кнопки " + rider.distanceToSqr(ground.getX() + 0.5, ground.getY() + 0.5,
+                    ground.getZ() + 0.5));
         }
         h.succeed();
     }

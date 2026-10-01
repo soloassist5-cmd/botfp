@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "citylife:block/elevator"
+    },
+    "facing=east": {
+      "model": "citylife:block/elevator",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "citylife:block/elevator",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "citylife:block/elevator",
+      "y": 270
+    }
+  }
+}

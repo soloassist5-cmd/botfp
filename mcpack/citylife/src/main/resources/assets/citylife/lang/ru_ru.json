@@ -703,5 +703,10 @@
   "citylife.pc.enter_number": "Число",
   "citylife.pc.text_hint": "Введите текст",
   "citylife.pc.todo_hint": "Новое дело…",
-  "citylife.pc.typing_hint": "Печатайте здесь"
+  "citylife.pc.typing_hint": "Печатайте здесь",
+  "block.citylife.elevator": "Кнопка лифта",
+  "citylife.elevator.title": "Лифт",
+  "citylife.elevator.hint": "выберите этаж",
+  "citylife.elevator.arrived": "Этаж %s",
+  "citylife.elevator.alone": "Лифт ходит между кнопками друг над другом: повесьте такую же на другом этаже"
 }

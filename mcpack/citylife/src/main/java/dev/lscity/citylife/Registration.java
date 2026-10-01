@@ -202,6 +202,14 @@ public final class Registration {
     public static final RegistryObject<Item> CASH_REGISTER_ITEM = ITEMS.register("cash_register",
             () -> new BlockItem(CASH_REGISTER.get(), new Item.Properties()));
 
+    /** Кнопка лифта: такие же кнопки друг над другом на этажах — одна шахта. */
+    public static final RegistryObject<Block> ELEVATOR = BLOCKS.register("elevator",
+            () -> new dev.lscity.citylife.block.ElevatorBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL).strength(2.0F, 6.0F).sound(SoundType.METAL)
+                    .noOcclusion().lightLevel(state -> 4)));
+    public static final RegistryObject<Item> ELEVATOR_ITEM = ITEMS.register("elevator",
+            () -> new BlockItem(ELEVATOR.get(), new Item.Properties()));
+
     public static final RegistryObject<Item> ATM_ITEM = ITEMS.register("atm",
             () -> new BlockItem(ATM.get(), new Item.Properties()));
 
@@ -221,6 +229,7 @@ public final class Registration {
                         output.accept(LOCKPICK.get());
                         output.accept(ATM_ITEM.get());
                         output.accept(CASH_REGISTER_ITEM.get());
+                        output.accept(ELEVATOR_ITEM.get());
                         output.accept(item("pickup_point"));
                         output.accept(CARD_MIR.get());
                         output.accept(CARD_MASTERCARD.get());

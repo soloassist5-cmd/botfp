@@ -703,5 +703,10 @@
   "citylife.pc.enter_number": "Number",
   "citylife.pc.text_hint": "Type text",
   "citylife.pc.todo_hint": "New task…",
-  "citylife.pc.typing_hint": "Type here"
+  "citylife.pc.typing_hint": "Type here",
+  "block.citylife.elevator": "Elevator button",
+  "citylife.elevator.title": "Elevator",
+  "citylife.elevator.hint": "choose a floor",
+  "citylife.elevator.arrived": "Floor %s",
+  "citylife.elevator.alone": "The elevator runs between buttons stacked above each other: place another one on a different floor"
 }

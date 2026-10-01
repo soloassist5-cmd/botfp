@@ -25,9 +25,12 @@ class Frame:
     """Прямоугольник, повёрнутый фасадом к улице."""
 
     def __init__(self, canvas: RegionCanvas, x0: int, z0: int, x1: int, z1: int,
-                 facing: str) -> None:
+                 facing: str, dy: int = 0) -> None:
         self.canvas = canvas
         self.facing = facing
+        # Сдвиг по высоте: участок на холме рисуется тем же кодом, что и в
+        # городе (уровень CITY_Y), а Frame поднимает всё на высоту площадки.
+        self.dy = dy
         if facing == "north":
             self.origin, self.du, self.dv = (x0, z0), (1, 0), (0, 1)
             self.W, self.D = x1 - x0 + 1, z1 - z0 + 1
@@ -60,19 +63,28 @@ class Frame:
         ax, az = self.world(u0, v0)
         bx, bz = self.world(u1, v1)
         return Frame(self.canvas, min(ax, bx), min(az, bz), max(ax, bx), max(az, bz),
-                     self.facing)
+                     self.facing, self.dy)
 
     # --- рисование ------------------------------------------------------------
 
     def set(self, u: int, y: int, v: int, state: str) -> None:
         x, z = self.world(u, v)
-        self.canvas.set(x, y, z, state)
+        self.canvas.set(x, y + self.dy, z, state)
+
+    def get(self, u: int, y: int, v: int) -> int:
+        x, z = self.world(u, v)
+        return self.canvas.get(x, y + self.dy, z)
+
+    def block_entity(self, u: int, y: int, v: int, state: str, entity: str,
+                     data: dict) -> None:
+        x, z = self.world(u, v)
+        self.canvas.block_entity(x, y + self.dy, z, state, entity, data)
 
     def fill(self, u0: int, y0: int, v0: int, u1: int, y1: int, v1: int, state: str) -> None:
         ax, az = self.world(u0, v0)
         bx, bz = self.world(u1, v1)
-        self.canvas.fill(min(ax, bx), min(y0, y1), min(az, bz),
-                         max(ax, bx), max(y0, y1), max(az, bz), state)
+        self.canvas.fill(min(ax, bx), min(y0, y1) + self.dy, min(az, bz),
+                         max(ax, bx), max(y0, y1) + self.dy, max(az, bz), state)
 
     def outline(self, u0: int, y0: int, v0: int, u1: int, y1: int, v1: int,
                 state: str) -> None:
@@ -83,12 +95,12 @@ class Frame:
 
     def get_name(self, u: int, y: int, v: int) -> str:
         x, z = self.world(u, v)
-        block_id = self.canvas.get(x, y, z)
+        block_id = self.canvas.get(x, y + self.dy, z)
         return self.canvas.registry.state_nbt(block_id)["Name"]
 
     def container(self, u: int, y: int, v: int, state: str, entity_id: str) -> None:
         x, z = self.world(u, v)
-        self.canvas.container(x, y, z, state, entity_id)
+        self.canvas.container(x, y + self.dy, z, state, entity_id)
 
     # --- детали с ориентацией ------------------------------------------------------
 
@@ -111,7 +123,7 @@ class Frame:
         """
         du, dv = LOCAL_VEC[out]
         x, z = self.world(u + du, v + dv)
-        self.canvas.sign(x, y, z, B.SIGN_WALL.format(f=self.dir(out)), lines,
+        self.canvas.sign(x, y + self.dy, z, B.SIGN_WALL.format(f=self.dir(out)), lines,
                          color=color, glowing=glowing)
 
     def door(self, u: int, y: int, v: int, out: str, material: str = "oak",
@@ -148,6 +160,67 @@ class Frame:
             # И торец проёма со стороны начала лестницы.
             self.set(u, floor_y + height + 1, v, B.fence("oak"))
 
+    def stairwell(self, u: int, v: int, floors: list[int], step: str, solid: str,
+                  wall: str, rail: str, enclose: bool = True) -> None:
+        """
+        Лестничная клетка на все этажи: П-образная, с площадкой на полпути.
+
+        Рисуется ПОСЛЕ всех перекрытий: раньше лестницу ставили в цикле по
+        этажам, следующий этаж заливал пол поверх проёма, и лестница
+        упиралась в потолок. А ещё все марши стояли в одной клетке друг над
+        другом, и наверх нужно было обходить проём по кругу.
+
+        Клетка 3×3 внутри стен: (u, v) — нижняя ступень первого марша.
+        Дорожки: A = u (первый марш, вверх вглубь), M = u+1 (стенка между
+        маршами), B = u+2 (второй марш, вверх к фасаду). Ряд v+2 — площадка
+        на полпути. Ряд v-1 — площадка этажа: с неё уходят наверх (A) и на
+        неё же приходят снизу (B) — на каждом этаже в одном и том же месте.
+        Стены клетки — столбцы u-1 и u+3 и ряд v+3; спереди клетка открыта.
+
+        floors — уровни полов снизу вверх (шаг 4 блока).
+        """
+        A, M, Bl = u, u + 1, u + 2
+        rise_back, rise_front = self.stairs(step, "back"), self.stairs(step, "front")
+        top = floors[-1]
+        if enclose:
+            for su in (u - 1, u + 3):
+                self.fill(su, floors[0] + 1, v, su, top + 3, v + 2, wall)
+            self.fill(u - 1, floors[0] + 1, v + 3, u + 3, top + 3, v + 3, wall)
+        for k, fy in enumerate(floors):
+            last = k == len(floors) - 1
+            # Чистим клетку этажа: мебель и свет, поставленные раньше, не мешают.
+            self.fill(A, fy + 1, v, Bl, fy + 3, v + 2, B.AIR)
+            if last:
+                # Верхний этаж: марша нет, проём снизу ограждаем перилами.
+                for cu, cv in ((A, v), (M, v), (M, v + 1)):
+                    self.set(cu, fy + 1, cv, rail)
+                self.light(Bl, fy + 3, v + 2)
+                break
+            nxt = floors[k + 1]
+            # Первый марш и косоур под второй ступенью.
+            self.set(A, fy + 1, v, rise_back)
+            self.set(A, fy + 1, v + 1, solid)
+            self.set(A, fy + 2, v + 1, rise_back)
+            # Площадка на полпути.
+            self.fill(A, fy + 1, v + 2, Bl, fy + 2, v + 2, solid)
+            # Стенка между маршами.
+            self.fill(M, fy + 1, v, M, fy + 3, v + 1, wall)
+            # Второй марш. Клетки под ним, через которые приходят снизу,
+            # на нижнем этаже закладываем — снизу никто не приходит.
+            self.set(Bl, fy + 2, v + 1, solid)
+            self.set(Bl, fy + 3, v + 1, rise_front)
+            self.set(Bl, fy + 3, v, solid)
+            if k == 0:
+                self.set(Bl, fy + 1, v + 1, solid)
+                self.fill(Bl, fy + 1, v, Bl, fy + 2, v, solid)
+            # Проём в перекрытии над маршами и площадкой, верхняя ступень — в нём.
+            for cu, cv in ((A, v + 1), (A, v + 2), (M, v + 2), (Bl, v + 2), (Bl, v + 1)):
+                self.set(cu, nxt, cv, B.AIR)
+            self.set(Bl, nxt, v, rise_front)
+            # Свет в клетке: над площадкой и над первым маршем.
+            self.light(Bl, fy + 3, v + 2)
+            self.light(A, fy + 3, v)
+
     def light(self, u: int, y: int, v: int) -> None:
         """Невидимый источник света (помещение светлое, потолок чистый)."""
         self.set(u, y, v, B.LIGHT)
@@ -161,9 +234,8 @@ class Frame:
         air = self.canvas.registry.id_of(B.AIR)
         for u in range(u0 + 1, u1, step):
             for v in range(v0 + 1, v1, step):
-                x, z = self.world(u, v)
-                if self.canvas.get(x, y, z) in (air, 0):
-                    self.canvas.set(x, y, z, B.LIGHT)
+                if self.get(u, y, v) in (air, 0):
+                    self.set(u, y, v, B.LIGHT)
 
 
 def vec(local: str) -> tuple[int, int]:

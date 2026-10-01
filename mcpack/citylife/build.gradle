@@ -25,6 +25,11 @@ minecraft {
             property 'forge.enabledGameTestNamespaces', mod_id
             // Снимки экранов мода: gradle runClient -Pshots (см. client/ShotHarness).
             property 'citylife.shots', project.hasProperty('shots') ? 'true' : 'false'
+            property 'citylife.scenes', project.hasProperty('scenes') ? 'true' : 'false'
+            // Миксины модов интерьера написаны под SRG-имена: в клиенте
+            // разработки их ссылки переводятся на имена маппингов.
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
         }
         server {
             property 'forge.enabledGameTestNamespaces', mod_id
@@ -49,11 +54,28 @@ repositories {
     maven { url = 'https://maven.maxhenkel.de/repository/public' }
 }
 
+// Снимки карты: gradle runClient -Pshots -Pscenes подключает к клиенту
+// разработки моды интерьера из кэша сборки (build/.cache/jars), чтобы
+// мебель в сгенерированном мире была видна на кадрах. В jar мода они не
+// попадают и без -Pscenes не нужны.
+if (project.hasProperty('scenes')) {
+    repositories { flatDir { dirs '../build/.cache/jars' } }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     // Только для компиляции: сам мод голосового чата стоит в сборке отдельно,
     // а без него звонки просто недоступны.
     compileOnly "de.maxhenkel.voicechat:voicechat-api:2.5.0"
+    if (project.hasProperty('scenes')) {
+        ['mcw-furniture:3.4.1-mc1.20.1forge', 'mcw-lights:1.1.5-mc1.20.1forge',
+         'mcw-roofs:2.3.2-mc1.20.1forge', 'another_furniture-forge-1.20.1:3.0.4',
+         'handcrafted-forge-1.20.1:3.0.6', 'resourcefullib-forge-1.20.1:2.1.29',
+         'FarmersDelight-1.20.1:1.3.4', 'supplementaries-1.20:3.1.43-forge',
+         'moonlight-1.20:2.16.35-forge'].each {
+            runtimeOnly fg.deobf("scenes:${it}")
+        }
+    }
 }
 
 tasks.named('processResources', ProcessResources).configure {

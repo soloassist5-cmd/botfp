@@ -145,80 +145,35 @@ SUBTITLES = {
 }
 
 
+# Планировки верхних этажей по типу здания (interiors.FLOOR_PLANS).
+UPPER_PLANS = {
+    "bank": ["office"], "city_hall": ["office", "hall"], "police": ["office"],
+    "hospital": ["ward"], "fire_station": ["dorm"], "club": ["lounge"],
+    "shop": ["storage"], "office": ["office"], "diner": ["lounge"],
+}
+
+
 def build_civic(canvas: RegionCanvas, lot: Lot, floors: int, facade_index: int | None = None,
                 inside: str = "counter") -> C.Layout:
     lay = C.build(canvas, lot, floors, facade_index, inside=inside,
-                  subtitle=SUBTITLES.get(lot.kind))
+                  subtitle=SUBTITLES.get(lot.kind), plans=UPPER_PLANS.get(lot.kind))
     frame = C.frame_of(canvas, lay)
-    rng = _rng(lot, 3)
-    y = CITY_Y + 1
-    if lot.kind == "hospital":
-        # Палата: койки вдоль левой стены за прилавком.
-        for v in range(lay.counter_v + 3, lay.v1 - 1, 3):
-            frame.set(lay.u0 + 4, y, v, f"minecraft:white_bed[facing={frame.dir('left')},"
-                                       f"occupied=false,part=foot]")
-            frame.set(lay.u0 + 3, y, v, f"minecraft:white_bed[facing={frame.dir('left')},"
-                                       f"occupied=false,part=head]")
-    elif lot.kind == "bank":
-        # Хранилище у задней стены.
-        frame.fill(lay.u1 - 5, y, lay.v1 - 3, lay.u1 - 2, y + 2, lay.v1 - 1, B.IRON_BLOCK)
-        frame.set(lay.u1 - 4, y, lay.v1 - 3, "minecraft:gold_block")
-    elif lot.kind == "police":
-        # Камера из решёток в дальнем углу.
-        frame.fill(lay.u1 - 5, y, lay.v1 - 4, lay.u1 - 1, y + 2, lay.v1 - 4, B.IRON_BARS)
-        frame.fill(lay.u1 - 5, y, lay.v1 - 4, lay.u1 - 5, y + 2, lay.v1 - 1, B.IRON_BARS)
-    elif lot.kind == "gun_shop":
-        # Мишени в тире за прилавком.
-        for u in range(lay.u0 + 3, lay.u1 - 2, 3):
-            frame.set(u, y + 1, lay.v1 - 1, B.TARGET)
-    elif lot.kind == "fire_station":
+    if lot.kind == "fire_station":
         # Гаражные ворота для машин справа от входа.
         g0 = lay.door_u + 4
         g1 = min(g0 + 4, lay.u1 - 2)
         if g1 - g0 >= 3:
             frame.fill(g0, CITY_Y + 1, lay.v0, g1, CITY_Y + 3, lay.v0, B.AIR)
             frame.fill(g0, CITY_Y + 4, lay.v0, g1, CITY_Y + 4, lay.v0, B.CONCRETE_RED)
-    elif lot.kind == "club":
-        colors = ("magenta", "purple", "blue", "cyan", "pink")
-        for u in range(lay.u0 + 3, lay.u1 - 2):
-            for v in range(lay.v0 + 2, lay.counter_v - 1):
-                frame.set(u, CITY_Y, v, B.concrete(colors[(u + v) % len(colors)]))
-        frame.set(lay.u0 + 2, y, lay.v1 - 1, B.JUKEBOX)
-    _ = rng
+            # Внутри за воротами пусто: тут стоит пожарная машина.
+            frame.fill(g0, CITY_Y + 1, lay.v0 + 1, g1, CITY_Y + 3, lay.counter_v - 1, B.AIR)
     return lay
 
 
 def build_tower(canvas: RegionCanvas, lot: Lot) -> None:
-    """Небоскрёб: стилобат с вестибюлем и узкая стеклянная башня над ним."""
-    rng = _rng(lot)
-    glass = rng.choice((B.GLASS_BLUE, B.GLASS_CYAN, B.GLASS_GRAY, B.GLASS_TINTED))
-    wall = rng.choice((B.CONCRETE_LIGHT, B.QUARTZ, B.CONCRETE_WHITE))
-    facade = (wall, B.CONCRETE_GRAY, glass, "smooth_stone")
-    lay = C.build(canvas, lot, facade=facade, exact_floors=rng.randint(8, 11),
-                  inside="none", subtitle=["бизнес-центр", "класса А"])
-    frame = C.frame_of(canvas, lay)
-    # Верхняя часть: на 4 блока уже с каждой стороны, сплошное остекление.
-    u0, v0, u1, v1 = lay.u0 + 4, lay.v0 + 4, lay.u1 - 4, lay.v1 - 4
-    if u1 - u0 < 8 or v1 - v0 < 8:
-        return
-    base = lay.top
-    floors = rng.randint(5, 8)
-    for k in range(floors):
-        fy = base + FLOOR_HEIGHT * k
-        frame.fill(u0, fy, v0, u1, fy, v1, B.CONCRETE_LIGHT)
-        frame.outline(u0, fy, v0, u1, fy, v1, B.CONCRETE_GRAY)
-        frame.outline(u0, fy + 1, v0, u1, fy + 3, v1, glass)
-        for u, v in ((u0, v0), (u1, v0), (u0, v1), (u1, v1)):
-            frame.fill(u, fy + 1, v, u, fy + 3, v, wall)
-        frame.light_grid(u0, v0, u1, v1, fy + 3, 4)
-    crown = base + FLOOR_HEIGHT * floors
-    frame.fill(u0, crown, v0, u1, crown, v1, B.CONCRETE_GRAY)
-    frame.outline(u0, crown + 1, v0, u1, crown + 1, v1, wall)
-    frame.outline(u0, crown + 2, v0, u1, crown + 2, v1, B.slab("smooth_stone"))
-    cu, cv = (u0 + u1) // 2, (v0 + v1) // 2
-    frame.fill(cu, crown + 1, cv, cu, crown + 8, cv, B.IRON_BARS)
-    frame.set(cu, crown + 9, cv, B.REDSTONE_LAMP_ON)
-    frame.set(cu, crown + 10, cv, B.REDSTONE_BLOCK)
+    """Небоскрёб Сантос-Сити: у каждого свой облик (см. towers.py)."""
+    from . import towers
+    towers.TOWER_BUILDERS.get(lot.label, towers.build_meridian)(canvas, lot)
 
 
 def build_office(canvas: RegionCanvas, lot: Lot) -> None:
@@ -760,6 +715,12 @@ def build_empty(canvas: RegionCanvas, lot: Lot) -> None:
 #  Раздача по типам
 # ---------------------------------------------------------------------------
 
+def _mansion(canvas: RegionCanvas, lot: Lot) -> None:
+    """Усадьба в Береговом или Приморском (см. estates.py)."""
+    from . import estates
+    estates.build_mansion(canvas, lot)
+
+
 KIND_BUILDERS = {
     "tower": build_tower,
     "mall": build_mall,
@@ -777,6 +738,7 @@ KIND_BUILDERS = {
     "dealership": build_dealership,
     "metro": build_metro,
     "pickup": build_pickup,
+    "mansion": lambda canvas, lot: _mansion(canvas, lot),
     "office": build_office,
     "club": lambda canvas, lot: build_civic(canvas, lot, 2, 8),
     "shop": lambda canvas, lot: build_civic(canvas, lot, 1),
@@ -793,8 +755,7 @@ KIND_BUILDERS = {
 # Типы, построенные на общем каркасе commercial.py: у них дверь, прилавок
 # и место продавца считаются одной функцией.
 COMMERCIAL_KINDS = {"shop", "diner", "bank", "police", "hospital", "city_hall",
-                    "fire_station", "gun_shop", "phone_shop", "club", "office", "tower",
-                    "pickup"}
+                    "fire_station", "gun_shop", "phone_shop", "club", "office", "pickup"}
 
 # Банкоматы стоят там, где их ищут: у банка, мэрии, торгового центра, метро
 # и на заправках. Ставим снаружи у входа, лицом на улицу.
@@ -843,6 +804,12 @@ def entrance_point(lot: Lot) -> tuple[int, int, int]:
         frame = Frame(None, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)
         x, z = frame.world(door_u, -1)
         return x, CITY_Y + 1, z
+    if lot.kind == "tower":
+        from . import towers
+        return towers.entrance_point(lot)
+    if lot.kind == "mansion":
+        from . import estates
+        return estates.entrance_point(lot)
     x0, z0, x1, z1 = pad(lot, 1)
     fx, fz = front_center(x0, z0, x1, z1, lot.facing)
     return fx + dx * 3, CITY_Y + 1, fz + dz * 3

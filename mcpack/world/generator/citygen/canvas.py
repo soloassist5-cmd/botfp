@@ -75,10 +75,6 @@ class RegionCanvas:
     def sign(self, x: int, y: int, z: int, state: str, lines: list[str],
              color: str = "black", glowing: bool = False) -> None:
         """Табличка с текстом (нужен block entity)."""
-        if x < self.x0 or x > self.x1 or z < self.z0 or z > self.z1:
-            return
-        self.set(x, y, z, state)
-        chunk = self._chunk(x, z)
         messages = []
         for index in range(4):
             text = lines[index] if index < len(lines) else ""
@@ -86,10 +82,7 @@ class RegionCanvas:
         # Тип block entity у всех вариантов таблички один — minecraft:sign.
         # С именем блока (oak_wall_sign) игра молча выбрасывает запись при
         # загрузке чанка: "Skipping BlockEntity with id ...", и текст пропадает.
-        chunk.block_entities.append({
-            "id": "minecraft:sign",
-            "keepPacked": nbt.Byte(0),
-            "x": x, "y": y, "z": z,
+        self.block_entity(x, y, z, state, "minecraft:sign", {
             "is_waxed": nbt.Byte(0),
             "front_text": {
                 "has_glowing_text": nbt.Byte(1 if glowing else 0),
@@ -105,19 +98,52 @@ class RegionCanvas:
 
     def container(self, x: int, y: int, z: int, state: str, entity_id: str) -> None:
         """Сундук, бочка, печь и т.п. — пустой block entity нужного типа."""
+        self.block_entity(x, y, z, state, entity_id, {"Items": nbt.List(nbt.TAG_COMPOUND)})
+
+    def block_entity(self, x: int, y: int, z: int, state: str, entity_id: str,
+                     data: dict) -> None:
+        """
+        Блок с block entity: полка с товаром, банка с печеньем, ящик для цветов.
+
+        Запись о прежнем block entity в этой клетке снимается: иначе в чанке
+        окажутся две записи на одно место, и игра возьмёт случайную.
+        """
         if x < self.x0 or x > self.x1 or z < self.z0 or z > self.z1:
             return
         self.set(x, y, z, state)
-        self._chunk(x, z).block_entities.append({
-            "id": entity_id,
-            "keepPacked": nbt.Byte(0),
-            "x": x, "y": y, "z": z,
-            "Items": nbt.List(nbt.TAG_COMPOUND),
-        })
+        chunk = self._chunk(x, z)
+        chunk.block_entities = [e for e in chunk.block_entities
+                                if (e["x"], e["y"], e["z"]) != (x, y, z)]
+        entry = {"id": entity_id, "keepPacked": nbt.Byte(0), "x": x, "y": y, "z": z,
+                 "__block": state.split("[", 1)[0]}
+        entry.update(data)
+        chunk.block_entities.append(entry)
+
+    def _prune_entities(self) -> None:
+        """
+        Убрать block entity, чей блок потом перезаписали: таблички под стеной,
+        сундуки под лестницей. Игра такие записи не грузит и пишет в лог
+        предупреждение о каждой, а их набегали сотни.
+        """
+        for chunk in self.chunks.values():
+            keep = []
+            seen = {}
+            for entry in chunk.block_entities:
+                block = entry.pop("__block", None)
+                if block is not None:
+                    name = self.registry.state_nbt(
+                        chunk.get(entry["x"] & 15, entry["y"], entry["z"] & 15))["Name"]
+                    if name != block:
+                        continue
+                seen[(entry["x"], entry["y"], entry["z"])] = len(keep)
+                keep.append(entry)
+            # Если на одно место пришлось две записи, остаётся последняя.
+            chunk.block_entities = [keep[i] for i in sorted(set(seen.values()))]
 
     def write(self, directory: str) -> str | None:
         if not self.chunks:
             return None
+        self._prune_entities()
         connect_blocks(self)
         writer = RegionWriter(self.rx, self.rz)
         for chunk in self.chunks.values():
@@ -170,7 +196,26 @@ def _family(name: str) -> str | None:
     return None
 
 
+def furniture(name: str) -> bool:
+    """
+    Мебель и мелочи из модов интерьера: не полный куб. К ней не цепляются
+    заборы, через неё проходит свет; так же её понимает проверка мира.
+    Ящики с овощами и кирпичные крыши — обычные полные блоки.
+    """
+    ns, _, base = name.partition(":")
+    if ns in ("mcwfurnitures", "another_furniture", "handcrafted", "mcwlights",
+              "supplementaries", "citylife", "decorative_blocks"):
+        return not base.endswith(("_bricks", "_tile", "lapis_bricks", "checker_block",
+                                  "daub", "fine_wood", "timber_frame", "flax_block",
+                                  "soap_block", "feather_block", "sugar_cube"))
+    if ns == "farmersdelight":
+        return not base.endswith(("_crate", "_bag", "_bale", "rich_soil", "organic_compost"))
+    return ns == "mcwroofs" and "awning" in base
+
+
 def _solid(name: str) -> bool:
+    if furniture(name):
+        return False
     base = name.split(":", 1)[-1]
     if base in _NOT_SOLID_EXACT:
         return False

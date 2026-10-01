@@ -23,7 +23,9 @@ import random
 from dataclasses import dataclass
 
 from . import blocks as B
+from . import furniture as F
 from .frame import Frame, LOCAL_VEC
+from .interiors import Floor
 from .plan import CITY_Y, Lot
 
 FY = CITY_Y + 1           # уровень пола первого этажа: дом стоит на цоколе
@@ -93,11 +95,7 @@ def _furnace(frame: Frame, u: int, y: int, v: int, face: str, kind: str = "furna
 
 def _bed(frame: Frame, u: int, y: int, v: int, head: str, color: str = "red") -> None:
     """Кровать: ноги в (u, v), изголовье — в сторону head."""
-    du, dv = LOCAL_VEC[head]
-    facing = frame.dir(head)
-    frame.set(u, y, v, f"minecraft:{color}_bed[facing={facing},occupied=false,part=foot]")
-    frame.set(u + du, y, v + dv,
-              f"minecraft:{color}_bed[facing={facing},occupied=false,part=head]")
+    F.bed(frame, u, y, v, head, color)
 
 
 def _chest(frame: Frame, u: int, y: int, v: int, face: str) -> None:
@@ -321,13 +319,16 @@ def _partition(frame: Frame, u0: int, v0: int, u1: int, v1: int, fy: int, wall: 
     frame.fill(u0, fy + 1, v0, u1, fy + 3, v1, wall)
 
 
-def interior(frame: Frame, box: Box, style: Style, door_u: int, rng: random.Random) -> None:
+def interior(frame: Frame, box: Box, style: Style, door_u: int, rng: random.Random,
+             luxury: bool = False) -> None:
     """
     Комнаты. Одноэтажный дом: гостиная спереди, сзади спальня и кухня.
-    Двухэтажный: внизу гостиная-кухня и лестница, наверху холл и спальня.
+    Двухэтажный: внизу гостиная, кухня со столом и лестница, наверху
+    спальня за перегородкой и кабинет в холле.
     """
     u0, v0, u1, v1 = box.u0, box.v0, box.u1, box.v1
     inner = style.floor
+    wood = _plank_mat(style.floor)
 
     if box.floors == 1:
         mid = v0 + box.d // 2
@@ -338,23 +339,28 @@ def interior(frame: Frame, box: Box, style: Style, door_u: int, rng: random.Rand
             frame.door(split + du, FY + 1, mid, "front", "oak",
                        hinge="left" if du < 0 else "right")
             frame.set(split + du, FY + 3, mid, inner)
-        # Гостиная.
-        _living(frame, u0 + 1, v0 + 1, u1 - 1, mid - 1, door_u, rng)
+        living = Floor(frame, u0 + 1, v0 + 1, u1 - 1, mid - 1, FY, rng,
+                       [(door_u, v0 + 1, door_u, mid - 1), (split - 1, mid - 1, split + 1, mid - 1)])
+        _living(living, rng, wood)
         frame.light((u0 + u1) // 2, FY + 3, (v0 + mid) // 2)
-        # Спальня слева, кухня справа.
-        if v1 - 2 > mid:
-            _bed(frame, u0 + 1, FY + 1, v1 - 2, "back")
-        if u0 + 2 < split:
-            _chest(frame, u0 + 2, FY + 1, v1 - 1, "front")
+        bedroom = Floor(frame, u0 + 1, mid + 1, split - 1, v1 - 1, FY, rng,
+                        [(split - 1, mid + 1, split - 1, mid + 1)])
+        _bedroom(bedroom, rng, wood)
         frame.light((u0 + split) // 2, FY + 3, (mid + v1) // 2)
-        _kitchen(frame, split + 1, mid + 1, u1 - 1, v1 - 1)
+        kitchen = Floor(frame, split + 1, mid + 1, u1 - 1, v1 - 1, FY, rng,
+                        [(split + 1, mid + 1, split + 1, mid + 1)])
+        _kitchen(kitchen, rng, wood)
         frame.light((split + u1) // 2, FY + 3, (mid + v1) // 2)
         return
 
-    # Первый этаж: лестница у левой стены, дальше открытая гостиная-кухня.
-    frame.staircase(u0 + 1, v0 + 2, FY, "back", _plank_mat(style.floor), rail="right")
-    _living(frame, u0 + 3, v0 + 1, u1 - 1, v0 + box.d // 2, door_u, rng)
-    _kitchen(frame, u0 + 3, v1 - 1, u1 - 1, v1 - 1)
+    # Первый этаж: лестница у левой стены, дальше гостиная и кухня-столовая.
+    frame.staircase(u0 + 1, v0 + 2, FY, "back", wood, rail="right")
+    half = v0 + box.d // 2
+    keep = [(u0 + 1, v0 + 1, u0 + 2, v1 - 1), (door_u, v0 + 1, door_u, half)]
+    living = Floor(frame, u0 + 3, v0 + 1, u1 - 1, half, FY, rng, keep)
+    _living(living, rng, wood)
+    kitchen = Floor(frame, u0 + 3, half + 1, u1 - 1, v1 - 1, FY, rng, keep)
+    _kitchen(kitchen, rng, wood)
     frame.light((u0 + u1) // 2, FY + 3, v0 + box.d // 3)
     frame.light((u0 + u1) // 2, FY + 3, v1 - 2)
 
@@ -364,10 +370,14 @@ def interior(frame: Frame, box: Box, style: Style, door_u: int, rng: random.Rand
     _partition(frame, split, v0 + 1, split, v1 - 1, fy, inner)
     frame.door(split, fy + 1, v1 - 2, "left", "oak")
     frame.set(split, fy + 3, v1 - 2, inner)
-    _bed(frame, u1 - 2, fy + 1, v0 + 2, "front", rng.choice(("red", "blue", "white")))
-    _chest(frame, u1 - 1, fy + 1, v1 - 1, "left")
-    frame.set(u0 + 2, fy + 1, v1 - 1, B.BOOKSHELF)
-    frame.set(u0 + 3, fy + 1, v1 - 1, B.CRAFTING)
+    bedroom = Floor(frame, split + 1, v0 + 1, u1 - 1, v1 - 1, fy, rng,
+                    [(split + 1, v1 - 2, split + 1, v1 - 2)])
+    _bedroom(bedroom, rng, wood, double=True)
+    # Холл: лестница у стены (u0+1..u0+2) и проход к двери спальни.
+    hall = Floor(frame, u0 + 1, v0 + 1, split - 1, v1 - 1, fy, rng,
+                 [(u0 + 1, v0 + 1, u0 + 2, v0 + 6), (split - 1, v1 - 2, split - 1, v1 - 2),
+                  (u0 + 3, v0 + 1, split - 1, v0 + 2) if luxury else (0, 0, -1, -1)])
+    _study(hall, rng, wood)
     frame.light((u0 + split) // 2, fy + 3, (v0 + v1) // 2)
     frame.light((split + u1) // 2, fy + 3, (v0 + v1) // 2)
     for k in range(box.floors - 2):
@@ -379,36 +389,102 @@ def _plank_mat(floor: str) -> str:
     return name.replace("_planks", "") if name.endswith("_planks") else "oak"
 
 
-def _living(frame: Frame, u0: int, v0: int, u1: int, v1: int, door_u: int,
-            rng: random.Random) -> None:
-    """Гостиная: ковёр, диван у стены, книжный шкаф."""
-    if u1 - u0 < 3 or v1 - v0 < 2:
+def _living(fl: Floor, rng: random.Random, wood: str) -> None:
+    """Гостиная: диван у стены, журнальный столик, телевизор напротив, ковёр."""
+    f, y = fl.frame, fl.y
+    if fl.u1 - fl.u0 < 2 or fl.v1 - fl.v0 < 1:
         return
-    color = rng.choice(("red", "gray", "cyan", "brown", "light_gray"))
-    for u in range(u0 + 1, u1):
-        for v in range(v0 + 1, v1 + 1):
-            if u != door_u:
-                frame.set(u, FY + 1, v, B.carpet(color))
-    # Диван спинкой к правой стене.
-    for v in (v1 - 1, v1):
-        if v > v0:
-            frame.set(u1, FY + 1, v, frame.stairs("spruce", "right"))
-    frame.set(u0, FY + 1, v1, B.BOOKSHELF)
-    frame.set(u0, FY + 2, v1, B.FLOWER_POT)
+    color = rng.choice(F.SOFA_COLORS)
+    rug = rng.choice(("red", "gray", "cyan", "brown", "light_gray", "white"))
+    for u in range(fl.u0, fl.u1 + 1):
+        for v in range(fl.v0, fl.v1 + 1):
+            if fl.free(u, v, u, v):
+                f.set(u, y, v, B.carpet(rug))
+    # Диван у левой стены лицом вправо, телевизор у правой стены.
+    length = min(3, fl.v1 - fl.v0 + 1)
+    sofa_cells = (fl.u0, fl.v1 - length + 1, fl.u0, fl.v1)
+    if fl.free(*sofa_cells):
+        F.sofa(f, fl.u0, y, fl.v1 - length + 1, length, "back", "right", color)
+        fl.take(*sofa_cells)
+        tv_v = fl.v1 - length // 2
+        if fl.u1 - fl.u0 >= 3 and fl.free(fl.u1, tv_v, fl.u1, tv_v):
+            F.tv(f, fl.u1, y, tv_v, "left")
+            fl.take(fl.u1, tv_v, fl.u1, tv_v)
+        if fl.u1 - fl.u0 >= 4 and fl.free(fl.u0 + 2, tv_v, fl.u0 + 2, tv_v):
+            F.coffee_table(f, fl.u0 + 2, y, tv_v)
+            fl.take(fl.u0 + 2, tv_v, fl.u0 + 2, tv_v)
+    for u, v in ((fl.u0, fl.v0), (fl.u1, fl.v0)):
+        if fl.free(u, v, u, v):
+            if u == fl.u0:
+                F.bookshelf(f, u, y, v, "right", wood if wood in ("oak", "spruce", "birch",
+                                                               "dark_oak") else "oak")
+            else:
+                F.plant(f, u, y, v, rng)
+            fl.take(u, v, u, v)
 
 
-def _kitchen(frame: Frame, u0: int, v0: int, u1: int, v1: int) -> None:
-    """Кухня вдоль дальней стены: плита, раковина, стол, бочка."""
-    items = [lambda u, v: _furnace(frame, u, FY + 1, v, "front", "smoker"),
-             lambda u, v: frame.set(u, FY + 1, v, B.CAULDRON),
-             lambda u, v: frame.set(u, FY + 1, v, B.CRAFTING),
-             lambda u, v: frame.set(u, FY + 1, v, B.BARREL)]
-    u = u1
-    for put in items:
-        if u < u0:
+def _kitchen(fl: Floor, rng: random.Random, wood: str) -> None:
+    """Кухня: гарнитур у дальней стены, холодильник, стол со стульями."""
+    f, y = fl.frame, fl.y
+    wood = wood if wood in ("oak", "spruce", "birch", "dark_oak") else "oak"
+    if fl.u1 - fl.u0 >= 2 and fl.free(fl.u0 + 1, fl.v1, fl.u1, fl.v1):
+        F.kitchen(f, fl.u0 + 1, y, fl.v1, fl.u1, "front", rng, wood=wood)
+        fl.take(fl.u0 + 1, fl.v1, fl.u1, fl.v1)
+        if fl.free(fl.u0, fl.v1 - 1, fl.u0, fl.v1):
+            F.fridge(f, fl.u0, y, fl.v1, "front")
+            fl.take(fl.u0, fl.v1 - 1, fl.u0, fl.v1)
+    tv = fl.v1 - 2
+    a, b = fl.u0 + 1, min(fl.u0 + 2, fl.u1 - 1)
+    if tv - 1 >= fl.v0 and b >= a and fl.free(a, tv - 1, b, tv + 1):
+        F.dining(f, a, y, tv, b, tv, rng, f"mcwfurnitures:{wood}_table",
+                 f"another_furniture:{wood}_chair")
+        fl.take(a, tv - 1, b, tv + 1)
+
+
+def _bedroom(fl: Floor, rng: random.Random, wood: str, double: bool = False) -> None:
+    """Спальня: кровать изголовьем к дальней стене, тумбочки, шкаф, ковёр."""
+    f, y = fl.frame, fl.y
+    wood = wood if wood in ("oak", "spruce", "birch", "dark_oak") else "oak"
+    color = rng.choice(("red", "blue", "white", "light_gray", "cyan", "green", "yellow"))
+    beds = 2 if double and fl.u1 - fl.u0 >= 3 else 1
+    cu = (fl.u0 + fl.u1) // 2
+    placed = False
+    for i in range(beds):
+        bu = cu + i - (beds // 2)
+        if fl.free(bu, fl.v1 - 1, bu, fl.v1):
+            F.bed(f, bu, y, fl.v1 - 1, "back", color)
+            fl.take(bu, fl.v1 - 1, bu, fl.v1)
+            placed = True
+    if placed:
+        for nu in (cu - (beds // 2) - 1, cu + beds - (beds // 2)):
+            if fl.free(nu, fl.v1, nu, fl.v1):
+                F.nightstand(f, nu, y, fl.v1, "front")
+                fl.take(nu, fl.v1, nu, fl.v1)
+    # Шкаф у передней стены, ковёр перед кроватью.
+    for u in (fl.u0, fl.u1):
+        if fl.free(u, fl.v0, u, fl.v0):
+            F.wardrobe(f, u, y, fl.v0, "back", wood)
+            fl.take(u, fl.v0, u, fl.v0)
             break
-        put(u, v1)
-        u -= 1
+    if fl.free(cu, fl.v1 - 2, cu, fl.v1 - 2):
+        f.set(cu, y, fl.v1 - 2, B.carpet(rng.choice(("white", "light_gray", "brown"))))
+
+
+def _study(fl: Floor, rng: random.Random, wood: str) -> None:
+    """Кабинет в холле второго этажа: стол с лампой, книжный шкаф, кресло."""
+    f, y = fl.frame, fl.y
+    wood = wood if wood in ("oak", "spruce", "birch", "dark_oak") else "oak"
+    for v in range(fl.v1, fl.v0 - 1, -1):
+        u = fl.u1
+        if fl.free(u - 1, v, u, v):
+            F.desk(f, u, y, v, "left", rng, computer=rng.random() < 0.4)
+            fl.take(u - 1, v, u, v)
+            break
+    for u in range(fl.u0, fl.u1 + 1):
+        if fl.free(u, fl.v1, u, fl.v1):
+            F.bookshelf(f, u, y, fl.v1, "front", wood)
+            fl.take(u, fl.v1, u, fl.v1)
+            break
 
 
 # ---------------------------------------------------------------------------
@@ -679,7 +755,12 @@ def build_rowhouses(canvas, lot: Lot) -> None:
         _bed(frame, u0 + unit - 1, fy + 1, box.v1 - 2, "back",
              rng.choice(("red", "blue", "white", "yellow")))
         frame.light(u0 + unit // 2, fy + 3, setback + d // 2)
-        _kitchen(frame, u0 + 3, box.v1 - 1, u0 + unit - 1, box.v1 - 1)
+        keep = [(u0 + 1, setback + 1, u0 + 2, box.v1 - 1), (door_u, setback + 1, door_u,
+                                                            box.v1 - 3)]
+        _kitchen(Floor(frame, u0 + 3, box.v1 - 3, u0 + unit - 1, box.v1 - 1, FY, rng, keep),
+                 rng, _plank_mat(base.floor))
+        _living(Floor(frame, u0 + 3, setback + 1, u0 + unit - 1, box.v1 - 4, FY, rng, keep),
+                rng, _plank_mat(base.floor))
         if lot.address:
             street, number = lot.address.rsplit(", ", 1)
             frame.wall_sign(door_u + 1, FY + 2, setback, "front",
@@ -794,9 +875,6 @@ def build_apartment(canvas, lot: Lot) -> None:
     corridor = v0 + box.d // 2          # коридор: две клетки corridor и corridor+1
     for k in range(box.floors):
         fy = FY + STOREY * k
-        # Подъезд: лестница вдоль левой стены, проход рядом с ней.
-        if k < box.floors - 1:
-            frame.staircase(u0 + 1, v0 + 2, fy, "back", "stone_brick", rail="right")
         # Стены квартир вдоль коридора.
         _partition(frame, u0 + 4, corridor - 1, u1 - 1, corridor - 1, fy, wall)
         _partition(frame, u0 + 4, corridor + 2, u1 - 1, corridor + 2, fy, wall)
@@ -806,6 +884,8 @@ def build_apartment(canvas, lot: Lot) -> None:
         frame.light(u0 + 2, fy + 3, corridor)
         for u in range(u0 + 7, u1, 6):
             frame.light(u, fy + 3, corridor)
+        # Коврик и растение в холле подъезда.
+        frame.set(u0 + 3, fy + 1, v0 + 1, "minecraft:potted_fern")
 
         # Квартиры: нарезаем обе стороны на секции по 6-7 блоков.
         for flat in apartment_flats(box):
@@ -820,23 +900,57 @@ def build_apartment(canvas, lot: Lot) -> None:
             frame.set(door, fy + 3, wall_v, wall)
             frame.wall_sign(door + 1, fy + 2, wall_v, out, [f"КВ. {number}"],
                             color="black")
-            # Обстановка у дальней стены и свет под потолком.
-            if b - a >= 2 and rv1 - rv0 >= 2:
-                far, head, step = (rv0, "front", 1) if side == "front" \
-                    else (rv1, "back", -1)
-                _bed(frame, b, fy + 1, far + step, head,
-                     rng.choice(("red", "blue", "white", "green", "yellow")))
-                _chest(frame, a, fy + 1, far, out)
-                if b - 1 > a:
-                    frame.set(b - 1, fy + 1, far, B.CRAFTING)
+            _flat(frame, flat, fy, rng)
             frame.light((a + b) // 2, fy + 3, (rv0 + rv1) // 2)
 
+    # Лестница подъезда — после всех перекрытий, иначе их заливка закрывает проёмы.
+    frame.stairwell(u0 + 1, v1 - 3, [FY + STOREY * k for k in range(box.floors)],
+                    "stone_brick", "minecraft:stone_bricks", wall, B.fence("dark_oak"))
     light_all(frame, box)
     T = flat_roof(frame, box, style)
     # Выход на крышу не делаем, зато на ней стоят баки и вентиляция.
     if box.w >= 12:
         frame.fill(u1 - 4, T, v1 - 4, u1 - 2, T + 2, v1 - 2, B.CONCRETE_LIGHT)
         frame.fill(u1 - 4, T + 3, v1 - 4, u1 - 2, T + 3, v1 - 2, B.slab("smooth_stone"))
+
+
+def _flat(frame: Frame, flat: "Flat", fy: int, rng: random.Random) -> None:
+    """
+    Квартира-студия: у дальней стены кухня и кровать, у двери шкаф,
+    посередине стол со стульями, если хватает глубины.
+    """
+    a, b, rv0, rv1 = flat.a, flat.b, flat.rv0, flat.rv1
+    near, far = (rv1, rv0) if flat.side == "front" else (rv0, rv1)
+    to_near = "back" if flat.side == "front" else "front"
+    entry = (a + 1, near)
+    fl = Floor(frame, a, rv0, b, rv1, fy, rng, [entry + entry])
+    y = fy + 1
+    # Кровать вдоль дальней стены изголовьем к правой стене, тумбочка рядом.
+    if fl.free(b - 1, far, b, far):
+        F.bed(frame, b - 1, y, far, "right", rng.choice(("red", "blue", "white", "green",
+                                                          "yellow", "light_gray")))
+        fl.take(b - 1, far, b, far)
+        step = 1 if to_near == "back" else -1
+        if fl.free(b, far + step, b, far + step) and abs(near - far) >= 2:
+            F.nightstand(frame, b, y, far + step, "left")
+            fl.take(b, far + step, b, far + step)
+    # Кухня по дальней стене слева от кровати, холодильник в углу.
+    if b - 3 >= a + 1 and fl.free(a, far, b - 3, far):
+        F.fridge(frame, a, y, far, to_near)
+        F.kitchen(frame, a + 1, y, far, b - 3, to_near, rng, upper=True)
+        step = 1 if to_near == "back" else -1
+        fl.take(a, far, b - 3, far)
+        fl.take(a, far + step, a, far + step)
+    # Шкаф у двери в правом углу.
+    if fl.free(b, near, b, near):
+        F.wardrobe(frame, b, y, near, "left")
+        fl.take(b, near, b, near)
+    # Стол на двоих посередине.
+    mid = (rv0 + rv1) // 2
+    if abs(near - far) >= 3 and fl.free(a + 2, mid - 1, a + 2, mid + 1):
+        F.dining(frame, a + 2, y, mid, a + 2, mid, rng, "mcwfurnitures:oak_table",
+                 "another_furniture:oak_chair")
+        fl.take(a + 2, mid - 1, a + 2, mid + 1)
 
 
 # ---------------------------------------------------------------------------
@@ -848,8 +962,10 @@ def build_apartment(canvas, lot: Lot) -> None:
 DISTRICT_PRICE = {
     "downtown": 480, "hills": 650, "beach": 550, "midtown": 380,
     "suburbs": 300, "eastside": 230, "industrial": 200,
+    "beregovoy": 950, "primorsky": 900,
 }
-KIND_TITLE = {"house": "Дом", "villa": "Вилла", "rowhouse": "Таунхаус", "flat": "Квартира"}
+KIND_TITLE = {"house": "Дом", "villa": "Вилла", "rowhouse": "Таунхаус", "flat": "Квартира",
+              "mansion": "Усадьба"}
 
 
 def _price(lot: Lot, area: int, floors: int, bonus: float = 1.0) -> int:
@@ -867,6 +983,9 @@ def estate_units(lot: Lot) -> list[dict]:
     Геометрию считают те же функции, что строят дом, поэтому границы
     совпадают с постройкой блок в блок.
     """
+    if lot.kind == "mansion" and lot.address:
+        from . import estates
+        return [estates.estate_unit(lot)]
     if not lot.address or lot.kind not in ("house", "villa", "rowhouse", "apartment"):
         return []
     frame = Frame(None, lot.x0, lot.z0, lot.x1, lot.z1, lot.facing)

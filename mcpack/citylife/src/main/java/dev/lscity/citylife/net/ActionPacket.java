@@ -39,6 +39,8 @@ public record ActionPacket(String action, CompoundTag args) {
                 dev.lscity.citylife.trade.Checkout.handle(player, packet.action(), packet.args());
             } else if (packet.action().startsWith("garage_")) {
                 dev.lscity.citylife.vehicle.Garage.handle(player, packet.action(), packet.args());
+            } else if (packet.action().startsWith("elevator_")) {
+                dev.lscity.citylife.building.Elevator.handle(player, packet.action(), packet.args());
             } else if (packet.action().startsWith("realty_")) {
                 dev.lscity.citylife.estate.EstateServer.handle(player, packet.action(),
                         packet.args());

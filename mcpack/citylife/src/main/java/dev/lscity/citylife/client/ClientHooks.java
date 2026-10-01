@@ -65,6 +65,13 @@ public final class ClientHooks {
             }
             return;
         }
+        if ("elevator".equals(packet.kind())) {
+            if (packet.open()) {
+                minecraft.setScreen(
+                        new dev.lscity.citylife.client.screen.ElevatorScreen(packet.snapshot()));
+            }
+            return;
+        }
         if ("realty".equals(packet.kind())) {
             if (minecraft.screen instanceof dev.lscity.citylife.client.screen.RealtyScreen screen) {
                 screen.update(packet.snapshot());

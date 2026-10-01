@@ -20,7 +20,7 @@ class QuizApp extends PcApp {
             new Question("Сколько длится игровой день?", new String[]{"10 минут", "20 минут", "1 час", "24 часа"}, 1),
             new Question("Какой процент цены приносит бизнес в сутки?", new String[]{"0,3%", "1,5%", "5%", "10%"}, 1),
             new Question("Сколько стоит лечение в больнице?", new String[]{"Бесплатно", "200 ₽", "1 000 ₽", "5 000 ₽"}, 1),
-            new Question("Самый высокий небоскрёб города?", new String[]{"MERIDIAN", "SUNSET PLAZA", "LS TOWER", "Мэрия"}, 2),
+            new Question("Самый высокий небоскрёб города?", new String[]{"MERIDIAN", "SUNSET PLAZA", "STARK TOWER", "Мэрия"}, 2),
             new Question("Столица Австралии?", new String[]{"Сидней", "Мельбурн", "Канберра", "Перт"}, 2),
             new Question("Сколько планет в Солнечной системе?", new String[]{"7", "8", "9", "10"}, 1),
             new Question("Химический символ золота?", new String[]{"Ag", "Au", "Gd", "Go"}, 1),

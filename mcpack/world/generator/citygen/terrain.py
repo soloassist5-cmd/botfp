@@ -67,9 +67,20 @@ def _smoothstep(edge0: float, edge1: float, value: float) -> float:
 class Terrain:
     """Высоты и покрытие поверхности."""
 
-    def __init__(self, seed: int, city_bounds: tuple[int, int, int, int]):
+    def __init__(self, seed: int, city_bounds: tuple[int, int, int, int],
+                 estates: bool = True):
         self.seed = seed
         self.city_x0, self.city_z0, self.city_x1, self.city_z1 = city_bounds
+        # Площадки и дороги прибрежных районов (см. estates.py): рельеф под
+        # ними выровнен и плавно сходит к естественному по краям.
+        self._pads: dict[tuple[int, int], list] = {}
+        if estates:
+            from . import estates as E
+            for pad in E.layout(seed).pads:
+                x0, z0, x1, z1, _, margin = pad
+                for cx in range((x0 - margin) >> 5, ((x1 + margin) >> 5) + 1):
+                    for cz in range((z0 - margin) >> 5, ((z1 + margin) >> 5) + 1):
+                        self._pads.setdefault((cx, cz), []).append(pad)
 
     # --- зоны ---------------------------------------------------------------
     def in_city(self, x: int, z: int, margin: int = 0) -> bool:
@@ -77,7 +88,27 @@ class Terrain:
                 and self.city_z0 - margin <= z <= self.city_z1 + margin)
 
     def height(self, x: int, z: int) -> int:
-        """Высота верхнего блока поверхности."""
+        """Высота верхнего блока поверхности с учётом площадок под застройку."""
+        natural = self.natural(x, z)
+        pads = self._pads.get((x >> 5, z >> 5))
+        if not pads:
+            return natural
+        best_w, best_h = 0.0, natural
+        for x0, z0, x1, z1, h, margin in pads:
+            dx = max(x0 - x, 0, x - x1)
+            dz = max(z0 - z, 0, z - z1)
+            d = max(dx, dz)
+            if d > margin:
+                continue
+            w = 1.0 if d == 0 else 1.0 - _smoothstep(0, margin, d)
+            if w > best_w:
+                best_w, best_h = w, h
+        if best_w <= 0:
+            return natural
+        return int(round(natural * (1 - best_w) + best_h * best_w))
+
+    def natural(self, x: int, z: int) -> int:
+        """Естественная высота рельефа, без площадок."""
         # Океан и пляж на западе.
         if x <= OCEAN_EDGE:
             depth = _smoothstep(OCEAN_EDGE, OCEAN_EDGE - 220, x)

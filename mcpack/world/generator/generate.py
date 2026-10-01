@@ -18,7 +18,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from citygen import buildings, level, plan, render          # noqa: E402
+from citygen import buildings, estates, level, plan, render  # noqa: E402
 from citygen.canvas import RegionCanvas                      # noqa: E402
 from citygen.region import BlockRegistry                     # noqa: E402
 from citygen.terrain import Terrain                          # noqa: E402
@@ -78,6 +78,7 @@ def main() -> int:
         canvas = RegionCanvas(registry, rx, rz, terrain)
         render.draw_terrain(canvas, terrain)
         render.draw_roads(canvas)
+        estates.draw_roads(canvas, args.seed)
         render.draw_freeway(canvas)
         render.draw_pier(canvas, terrain)
         render.draw_metro_tunnels(canvas, city)

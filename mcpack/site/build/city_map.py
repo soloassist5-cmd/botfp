@@ -56,6 +56,7 @@ LOT_FILL = {
     "diner": "#6b5a8f",
     "house": "#454c70",
     "villa": "#525b8c",
+    "mansion": "#8c7a52",
     "rowhouse": "#4d5580",
     "square": "#2a6b47",
     "pickup": "#c77dff",
@@ -65,7 +66,7 @@ LOT_FILL = {
 # Ключевые объекты: подпись на карте и порядок в легенде.
 PINS = [
     ("Автовокзал", None, (P.SPAWN[0], P.SPAWN[2]), "spawn"),
-    ("LS TOWER", "LS TOWER", None, "tower"),
+    ("STARK TOWER", "STARK TOWER", None, "tower"),
     ("MERIDIAN", "MERIDIAN", None, "tower"),
     ("SUNSET PLAZA", "SUNSET PLAZA", None, "tower"),
     ("Торговый центр", "ТОРГОВЫЙ ЦЕНТР", None, "mall"),
@@ -86,6 +87,8 @@ PINS = [
     ("Центральный парк", "ЦЕНТРАЛЬНЫЙ ПАРК", None, "park"),
     ("Парк «Дубрава»", "ПАРК «ДУБРАВА»", None, "park"),
     ("Парк на холмах", "ПАРК НА ХОЛМАХ", None, "park"),
+    ("Береговой", None, (-512, -720), "estate"),
+    ("Приморский", None, (-420, 904), "estate"),
 ]
 
 PIN_COLOR = {
@@ -99,6 +102,7 @@ PIN_COLOR = {
     "pier": "#35c7f0",
     "park": "#5fd38d",
     "pickup": "#c77dff",
+    "estate": "#f0c35a",
 }
 
 
@@ -183,6 +187,17 @@ def build_svg() -> tuple[str, list[dict]]:
             f'width="{(P.IX_MAX + 2 - P.IX_MIN) * P.CELL}" height="{height}" '
             f'fill="#0b0d16"/>')
     add('</g>')
+
+    # Дороги прибрежных районов.
+    from citygen import estates as E
+    for road in E.layout(SEED).roads:
+        w = E.ROAD_HALF * 2 + 1
+        if road.vertical:
+            add(f'<rect x="{road.fixed - E.ROAD_HALF}" y="{road.a}" width="{w}" '
+                f'height="{road.b - road.a + 1}" fill="#0b0d16"/>')
+        else:
+            add(f'<rect x="{road.a}" y="{road.fixed - E.ROAD_HALF}" width="{road.b - road.a + 1}" '
+                f'height="{w}" fill="#0b0d16"/>')
 
     # Участки.
     add('<g class="map-lots">')

@@ -127,6 +127,8 @@ class Lot:
     address: str = ""
     # Стороны света, по которым участок граничит с улицей (а не с соседом).
     street_sides: tuple[str, ...] = ()
+    # Уровень земли участка: в городе — асфальт, в Береговом — своя терраса.
+    ground: int = CITY_Y
 
     @property
     def width(self) -> int:
@@ -155,7 +157,7 @@ class Plan:
 
 # Ключевые объекты города: квартал -> тип застройки и вывеска.
 LANDMARKS: dict[tuple[int, int], tuple[str, str]] = {
-    (0, 0): ("tower", "LS TOWER"),
+    (0, 0): ("tower", "STARK TOWER"),
     (1, 0): ("tower", "MERIDIAN"),
     (0, 1): ("tower", "SUNSET PLAZA"),
     (1, 1): ("mall", "ТОРГОВЫЙ ЦЕНТР"),
@@ -449,11 +451,18 @@ def build_plan(seed: int) -> Plan:
                     plan.metro_stations.append((cx, cz, label or "МЕТРО"))
 
     _assign_addresses(plan)
+    # Прибрежные районы за городской сеткой: адреса у них свои.
+    from . import estates
+    plan.lots += estates.layout(seed).lots
     _add_npc_spots(plan)
     plan.landmark_points = [
         {"name": "Автовокзал", "x": SPAWN[0], "y": SPAWN[1], "z": SPAWN[2]},
         {"name": "Пирс", "x": PIER_X_TO + 8, "y": CITY_Y - 2, "z": PIER_Z},
     ]
+    for area, title in estates.DISTRICTS.items():
+        first = next(l for l in plan.lots if l.district == area)
+        x, y, z = estates.entrance_point(first)
+        plan.landmark_points.append({"name": title, "x": x, "y": y, "z": z})
     return plan
 
 

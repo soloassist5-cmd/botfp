@@ -139,6 +139,26 @@ ls run/screenshots/        # pc_home.png, pc_<программа>.png, checkout.
 Видеокарта не нужна: хватает программного OpenGL (Mesa llvmpipe). Код —
 `client/ShotHarness.java`, без `-Pshots` он ничего не делает.
 
+### Кадры карты
+
+С ключом `-Pscenes` клиент вместо окон снимает сам мир: подключает моды
+интерьера из кэша сборки (`build/.cache/jars`, их скачивает
+`build/build_pack.py`), открывает сохранение `run/saves/scenes`, по очереди
+телепортируется в точки из `run/scenes.txt` в режиме наблюдателя и делает
+кадр в каждой. Так проверяется мебель, лестницы и фасады без живого игрока.
+
+```bash
+cd citylife
+python3 ../world/generator/generate.py --out run/saves/scenes --regions "0,0"
+# строка scenes.txt: имя x y z поворот наклон [тиков ожидания]
+echo "lobby 30.5 70 30.5 -45 20" > run/scenes.txt
+xvfb-run -a -s "-screen 0 1280x800x24" gradle runClient -Pshots -Pscenes
+ls run/screenshots/scene_*
+```
+
+Высота в строке — уровень ног: глаз на 1,6 блока выше, поэтому для этажа с
+полом на y ставь y+1, иначе камера окажется в перекрытии.
+
 ## Установщики и кодировки
 
 `install/install.ps1` и `install/setup.ps1` содержат **только ASCII** — это

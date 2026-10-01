@@ -41,6 +41,13 @@ public final class TestKit {
         for (BlockPos pos : BlockPos.betweenClosed(origin, origin.offset(15, 0, 15))) {
             level.setBlock(pos, Blocks.SMOOTH_STONE.defaultBlockState(), 2 | 16);
         }
+        // Жители и тела от прошлых прогонов: мир сервера постоянный, и забытый
+        // на площадке NPC загораживал дорогу прохожему из следующего теста.
+        for (net.minecraft.world.entity.Entity stray : level.getEntities((net.minecraft.world.entity.Entity) null,
+                new net.minecraft.world.phys.AABB(origin.offset(-2, -2, -2), origin.offset(18, 12, 18)),
+                e -> !(e instanceof net.minecraft.world.entity.player.Player))) {
+            stray.discard();
+        }
     }
 
     public ServerLevel getLevel() {

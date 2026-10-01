@@ -45,7 +45,8 @@ public class RealtyScreen extends Screen {
             "business", "free", "rent", "mine"};
     private static final Map<String, String> DISTRICTS = Map.of(
             "downtown", "Даунтаун", "midtown", "Мидтаун", "suburbs", "Пригород",
-            "hills", "Холмы", "beach", "Пляж", "eastside", "Истсайд", "industrial", "Промзона");
+            "hills", "Холмы", "beach", "Пляж", "eastside", "Истсайд", "industrial", "Промзона",
+            "beregovoy", "Береговой", "primorsky", "Приморский");
 
     private CompoundTag snapshot;
     private final Map<String, CompoundTag> owners = new HashMap<>();
@@ -148,6 +149,8 @@ public class RealtyScreen extends Screen {
                         && (owners.get(unit.id()).getBoolean("k")
                         || owners.get(unit.id()).getBoolean("tm"));
                 case "all" -> true;
+                // Усадьбы Берегового и Приморского показываем вместе с виллами.
+                case "villa" -> "villa".equals(unit.kind()) || "mansion".equals(unit.kind());
                 default -> filter.equals(unit.kind());
             };
             if (ok && (query.isEmpty() || norm(unit.address()).contains(query)

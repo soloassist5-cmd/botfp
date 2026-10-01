@@ -34,10 +34,11 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from citygen import nbt  # noqa: E402
+from citygen.canvas import furniture  # noqa: E402
 from citygen.plan import CITY_Y  # noqa: E402
 
 Y0 = CITY_Y - 4          # от земли чуть вниз: ямы и полы
-Y1 = CITY_Y + 100        # до верха высоток
+Y1 = CITY_Y + 172        # до шпиля самой высокой башни
 H = Y1 - Y0
 
 
@@ -140,11 +141,16 @@ def classify(palette: Palette):
         props = palette.props[i]
         is_air = base in ("air", "cave_air", "void_air", "light")
         air[i] = is_air
-        non_solid = base in NON_SOLID_EXACT or any(p in base for p in NON_SOLID_PARTS)
+        mod_furniture = furniture(name)
+        non_solid = (base in NON_SOLID_EXACT or any(p in base for p in NON_SOLID_PARTS)
+                     or mod_furniture)
         solid[i] = not non_solid
         passable[i] = (is_air or any(p in base for p in PASSABLE_PARTS)
-                       or base in PASSABLE_EXACT or base in NON_SOLID_EXACT)
-        level = LIGHT_LEVEL.get(base, 0)
+                       or base in PASSABLE_EXACT or base in NON_SOLID_EXACT
+                       or base in ("canvas_rug", "doormat"))
+        level = LIGHT_LEVEL.get(base, 0) if not mod_furniture else 0
+        if mod_furniture and props.get("lit") == "true":
+            level = 15
         if base == "redstone_lamp" and props.get("lit") != "true":
             level = 0
         if base == "light":

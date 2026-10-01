@@ -29,6 +29,12 @@ import java.util.function.Supplier;
 public final class ShotHarness {
 
     private static final boolean ON = Boolean.getBoolean("citylife.shots");
+    /** Режим кадров карты: грузит мир saves/scenes и снимает точки из scenes.txt. */
+    private static final boolean SCENES = Boolean.getBoolean("citylife.scenes");
+    private static final List<String[]> VIEWS = new ArrayList<>();
+    private static int view = -1;
+    private static boolean opening;
+    private static int titleTicks;
     private static final List<Shot> SHOTS = new ArrayList<>();
     private static int index = -1;
     private static int wait;
@@ -170,12 +176,76 @@ public final class ShotHarness {
         SHOTS.add(new Shot("vehicles", () -> new dev.lscity.citylife.client.screen.VehicleScreen(garage), null));
     }
 
+    /**
+     * Кадры карты: мир saves/scenes, точки съёмки — строки scenes.txt в
+     * каталоге запуска: «имя x y z поворот наклон». Игрок в режиме
+     * наблюдателя телепортируется в точку, ждёт прогрузки чанков и снимает.
+     */
+    private static void scenes(Minecraft mc) {
+        if (view < 0) {
+            if (mc.level == null) {
+                titleTicks++;
+                if (titleTicks % 100 == 0) {
+                    CityLife.LOG.info("City Life: кадры карты ждут, экран {}",
+                            mc.screen == null ? "нет" : mc.screen.getClass().getName());
+                }
+                if ((mc.screen instanceof TitleScreen || titleTicks > 600) && !opening) {
+                    opening = true;
+                    try {
+                        for (String line : java.nio.file.Files.readAllLines(
+                                mc.gameDirectory.toPath().resolve("scenes.txt"))) {
+                            String[] parts = line.trim().split("\\s+");
+                            if (parts.length >= 6 && !line.startsWith("#")) {
+                                VIEWS.add(parts);
+                            }
+                        }
+                    } catch (java.io.IOException e) {
+                        CityLife.LOG.error("City Life: нет scenes.txt", e);
+                    }
+                    mc.createWorldOpenFlows().loadLevel(mc.screen, "scenes");
+                }
+                return;
+            }
+            if (mc.player == null) {
+                return;
+            }
+            for (String command : new String[]{"gamemode spectator", "time set 6000",
+                    "gamerule doDaylightCycle false", "weather clear", "gamerule doWeatherCycle false"}) {
+                mc.player.connection.sendCommand(command);
+            }
+            mc.options.hideGui = true;
+            view = 0;
+            wait = 200;
+            return;
+        }
+        if (wait-- > 0) {
+            return;
+        }
+        if (view > 0) {
+            Screenshot.grab(mc.gameDirectory, "scene_" + VIEWS.get(view - 1)[0] + ".png",
+                    mc.getMainRenderTarget(), msg -> {
+                    });
+        }
+        if (view >= VIEWS.size()) {
+            CityLife.LOG.info("City Life: кадры карты готовы ({})", VIEWS.size());
+            mc.stop();
+            return;
+        }
+        String[] p = VIEWS.get(view++);
+        mc.player.connection.sendCommand("tp @s " + p[1] + " " + p[2] + " " + p[3] + " " + p[4] + " " + p[5]);
+        wait = p.length > 6 ? Integer.parseInt(p[6]) : 60;
+    }
+
     @SubscribeEvent
     public static void onTick(TickEvent.ClientTickEvent event) {
         if (!ON || event.phase != TickEvent.Phase.END) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
+        if (SCENES) {
+            scenes(mc);
+            return;
+        }
         if (index < 0) {
             if (!(mc.screen instanceof TitleScreen)) {
                 return;
