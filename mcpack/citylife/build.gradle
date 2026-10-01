@@ -21,7 +21,11 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
             mods { "${mod_id}" { source sourceSets.main } }
         }
-        client { property 'forge.enabledGameTestNamespaces', mod_id }
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            // Снимки экранов мода: gradle runClient -Pshots (см. client/ShotHarness).
+            property 'citylife.shots', project.hasProperty('shots') ? 'true' : 'false'
+        }
         server {
             property 'forge.enabledGameTestNamespaces', mod_id
             args '--nogui'

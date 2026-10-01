@@ -140,7 +140,7 @@ public class VehicleScreen extends Screen {
         int y = top();
         PhoneUi.roundedRect(g, x, y, w(), h(), 8, 0xF0141824);
         g.drawString(font, title, x + 10, y + 9, 0xFFEDEFF7, false);
-        String hint = Component.translatable("key.citylife.vehicle").getString();
+        String hint = dev.lscity.citylife.client.Keys.VEHICLE.getTranslatedKeyMessage().getString();
         ListTag cars = cars();
         if (cars.isEmpty()) {
             g.drawWordWrap(font, Component.translatable("citylife.garage.none"), x + 10, y + 34,

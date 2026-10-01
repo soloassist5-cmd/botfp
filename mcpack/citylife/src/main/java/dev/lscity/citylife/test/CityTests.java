@@ -1061,7 +1061,8 @@ public final class CityTests {
         FakePlayer killer = player(h, "Killer");
         LifeData life = LifeData.get(h.getLevel().getServer());
         Entity walker = dev.lscity.citylife.city.Pedestrians.spawnWalker(h.getLevel(),
-                h.absolutePos(new BlockPos(9, 1, 8)), h.getLevel().getRandom());
+                h.absolutePos(new BlockPos(9, 1, 8)), h.getLevel().getRandom(),
+                new dev.lscity.citylife.city.Citizens.Look("man_1", "Максим", false));
         if (!(walker instanceof net.minecraft.world.entity.LivingEntity living)) {
             h.fail("прохожий не создался");
             return;
@@ -1416,6 +1417,19 @@ public final class CityTests {
             buyer.getInventory().clearContent();
             stranger.getInventory().clearContent();
             clerk.discard();
+        }
+        h.succeed();
+    }
+
+    /** На компьютере не меньше сотни программ, и ни одна не повторяется. */
+    @SelfTest
+    public static void computerHasHundredApps(TestKit h) {
+        var apps = dev.lscity.citylife.device.Devices.COMPUTER.apps();
+        if (apps.size() < 100) {
+            h.fail("программ на компьютере " + apps.size() + ", нужно не меньше 100");
+        }
+        if (new java.util.HashSet<>(apps).size() != apps.size()) {
+            h.fail("в списке программ компьютера есть повторы");
         }
         h.succeed();
     }

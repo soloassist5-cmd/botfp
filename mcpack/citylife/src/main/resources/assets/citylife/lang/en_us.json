@@ -699,5 +699,9 @@
   "citylife.checkout.insert": "Swipe card",
   "citylife.checkout.processing": "Processing…",
   "citylife.checkout.cash_wait": "Counting…",
-  "citylife.checkout.nocard_hint": "No card — cash only"
+  "citylife.checkout.nocard_hint": "No card — cash only",
+  "citylife.pc.enter_number": "Number",
+  "citylife.pc.text_hint": "Type text",
+  "citylife.pc.todo_hint": "New task…",
+  "citylife.pc.typing_hint": "Type here"
 }

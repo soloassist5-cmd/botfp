@@ -124,6 +124,21 @@ gradle runClient      # клиент с модом
 gradle build -Dorg.gradle.java.home=/путь/к/jdk17
 ```
 
+## Снимки экранов мода
+
+Окна мода (телефон, компьютер со всеми программами, касса, «Мой транспорт»)
+можно снять без сервера и без игрока — клиент открывает их по очереди на
+титульном экране с подставными данными и закрывается сам:
+
+```bash
+cd citylife
+xvfb-run -a -s "-screen 0 1280x800x24" gradle runClient -Pshots
+ls run/screenshots/        # pc_home.png, pc_<программа>.png, checkout.png …
+```
+
+Видеокарта не нужна: хватает программного OpenGL (Mesa llvmpipe). Код —
+`client/ShotHarness.java`, без `-Pshots` он ничего не делает.
+
 ## Установщики и кодировки
 
 `install/install.ps1` и `install/setup.ps1` содержат **только ASCII** — это

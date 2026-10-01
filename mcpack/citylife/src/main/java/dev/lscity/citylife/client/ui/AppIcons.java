@@ -23,6 +23,22 @@ public final class AppIcons {
 
     /** Плитка приложения: скруглённый квадрат с градиентом и белым значком. */
     public static void draw(GuiGraphics g, String id, int x, int y, int size) {
+        var def = dev.lscity.citylife.client.device.pc.PcApps.get(id);
+        if (def != null) {
+            // Программа компьютера: свой градиент и символ по центру.
+            PhoneUi.shadow(g, x, y, size, size, size / 4);
+            PhoneUi.roundedGradient(g, x, y, size, size, size / 4, def.top(), def.bottom());
+            PhoneUi.roundedRect(g, x, y, size, size / 2, size / 4, 0x14FFFFFF);
+            var font = net.minecraft.client.Minecraft.getInstance().font;
+            String glyph = def.glyph();
+            float scale = Math.min(size / 14F, (size - 6F) / Math.max(1, font.width(glyph)));
+            g.pose().pushPose();
+            g.pose().translate(x + size / 2F, y + size / 2F - 4 * scale, 0);
+            g.pose().scale(scale, scale, 1F);
+            g.drawString(font, glyph, -font.width(glyph) / 2, 0, WHITE, false);
+            g.pose().popPose();
+            return;
+        }
         int[] colours = palette(id);
         PhoneUi.shadow(g, x, y, size, size, size / 4);
         PhoneUi.roundedGradient(g, x, y, size, size, size / 4, colours[0], colours[1]);

@@ -73,9 +73,18 @@ public final class Devices {
 
     /** Компьютер собирается из комплектующих, отдельным предметом не продаётся. */
     public static final DeviceModel COMPUTER = new DeviceModel("computer", Kind.COMPUTER,
-            false, 10, List.of("browser", "mail", "bank", "marketplace", "cameras", "locks",
-            "navigator", "jobs", "homes", "cars", "music", "notes", "calc", "terminal", "sysinfo", "mines", "game2048",
-            "tetris", "snake", "store", "settings"), 0, 0xFF15171C);
+            false, 10, computerApps(), 0, 0xFF15171C);
+
+    /** Компьютер: всё, что у ноутбука, плюс сотня программ каталога; магазин и настройки — в конце. */
+    private static List<String> computerApps() {
+        List<String> apps = new java.util.ArrayList<>(List.of("browser", "mail", "bank", "marketplace",
+                "cameras", "locks", "navigator", "jobs", "homes", "cars", "music", "notes", "calc",
+                "terminal", "sysinfo", "mines", "game2048", "tetris", "snake"));
+        apps.addAll(PcCatalog.ALL);
+        apps.add("store");
+        apps.add("settings");
+        return List.copyOf(apps);
+    }
 
     public static final Map<String, DeviceModel> BY_ID = new LinkedHashMap<>();
 

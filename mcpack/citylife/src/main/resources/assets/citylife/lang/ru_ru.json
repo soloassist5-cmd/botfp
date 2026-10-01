@@ -699,5 +699,9 @@
   "citylife.checkout.insert": "Проведите картой",
   "citylife.checkout.processing": "Обработка…",
   "citylife.checkout.cash_wait": "Отсчитываю…",
-  "citylife.checkout.nocard_hint": "Карты нет — только наличные"
+  "citylife.checkout.nocard_hint": "Карты нет — только наличные",
+  "citylife.pc.enter_number": "Число",
+  "citylife.pc.text_hint": "Введите текст",
+  "citylife.pc.todo_hint": "Новое дело…",
+  "citylife.pc.typing_hint": "Печатайте здесь"
 }

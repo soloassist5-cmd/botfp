@@ -48,6 +48,8 @@ public class CheckoutScreen extends Screen {
     private String method = "";
     private long since;
     private boolean resultOk;
+    /** Сколько списали по последней оплате: корзина к этому времени уже пуста. */
+    private long resultTotal;
     private String resultText = "";
     private boolean beeped;
 
@@ -62,6 +64,7 @@ public class CheckoutScreen extends Screen {
             CompoundTag result = fresh.getCompound("result");
             resultOk = result.getBoolean("ok");
             resultText = result.getString("message");
+            resultTotal = result.getLong("total");
             stage = Stage.RESULT;
             since = System.currentTimeMillis();
             playSound(resultOk);
@@ -344,7 +347,7 @@ public class CheckoutScreen extends Screen {
             text = Component.translatable("swipe".equals(method) ? "citylife.checkout.insert"
                     : "citylife.checkout.present").getString();
         }
-        String sum = Money.format(total());
+        String sum = Money.format(stage == Stage.RESULT ? resultTotal : total());
         if (stage != Stage.RESULT || resultOk) {
             g.drawString(font, sum, sx + (sw - font.width(sum)) / 2, sy + 6, 0xFFFFFFFF, false);
         }

@@ -455,7 +455,11 @@ public final class Pedestrians {
 
     /** Поставить прохожего в точку. Возвращает сущность или null. */
     public static Entity spawnWalker(ServerLevel level, BlockPos at, RandomSource random) {
-        Citizens.Look look = Citizens.pick(random);
+        return spawnWalker(level, at, random, Citizens.pick(random));
+    }
+
+    /** Поставить прохожего с заданной внешностью (для самотестов — без случайного патрульного). */
+    public static Entity spawnWalker(ServerLevel level, BlockPos at, RandomSource random, Citizens.Look look) {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", "easy_npc:humanoid");
         tag.putString("CustomName", Component.Serializer.toJson(Component.literal(look.name())));

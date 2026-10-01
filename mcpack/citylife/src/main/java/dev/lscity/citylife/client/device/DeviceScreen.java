@@ -129,7 +129,11 @@ public class DeviceScreen extends Screen {
             case "flashlight" -> new FlashlightApp(this);
             case "sysinfo" -> new SysInfoApp(this);
             case "tetris", "snake" -> new GameApp(this, id);
-            default -> new HomeApp(this);
+            default -> {
+                // Программы компьютера: конвертеры, калькуляторы, игры и прочее (client/device/pc).
+                var def = dev.lscity.citylife.client.device.pc.PcApps.get(id);
+                yield def != null ? def.make().apply(this) : new HomeApp(this);
+            }
         };
         if (created.needsNetwork() && !online()) {
             return new OfflineApp(this, created.title());
@@ -354,6 +358,10 @@ public class DeviceScreen extends Screen {
     }
 
     public String appTitle(String id) {
+        var def = dev.lscity.citylife.client.device.pc.PcApps.get(id);
+        if (def != null) {
+            return def.title();
+        }
         return Component.translatable("citylife.app." + id).getString();
     }
 
