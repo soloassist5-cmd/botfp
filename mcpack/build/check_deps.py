@@ -133,11 +133,20 @@ def read_mods_toml(data: bytes, source: str, found: list[dict]) -> None:
                 "source": source,
                 "dependencies": parsed.get("dependencies", {}).get(mod.get("modId"), []),
             })
-    # Вложенные библиотеки (jar-in-jar).
-    for name in names:
-        if name.startswith("META-INF/jarjar/") and name.endswith(".jar"):
-            read_mods_toml(archive.read(name), f"{source} > {os.path.basename(name)}",
-                           found)
+    # Вложенные библиотеки (jar-in-jar). Обычно лежат в META-INF/jarjar/, но
+    # путь задаёт metadata.json, и Palladium, например, кладёт их в
+    # META-INF/jars/ — поэтому берём пути и оттуда.
+    nested = {name for name in names
+              if name.startswith("META-INF/jarjar/") and name.endswith(".jar")}
+    if "META-INF/jarjar/metadata.json" in names:
+        try:
+            meta = json.loads(archive.read("META-INF/jarjar/metadata.json"))
+            nested |= {entry["path"] for entry in meta.get("jars", [])
+                       if entry.get("path") in names}
+        except (ValueError, KeyError):
+            pass
+    for name in sorted(nested):
+        read_mods_toml(archive.read(name), f"{source} > {os.path.basename(name)}", found)
 
 
 def load_from_dir(directory: str, skip: set[str] | None = None) -> list[dict]:

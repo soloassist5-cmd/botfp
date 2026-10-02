@@ -195,7 +195,10 @@ public final class ShotHarness {
                         for (String line : java.nio.file.Files.readAllLines(
                                 mc.gameDirectory.toPath().resolve("scenes.txt"))) {
                             String[] parts = line.trim().split("\\s+");
-                            if (parts.length >= 6 && !line.startsWith("#")) {
+                            if (line.startsWith("/")) {
+                                // Команда перед следующим кадром: расставить подставки и т.п.
+                                VIEWS.add(new String[]{line.trim()});
+                            } else if (parts.length >= 6 && !line.startsWith("#")) {
                                 VIEWS.add(parts);
                             }
                         }
@@ -221,7 +224,7 @@ public final class ShotHarness {
         if (wait-- > 0) {
             return;
         }
-        if (view > 0) {
+        if (view > 0 && VIEWS.get(view - 1).length > 1) {
             Screenshot.grab(mc.gameDirectory, "scene_" + VIEWS.get(view - 1)[0] + ".png",
                     mc.getMainRenderTarget(), msg -> {
                     });
@@ -232,6 +235,11 @@ public final class ShotHarness {
             return;
         }
         String[] p = VIEWS.get(view++);
+        if (p.length == 1) {
+            mc.player.connection.sendCommand(p[0].substring(1));
+            wait = 4;
+            return;
+        }
         mc.player.connection.sendCommand("tp @s " + p[1] + " " + p[2] + " " + p[3] + " " + p[4] + " " + p[5]);
         wait = p.length > 6 ? Integer.parseInt(p[6]) : 60;
     }

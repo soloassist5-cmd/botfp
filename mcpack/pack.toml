@@ -96,6 +96,51 @@ side  = "both"
 group = "core"
 note = "Дрон-камера с удалённым управлением"
 
+# Броня Железного человека: 60 костюмов Марок с анимацией облачения, полётом,
+# репульсорами и ИИ в шлеме. Работает на фреймворке Palladium; в подвале
+# STARK TOWER стоит зал брони с костюмами на подставках.
+[[mods]]
+slug = "satsu-iron-man-addon"
+side  = "both"
+group = "core"
+note = "Костюмы Железного человека: Марки 1–86, Халкбастер, Iron Legion"
+
+[[mods]]
+slug = "threetag-palladium"
+side  = "both"
+group = "lib"
+note = "Фреймворк супергероев: костюмы, способности, анимации"
+
+[[mods]]
+slug = "gravestone-core"
+side  = "both"
+group = "lib"
+note = "Библиотека способностей для дополнений Palladium"
+
+[[mods]]
+slug = "corewithstuff"
+side  = "both"
+group = "lib"
+note = "Библиотека для дополнений Palladium"
+
+[[mods]]
+slug = "pehkui"
+side  = "both"
+group = "lib"
+note = "Масштаб сущностей: Халкбастер и сжатие костюма"
+
+[[mods]]
+slug = "curios"
+side  = "both"
+group = "lib"
+note = "Слот костюма и браслета"
+
+[[mods]]
+slug = "packet-fixer"
+side  = "both"
+group = "lib"
+note = "Большие сетевые пакеты для костюмов"
+
 [[mods]]
 slug = "traffic-control-+-roads-mod-by-teerth"
 side  = "both"

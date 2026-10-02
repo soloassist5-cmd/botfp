@@ -1,11 +1,11 @@
 {
-  "generated": "2026-10-01T18:19:52Z",
+  "generated": "2026-10-02T15:56:35Z",
   "pack_version": "1.0.0",
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 63,
-  "total_size": 304545168,
+  "mod_count": 71,
+  "total_size": 327293168,
   "mods": [
     {
       "slug": "cameracraft",
@@ -236,6 +236,29 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/mrcrayfishs-vehicle-unofficial"
+    },
+    {
+      "slug": "satsu-iron-man-addon",
+      "title": "Satsu Iron man addon (Palladium)",
+      "project_id": "b8DiFMOK",
+      "version_id": "NbiZbpIk",
+      "version_number": "3.5.4",
+      "version_type": "release",
+      "filename": "Satsu_iron_man_addon-3.5.4.jar",
+      "url": "https://cdn.modrinth.com/data/b8DiFMOK/versions/NbiZbpIk/Satsu_iron_man_addon-3.5.4.jar",
+      "size": 11671767,
+      "sha1": "464964dc2190ff0a1e887e8d4297728fd34c633b",
+      "sha512": "e82098793ce7eefb4f1a8df6ea4c2cf00825746c9da4c6a17a6de2bae02cdc297749321241626026c0f6ce7d69e1d1fe57c30700ab84fd4df63cf83a4a68e390",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "core",
+      "note": "Костюмы Железного человека: Марки 1–86, Халкбастер, Iron Legion",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/satsu-iron-man-addon"
     },
     {
       "slug": "security-craft",
@@ -694,7 +717,7 @@
       "group": "lib",
       "note": "Библиотека-зависимость",
       "optional": false,
-      "required_by": "kubejs",
+      "required_by": "gravestone-core",
       "page": "https://modrinth.com/mod/architectury-api"
     },
     {
@@ -742,6 +765,52 @@
       "optional": false,
       "required_by": "waystones",
       "page": "https://modrinth.com/mod/balm"
+    },
+    {
+      "slug": "corewithstuff",
+      "title": "CoreWithStuff",
+      "project_id": "MBGhXGlQ",
+      "version_id": "RHv1uy6j",
+      "version_number": "1.6-Fix",
+      "version_type": "release",
+      "filename": "corewithstuff-v1.6.jar",
+      "url": "https://cdn.modrinth.com/data/MBGhXGlQ/versions/RHv1uy6j/corewithstuff-v1.6.jar",
+      "size": 4581777,
+      "sha1": "4c0c2044f78b47a5524cedae8a7d413c81b513c3",
+      "sha512": "308225839718980e444ce53fd55aa26397b3678f44f59f275e99fcace72d6ed4103848f4d32339779a2ecb7021bdcb1aa8afd1a70ed3b3a319a7e743c08f0714",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Библиотека для дополнений Palladium",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/corewithstuff"
+    },
+    {
+      "slug": "curios",
+      "title": "Curios API",
+      "project_id": "vvuO3ImH",
+      "version_id": "IPQlZkz1",
+      "version_number": "5.14.1+1.20.1",
+      "version_type": "release",
+      "filename": "curios-forge-5.14.1+1.20.1.jar",
+      "url": "https://cdn.modrinth.com/data/vvuO3ImH/versions/IPQlZkz1/curios-forge-5.14.1%2B1.20.1.jar",
+      "size": 398066,
+      "sha1": "452175b95ad3db6ff58bb8968f6bf7a9d1e0f480",
+      "sha512": "1373f95fd111c977db2f6adcef8e4eb486a2d926a3e17374692dee4ac3d65857de6446c16922b531aa5ace2c23c666a7fcc28c720b2917c1e04808d15648ba87",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Слот костюма и браслета",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/curios"
     },
     {
       "slug": "framework",
@@ -817,6 +886,52 @@
       "page": "https://modrinth.com/mod/geckolib"
     },
     {
+      "slug": "gravestone-core",
+      "title": "Gravestone: Core",
+      "project_id": "jKzIQ1it",
+      "version_id": "b2MmrOHu",
+      "version_number": "1.2.6",
+      "version_type": "release",
+      "filename": "gravecore-1.2.6-forge.jar",
+      "url": "https://cdn.modrinth.com/data/jKzIQ1it/versions/b2MmrOHu/gravecore-1.2.6-forge.jar",
+      "size": 1576752,
+      "sha1": "2c9b22185256f6fb47a374a3e5eaa498e1205957",
+      "sha512": "a51182352455955d626b31412ff97860ce4f54839c1041e48e43c51a894a6a9cef67cabd69d60c4a4270e0beec9a98eb3b2077f0d11b626bf7aef0291578f66a",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Библиотека способностей для дополнений Palladium",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/gravestone-core"
+    },
+    {
+      "slug": "lodestonelib",
+      "title": "Lodestone",
+      "project_id": "bN3xUWdo",
+      "version_id": "dRIycWqx",
+      "version_number": "1.20.1-1.6.4.1",
+      "version_type": "release",
+      "filename": "lodestone-1.20.1-1.6.4.1.jar",
+      "url": "https://cdn.modrinth.com/data/bN3xUWdo/versions/dRIycWqx/lodestone-1.20.1-1.6.4.1.jar",
+      "size": 670934,
+      "sha1": "e6346060ae70cbf103b231d8a1536bcd044c84a8",
+      "sha512": "fec5107deb73c06c4b1756349cb874e0933c4181fd20e8528e46a24e35ccb048898c8607830deea3242d7303784a9c3a03f3fadd40d13fb6dc27a34a77f5cc85",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Библиотека-зависимость",
+      "optional": false,
+      "required_by": "gravestone-core",
+      "page": "https://modrinth.com/mod/lodestonelib"
+    },
+    {
       "slug": "mezzconfig",
       "title": "MezzConfig",
       "project_id": "7tEfOcA7",
@@ -863,6 +978,52 @@
       "page": "https://modrinth.com/mod/moonlight"
     },
     {
+      "slug": "packet-fixer",
+      "title": "Packet Fixer",
+      "project_id": "c7m1mi73",
+      "version_id": "9F4NGhGR",
+      "version_number": "3.3.2",
+      "version_type": "release",
+      "filename": "packetfixer-3.3.2-1.18-1.20.4-merged.jar",
+      "url": "https://cdn.modrinth.com/data/c7m1mi73/versions/9F4NGhGR/packetfixer-3.3.2-1.18-1.20.4-merged.jar",
+      "size": 188661,
+      "sha1": "79ebc5e66a5ee3ce92afb340e693d506e97361a0",
+      "sha512": "916501acefab2a33f7b5438375dec0c3d523975d82c807c98496227c107c1efd57c95d9e1501d657513324a9ad617eb8ef7e963921263389af896da55dc707a9",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Большие сетевые пакеты для костюмов",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/packet-fixer"
+    },
+    {
+      "slug": "pehkui",
+      "title": "Pehkui",
+      "project_id": "t5W7Jfwy",
+      "version_id": "SQpqSgAE",
+      "version_number": "3.8.2+1.20.1-forge",
+      "version_type": "release",
+      "filename": "Pehkui-3.8.2+1.20.1-forge.jar",
+      "url": "https://cdn.modrinth.com/data/t5W7Jfwy/versions/SQpqSgAE/Pehkui-3.8.2%2B1.20.1-forge.jar",
+      "size": 671605,
+      "sha1": "4bc816efdd8e5e2a97423313674401351710e403",
+      "sha512": "e4660f0b5af6bfe2902ab39a6fbfa911856e0567bffc47842b482731da373afa4424b9e7cf47c61a0c2107445520475053709a6671d9eb4b7f4b55597729af3f",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Масштаб сущностей: Халкбастер и сжатие костюма",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/pehkui"
+    },
+    {
       "slug": "resourceful-lib",
       "title": "Resourceful Lib",
       "project_id": "G1hIVOrD",
@@ -905,7 +1066,7 @@
       "group": "lib",
       "note": "Библиотека-зависимость",
       "optional": false,
-      "required_by": "kubejs",
+      "required_by": "gravestone-core",
       "page": "https://modrinth.com/mod/rhino"
     },
     {
@@ -976,6 +1137,29 @@
       "optional": false,
       "required_by": "cameracraft",
       "page": "https://modrinth.com/mod/tct-core"
+    },
+    {
+      "slug": "threetag-palladium",
+      "title": "Palladium",
+      "project_id": "lt2zd42r",
+      "version_id": "cR8uBzEl",
+      "version_number": "4.5.9+1.20.1-forge",
+      "version_type": "release",
+      "filename": "palladium-4.5.9+1.20.1-forge.jar",
+      "url": "https://cdn.modrinth.com/data/lt2zd42r/versions/cR8uBzEl/palladium-4.5.9%2B1.20.1-forge.jar",
+      "size": 2869419,
+      "sha1": "d3866bebe8d4890535005fe7978d0bf5a08dbe72",
+      "sha512": "0c44a6d30fbfd57c1c44231ebaf0ca43011cd9996bcf2ae3d789228db7206f047b430ab2f2c261895677e2b7244a79968c156c41e61959e2d5613f89b884aca4",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Фреймворк супергероев: костюмы, способности, анимации",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/threetag-palladium"
     },
     {
       "slug": "clumps",
