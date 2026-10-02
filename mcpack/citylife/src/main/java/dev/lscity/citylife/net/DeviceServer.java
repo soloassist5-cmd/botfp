@@ -245,6 +245,7 @@ public final class DeviceServer {
 
         tag.put("locks", locks(player, data));
         tag.put("cameras", cameras(player, data));
+        tag.put("jarvis", dev.lscity.citylife.stark.StarkSuits.snapshot(player));
 
         long now = player.level().getGameTime();
         ListTag inbox = new ListTag();

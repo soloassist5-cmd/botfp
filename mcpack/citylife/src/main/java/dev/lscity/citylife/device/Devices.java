@@ -20,12 +20,12 @@ public final class Devices {
     /** Без интернета не открываются. */
     public static final Set<String> NETWORK_APPS =
             Set.of("messages", "contacts", "bank", "navigator", "locks", "store", "marketplace",
-                    "cameras", "browser", "mail", "jobs", "homes", "cars", "phone");
+                    "cameras", "browser", "mail", "jobs", "homes", "cars", "phone", "jarvis");
 
     /** Что можно доставить из магазина приложений, если этого нет в прошивке. */
     public static final List<String> STORE_APPS =
             List.of("tetris", "snake", "calc", "notes", "compass", "cameras", "browser", "mail",
-                    "music", "mines", "game2048", "terminal", "jobs", "homes", "cars");
+                    "music", "mines", "game2048", "terminal", "jobs", "homes", "cars", "jarvis");
 
     private static final List<String> BASIC = List.of(
             "messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "cars", "locks", "cameras", "sos",
@@ -77,7 +77,7 @@ public final class Devices {
      * флагмана, плюс почта, музыка, терминал и игры прямо в прошивке.
      */
     public static final DeviceModel STARK = new DeviceModel("phone_stark", Kind.PHONE,
-            true, 12, List.of("messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "cars", "locks",
+            true, 12, List.of("jarvis", "messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "cars", "locks",
             "cameras", "sos", "store", "marketplace", "browser", "mail", "music", "notes", "calc", "compass",
             "flashlight", "terminal", "tetris", "snake", "game2048", "settings"), 0, 0x3384E1FF);
 

@@ -1643,4 +1643,152 @@ public final class CityTests {
         }
         h.succeed();
     }
+
+    // --- розыск, дроны, прохожие, башня STARK ---------------------------------------
+
+    /** Розыск: откуп снимает звёзды за деньги, сразу после нарушения — нельзя; админ снимает командой. */
+    @SelfTest
+    public static void wantedPayAndClear(TestKit h) {
+        FakePlayer bandit = player(h, "Bandit");
+        LifeData life = LifeData.get(h.getLevel().getServer());
+        CityData bank = CityData.get(h.getLevel().getServer());
+        try {
+            Wanted.clear(h.getLevel().getServer(), bandit.getUUID());
+            bank.setBalance(bandit.getUUID(), 100_000);
+            Wanted.crime(bandit, 2, "citylife.wanted.theft");
+            if (Wanted.pay(bandit) != Wanted.Pay.TOO_SOON) {
+                h.fail("откупился сразу после нарушения");
+            }
+            Wanted.clear(h.getLevel().getServer(), bandit.getUUID());
+            life.setWanted(bandit.getUUID(), 2, h.getLevel().getGameTime() + 6000);
+            long before = bank.balance(bandit.getUUID());
+            if (Wanted.pay(bandit) != Wanted.Pay.OK || life.wanted(bandit.getUUID()) != 0) {
+                h.fail("откуп не снял розыск");
+            }
+            if (before - bank.balance(bandit.getUUID()) != Wanted.bail(2)) {
+                h.fail("за откуп списано " + (before - bank.balance(bandit.getUUID())) + ", нужно " + Wanted.bail(2));
+            }
+            life.setWanted(bandit.getUUID(), 3, h.getLevel().getGameTime() + 6000);
+            life.setJail(bandit.getUUID(), h.getLevel().getGameTime() + 6000);
+            Wanted.clear(h.getLevel().getServer(), bandit.getUUID());
+            if (life.wanted(bandit.getUUID()) != 0 || life.jailUntil(bandit.getUUID()) > 0) {
+                h.fail("команда не сняла розыск и камеру");
+            }
+        } finally {
+            Wanted.clear(h.getLevel().getServer(), bandit.getUUID());
+        }
+        h.succeed();
+    }
+
+    /** Дроны — тоже «мобы», но технику модов правило «без мобов» не убирает, а зомби — убирает. */
+    @SelfTest
+    public static void dronesArePlaceable(TestKit h) {
+        BlockPos at = h.absolutePos(new BlockPos(6, 1, 6));
+        var droneType = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValue(
+                new net.minecraft.resources.ResourceLocation("fpvdrone", "drone"));
+        if (droneType != null) {
+            Entity drone = droneType.create(h.getLevel());
+            if (drone == null) {
+                h.fail("дрон не создаётся");
+                return;
+            }
+            drone.moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+            boolean added = h.getLevel().addFreshEntity(drone);
+            boolean alive = added && drone.isAddedToWorld() && !drone.isRemoved();
+            drone.discard();
+            if (!alive) {
+                h.fail("FPV-дрон не встал на землю: правило «без мобов» его убрало");
+            }
+        }
+        if (!dev.lscity.citylife.city.CityRules.machine(new net.minecraft.resources.ResourceLocation("somemod", "turret"),
+                net.minecraft.world.entity.MobCategory.MISC)) {
+            h.fail("техника модов (MISC) не пропускается");
+        }
+        Entity zombie = EntityType.ZOMBIE.create(h.getLevel());
+        zombie.moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+        boolean zombieAdded = h.getLevel().addFreshEntity(zombie) && !zombie.isRemoved();
+        zombie.discard();
+        if (zombieAdded) {
+            h.fail("зомби появился в городе");
+        }
+        h.succeed();
+    }
+
+    /** Застрявший прохожий: не сдвинулся за проверку — замечен и выручается; пошёл — счётчик сброшен. */
+    @SelfTest(timeout = 200)
+    public static void walkerUnsticks(TestKit h) {
+        BlockPos at = h.absolutePos(new BlockPos(4, 1, 8));
+        // Внешность фиксированная: патрульный ходит своим маршрутом (см. walkerWalks).
+        Entity walker = dev.lscity.citylife.city.Pedestrians.spawnWalker(h.getLevel(), at, h.getLevel().getRandom(),
+                new dev.lscity.citylife.city.Citizens.Look("man_2", "Артём", false));
+        if (walker == null) {
+            h.fail("прохожий не появился");
+            return;
+        }
+        dev.lscity.citylife.city.Pedestrians.sendTo(walker, h.absolutePos(new BlockPos(13, 1, 8)));
+        h.succeedWhen(() -> {
+            // Путь строится на тике после появления — ждём его.
+            if (!dev.lscity.citylife.city.Pedestrians.walking(walker)) {
+                h.fail("нет пути: " + dev.lscity.citylife.city.Pedestrians.debug(walker));
+            }
+            try {
+                // Первая проверка запоминает место, вторая — видит, что он стоит (в том же тике).
+                dev.lscity.citylife.city.Pedestrians.checkStuck(walker);
+                dev.lscity.citylife.city.Pedestrians.checkStuck(walker);
+                int fails = dev.lscity.citylife.city.Pedestrians.fails(walker);
+                if (fails < 1) {
+                    throw new IllegalStateException("стоящий на месте прохожий не замечен; "
+                            + dev.lscity.citylife.city.Pedestrians.debug(walker));
+                }
+                walker.moveTo(walker.getX() + 2, walker.getY(), walker.getZ());
+                dev.lscity.citylife.city.Pedestrians.checkStuck(walker);
+                walker.moveTo(walker.getX() + 2, walker.getY(), walker.getZ());
+                dev.lscity.citylife.city.Pedestrians.checkStuck(walker);
+                if (dev.lscity.citylife.city.Pedestrians.fails(walker) != 0) {
+                    throw new IllegalStateException("прохожий идёт, а считается застрявшим");
+                }
+            } finally {
+                walker.discard();
+            }
+        });
+    }
+
+    /** Башня STARK в агентстве: 10 000 000 ₽, у владельца — допуск охраны и костюмы. */
+    @SelfTest
+    public static void starkTowerOwner(TestKit h) {
+        var unit = Estate.get(dev.lscity.citylife.stark.StarkSecurity.TOWER_UNIT);
+        if (unit == null || unit.price() != 10_000_000L || !unit.landmark()) {
+            h.fail("башни STARK нет в агентстве или цена не 10 000 000: " + unit);
+            return;
+        }
+        FakePlayer tony = player(h, "TonyOwner");
+        LifeData life = LifeData.get(h.getLevel().getServer());
+        var previous = life.owner(unit.id());
+        try {
+            if (dev.lscity.citylife.stark.StarkSecurity.cleared(tony)) {
+                h.fail("допуск без покупки башни");
+            }
+            life.setOwner(unit.id(), tony.getUUID(), "TonyOwner", h.getLevel().getGameTime());
+            if (!dev.lscity.citylife.stark.StarkSecurity.cleared(tony)) {
+                h.fail("у владельца башни нет допуска охраны");
+            }
+            var mark = new net.minecraft.resources.ResourceLocation("satsu_iron_man_addon", "marks/mark_42/bracelet");
+            if (!dev.lscity.citylife.stark.StarkSuits.isSuit(mark)
+                    || dev.lscity.citylife.stark.StarkSuits.isSuit(new net.minecraft.resources.ResourceLocation(
+                    "satsu_iron_man_addon", "steel_ingot"))) {
+                h.fail("Джарвис путает костюмы и прочие предметы");
+            }
+            if (!"hulkbuster_armor".equals(dev.lscity.citylife.stark.StarkSuits.slot(
+                    "satsu_iron_man_addon:marks/mark_44/bracelet"))) {
+                h.fail("Халкбастер не в своём слоте");
+            }
+        } finally {
+            if (previous == null) {
+                life.clearOwner(unit.id());
+            } else {
+                life.setOwner(unit.id(), previous.id(), previous.name(), previous.since());
+            }
+        }
+        h.succeed();
+    }
 }

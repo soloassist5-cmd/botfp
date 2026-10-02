@@ -65,6 +65,7 @@ public final class AppIcons {
             case "tetris" -> new int[]{0xFF8E7BFF, 0xFF4C3FD0};
             case "snake" -> new int[]{0xFF7BE07B, 0xFF2F9E4F};
             case "cameras" -> new int[]{0xFF5B6B8C, 0xFF263049};
+            case "jarvis" -> new int[]{0xFF0E3550, 0xFF06121C};
             case "browser" -> new int[]{0xFF45A3F0, 0xFF1A5FA8};
             case "mail" -> new int[]{0xFFFF8A65, 0xFFD04A2E};
             case "music" -> new int[]{0xFFFF5C8A, 0xFFB0245A};
@@ -236,6 +237,13 @@ public final class AppIcons {
                             PhoneUi.alpha(0xFFFFE066, 0.2F + i / (float) (s / 4)));
                 }
                 g.fill(cx - 2, cy + s / 20, cx + 3, cy + s / 4, WHITE);
+            }
+            case "jarvis" -> {
+                // Дуговой реактор: светящееся кольцо, перемычки и белое ядро.
+                int r = s / 3;
+                PhoneUi.ring(g, cx, cy, r, Math.max(2, s / 14), 0xFF57D8FF);
+                PhoneUi.ring(g, cx, cy, r - s / 8, 1, 0xAA9BE8FF);
+                PhoneUi.disc(g, cx, cy, Math.max(2, s / 9), 0xFFE8FBFF);
             }
             case "sysinfo" -> {
                 // Микросхема: квадрат с ножками.

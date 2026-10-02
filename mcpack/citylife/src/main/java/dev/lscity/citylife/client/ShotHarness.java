@@ -279,6 +279,24 @@ public final class ShotHarness {
                 screen.open("bank");
                 return screen;
             }
+            case "ui_controls" -> {
+                return new dev.lscity.citylife.client.controls.ControlsScreen(null);
+            }
+            case "ui_controls_alt" -> {
+                return new dev.lscity.citylife.client.controls.ControlsScreen(null).layer("alt");
+            }
+            case "ui_jarvis" -> {
+                CompoundTag dev = device("phone_stark", "PHONE", stark.apps());
+                CompoundTag jarvis = new CompoundTag();
+                jarvis.putBoolean("allowed", true);
+                jarvis.putBoolean("owner", true);
+                jarvis.putString("suit", "satsu_iron_man_addon:marks/mark_42/bracelet");
+                dev.put("jarvis", jarvis);
+                var screen = new dev.lscity.citylife.client.device.DeviceScreen(dev);
+                Minecraft.getInstance().setScreen(screen);
+                screen.open("jarvis");
+                return screen;
+            }
             case "ui_printer" -> {
                 CompoundTag tag = new CompoundTag();
                 tag.putLong("pos", new net.minecraft.core.BlockPos(20, 61, 22).asLong());

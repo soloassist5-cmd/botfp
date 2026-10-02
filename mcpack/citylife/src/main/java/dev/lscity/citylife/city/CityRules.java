@@ -19,7 +19,10 @@ import net.minecraftforge.registries.ForgeRegistries;
  * проходами крипер успевал подойти, а животные и стражи оставались вовсе.
  * Здесь любой моб отклоняется ещё при входе в мир — при естественном
  * спавне, из яйца, из спавнера и при загрузке старого чанка. Пропускаем
- * только жителей Easy NPC: это городские продавцы.
+ * жителей Easy NPC (городские продавцы) и технику модов: FPV-дрон и турель
+ * SecurityCraft тоже «мобы» для игры, но не звери и не монстры — у них
+ * категория MISC. Ванильные мобы не проходят никогда: деревенские жители и
+ * големы тоже MISC, но в городе им не место.
  *
  * Взрывы. Гранаты и ракеты TaCZ, мины SecurityCraft и динамит ранят как
  * обычно, но список ломаемых блоков очищается: город не разнести, и от
@@ -29,7 +32,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 public final class CityRules {
 
     /** Моды, чьи «мобы» — это жители города, а не животные или монстры. */
-    private static final String[] ALLOWED_NAMESPACES = {"easy_npc"};
+    private static final String[] ALLOWED_NAMESPACES = {"easy_npc", "fpvdrone", "diligentstalker"};
 
     private CityRules() {
     }
@@ -68,7 +71,12 @@ public final class CityRules {
                 return true;
             }
         }
-        return false;
+        return machine(id, entity.getType().getCategory());
+    }
+
+    /** Модовая «техника»: не ванильный моб и не зверь, не монстр, не рыба. */
+    public static boolean machine(ResourceLocation id, net.minecraft.world.entity.MobCategory category) {
+        return !"minecraft".equals(id.getNamespace()) && category == net.minecraft.world.entity.MobCategory.MISC;
     }
 
     @SubscribeEvent

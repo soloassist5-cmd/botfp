@@ -76,6 +76,11 @@ public final class Pedestrians {
         Entity listener;
         /** Убегает: шагает быстрее, пока не добежит. */
         boolean fleeing;
+        /** Где стоял на прошлой проверке хода и когда: так видно, что застрял. */
+        Vec3 checkpoint;
+        long checkedAt;
+        /** Сколько проверок подряд не сдвинулся с места. */
+        int fails;
 
         Walker(UUID id) {
             this.id = id;
@@ -206,6 +211,7 @@ public final class Pedestrians {
                     continue;
                 }
             }
+            unstick(level, mob, w);
             if (!w.wander || w.pauseUntil > level.getGameTime()) {
                 continue;
             }
@@ -216,8 +222,104 @@ public final class Pedestrians {
             if (w.path == null || w.path.isDone() || w.stuck > 40) {
                 BlockPos next = w.pinned && w.target != null && w.path == null ? w.target
                         : pointNear(mob.getRandom(), entity.position(), 10, 40);
+                if (next == null) {
+                    // Забрёл туда, где рядом нет тротуара (двор, площадь): к ближайшему.
+                    next = nearestPoint(entity.position(), 80);
+                }
                 route(mob, w, next);
             }
+        }
+    }
+
+    /** Каждые 2 секунды ходьбы без сдвига хоть на полблока — житель застрял. */
+    static final int CHECK_TICKS = 40;
+
+    /**
+     * Застрял — выручаем по нарастающей: перестроить путь к той же цели,
+     * потом сменить цель (у прохожих), а на третий раз перенести на
+     * ближайшую точку тротуара. Раньше прохожий менял цель только когда
+     * упирался в человека, а ведомые (наряды 112, пассажиры) и вовсе
+     * оставались стоять, если путь упёрся в стену или ушёл в забор.
+     */
+    private static void unstick(ServerLevel level, Mob mob, Walker w) {
+        long now = level.getGameTime();
+        boolean walking = w.path != null && !w.path.isDone() && w.pauseUntil <= now;
+        if (!walking || w.checkpoint == null) {
+            w.checkpoint = mob.position();
+            w.checkedAt = now;
+            if (!walking) {
+                w.fails = 0;
+            }
+            return;
+        }
+        if (now - w.checkedAt < CHECK_TICKS) {
+            return;
+        }
+        double moved = mob.position().distanceTo(w.checkpoint);
+        w.checkpoint = mob.position();
+        w.checkedAt = now;
+        if (moved >= 0.5D) {
+            w.fails = 0;
+            return;
+        }
+        w.fails++;
+        if (w.fails == 1) {
+            route(mob, w, w.target);
+        } else if (w.fails == 2 && w.wander) {
+            route(mob, w, pointNear(mob.getRandom(), mob.position(), 6, 30));
+        } else {
+            BlockPos free = nearestPoint(mob.position(), 24);
+            if (free != null) {
+                mob.moveTo(free.getX() + 0.5D, free.getY(), free.getZ() + 0.5D, mob.getYRot(), 0F);
+            }
+            route(mob, w, w.target);
+            w.fails = 0;
+        }
+        w.fails = Math.min(w.fails, 3);
+    }
+
+    /** Ближайшая точка тротуара не дальше max блоков, или null. */
+    private static BlockPos nearestPoint(Vec3 at, double max) {
+        BlockPos best = null;
+        double bestD = max * max;
+        for (BlockPos p : points()) {
+            double d = p.distToCenterSqr(at);
+            if (d < bestD && d > 1.0D) {
+                bestD = d;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    /** Идёт ли житель по пути (не стоит без цели) — для самотестов. */
+    public static boolean walking(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        return w != null && w.path != null && !w.path.isDone();
+    }
+
+    /** Что с путём жителя — для самотестов. */
+    public static String debug(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w == null) {
+            return "не прохожий";
+        }
+        return "путь " + (w.path == null ? "нет" : w.path.isDone() ? "пройден" : w.path.getNodeCount() + " узлов")
+                + ", цель " + w.target + ", пауза до " + w.pauseUntil + ", проверка " + w.checkpoint;
+    }
+
+    /** Сколько раз подряд житель не сдвинулся — для самотестов. */
+    public static int fails(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        return w == null ? -1 : w.fails;
+    }
+
+    /** Проверить ход жителя сейчас (самотесты не ждут 2 секунды). */
+    public static void checkStuck(Entity entity) {
+        Walker w = WALKERS.get(entity.getUUID());
+        if (w != null && entity instanceof Mob mob) {
+            w.checkedAt -= CHECK_TICKS;
+            unstick((ServerLevel) entity.level(), mob, w);
         }
     }
 

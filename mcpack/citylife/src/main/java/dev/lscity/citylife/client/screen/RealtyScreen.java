@@ -42,7 +42,7 @@ public class RealtyScreen extends Screen {
     private static final int ROW = 13;
 
     private static final String[] FILTERS = {"all", "house", "villa", "rowhouse", "flat",
-            "business", "free", "rent", "mine"};
+            "business", "landmark", "free", "rent", "mine"};
     private static final Map<String, String> DISTRICTS = Map.of(
             "downtown", "Даунтаун", "midtown", "Мидтаун", "suburbs", "Пригород",
             "hills", "Холмы", "beach", "Пляж", "eastside", "Истсайд", "industrial", "Промзона",
@@ -151,6 +151,7 @@ public class RealtyScreen extends Screen {
                 case "all" -> true;
                 // Усадьбы Берегового и Приморского показываем вместе с виллами.
                 case "villa" -> "villa".equals(unit.kind()) || "mansion".equals(unit.kind());
+                case "business" -> "business".equals(unit.kind());
                 default -> filter.equals(unit.kind());
             };
             if (ok && (query.isEmpty() || norm(unit.address()).contains(query)

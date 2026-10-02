@@ -124,10 +124,19 @@ public final class StarkSecurity {
         return false;
     }
 
-    /** Свой ли игрок для охраны: допуск, творческий режим или наблюдатель. */
+    /** Объект агентства недвижимости «Башня STARK». */
+    public static final String TOWER_UNIT = "stark_tower";
+
+    /** Свой ли игрок для охраны: владелец башни, допуск, творческий режим или наблюдатель. */
     public static boolean cleared(ServerPlayer player) {
-        return player.isCreative() || player.isSpectator()
+        return player.isCreative() || player.isSpectator() || ownsTower(player)
                 || StarkData.get(player.server).cleared(player.getUUID());
+    }
+
+    /** Купил ли игрок башню STARK в агентстве недвижимости. */
+    public static boolean ownsTower(ServerPlayer player) {
+        var owner = dev.lscity.citylife.data.LifeData.get(player.server).owner(TOWER_UNIT);
+        return owner != null && owner.id().equals(player.getUUID());
     }
 
     public static boolean alarm(long now) {
@@ -333,7 +342,8 @@ public final class StarkSecurity {
         CompoundTag tag = state(data, player.level().getGameTime());
         tag.putLong("pos", pos.asLong());
         tag.putBoolean("me", cleared(player));
-        tag.putBoolean("bought", data.cleared(player.getUUID()));
+        tag.putBoolean("bought", data.cleared(player.getUUID()) || ownsTower(player));
+        tag.putBoolean("owner", ownsTower(player));
         tag.putLong("price", ACCESS_PRICE);
         tag.putLong("balance", CityData.get(player.server).balance(player.getUUID()));
         ListTag cams = new ListTag();

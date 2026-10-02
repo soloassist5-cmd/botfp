@@ -30,6 +30,10 @@ import java.util.UUID;
  * взлом замка и кража из чужого дома (★). Каждые 5 минут снимается одна
  * звезда. Приехавшая по вызову полиция задерживает разыскиваемых рядом:
  * штраф со счёта и время в камере у полицейского участка.
+ *
+ * Команда /wanted: показать свой розыск, откупиться штрафом (вдвое дороже
+ * ареста, зато без камеры и только если последнее нарушение было больше
+ * двух минут назад), а админу — снять, назначить или выпустить из камеры.
  */
 @Mod.EventBusSubscriber(modid = CityLife.MOD_ID)
 public final class Wanted {
@@ -40,6 +44,10 @@ public final class Wanted {
     private static final double CELL = 3.0D;
     /** Кого и когда уже отмечали за драку, чтобы не копить звёзды за каждый удар. */
     private static final Map<UUID, Long> FIGHTS = new HashMap<>();
+    /** Когда игрок последний раз нарушил закон: откупиться сразу после преступления нельзя. */
+    private static final Map<UUID, Long> LAST_CRIME = new HashMap<>();
+    /** Сколько ждать после нарушения, прежде чем можно откупиться (2 минуты). */
+    public static final long PAY_COOLDOWN = 20L * 120;
 
     private Wanted() {
     }
@@ -53,8 +61,125 @@ public final class Wanted {
         LifeData life = LifeData.get(player.server);
         int now = Math.min(5, life.wanted(player.getUUID()) + stars);
         life.setWanted(player.getUUID(), now, player.level().getGameTime() + DECAY);
+        LAST_CRIME.put(player.getUUID(), player.level().getGameTime());
         player.displayClientMessage(Component.translatable("citylife.wanted.gained",
                 Component.translatable(reasonKey), stars(now)).withStyle(ChatFormatting.RED), false);
+    }
+
+    /** Откуп: штраф вдвое больше, чем при аресте, но без камеры. */
+    public static long bail(int stars) {
+        return 2L * Math.max(1, stars) * CityConfig.CONFIG.finePerStar.get();
+    }
+
+    public enum Pay { OK, NOT_WANTED, TOO_SOON, NO_MONEY, IN_JAIL }
+
+    /** Откупиться от розыска со своего счёта. */
+    public static Pay pay(ServerPlayer player) {
+        LifeData life = LifeData.get(player.server);
+        UUID id = player.getUUID();
+        long now = player.level().getGameTime();
+        if (life.jailUntil(id) > now) {
+            return Pay.IN_JAIL;
+        }
+        int stars = life.wanted(id);
+        if (stars <= 0) {
+            return Pay.NOT_WANTED;
+        }
+        Long last = LAST_CRIME.get(id);
+        if (last != null && now - last < PAY_COOLDOWN && now >= last) {
+            return Pay.TOO_SOON;
+        }
+        long fine = bail(stars);
+        if (!CityData.get(player.server).withdraw(id, fine, dev.lscity.citylife.data.Texts.ru(
+                "citylife.statement.bail"), now)) {
+            return Pay.NO_MONEY;
+        }
+        clear(player.server, id);
+        return Pay.OK;
+    }
+
+    /** Снять розыск и выпустить из камеры (админ или откуп). */
+    public static void clear(net.minecraft.server.MinecraftServer server, UUID id) {
+        LifeData life = LifeData.get(server);
+        life.setWanted(id, 0, 0);
+        life.setJail(id, 0);
+        Robbery.forget(id);
+        LAST_CRIME.remove(id);
+        FIGHTS.remove(id);
+    }
+
+    @SubscribeEvent
+    public static void onCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
+        var dispatcher = event.getDispatcher();
+        var root = net.minecraft.commands.Commands.literal("wanted")
+                .executes(ctx -> status(ctx.getSource(), ctx.getSource().getPlayerOrException()));
+        root.then(net.minecraft.commands.Commands.literal("pay").executes(ctx -> {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            int stars = LifeData.get(player.server).wanted(player.getUUID());
+            Pay result = pay(player);
+            String key = "citylife.wanted.pay." + result.name().toLowerCase(java.util.Locale.ROOT);
+            Component msg = switch (result) {
+                case OK -> Component.translatable(key, Money.format(bail(stars)));
+                case TOO_SOON -> Component.translatable(key, PAY_COOLDOWN / 20);
+                case NO_MONEY -> Component.translatable(key, Money.format(bail(stars)));
+                default -> Component.translatable(key);
+            };
+            ctx.getSource().sendSuccess(() -> msg.copy().withStyle(result == Pay.OK ? ChatFormatting.GREEN
+                    : ChatFormatting.RED), false);
+            return result == Pay.OK ? 1 : 0;
+        }));
+        var target = net.minecraft.commands.arguments.EntityArgument.player();
+        root.then(net.minecraft.commands.Commands.literal("clear").requires(s -> s.hasPermission(2))
+                .executes(ctx -> clearCmd(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+                .then(net.minecraft.commands.Commands.argument("player", target).executes(ctx ->
+                        clearCmd(ctx.getSource(), net.minecraft.commands.arguments.EntityArgument
+                                .getPlayer(ctx, "player")))));
+        root.then(net.minecraft.commands.Commands.literal("set").requires(s -> s.hasPermission(2))
+                .then(net.minecraft.commands.Commands.argument("player", target)
+                        .then(net.minecraft.commands.Commands.argument("stars",
+                                com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 5)).executes(ctx -> {
+                            ServerPlayer p = net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player");
+                            int n = com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "stars");
+                            LifeData.get(p.server).setWanted(p.getUUID(), n,
+                                    n > 0 ? p.level().getGameTime() + DECAY : 0);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("citylife.wanted.cmd.set",
+                                    p.getGameProfile().getName(), stars(n)), true);
+                            return 1;
+                        }))));
+        root.then(net.minecraft.commands.Commands.literal("release").requires(s -> s.hasPermission(2))
+                .then(net.minecraft.commands.Commands.argument("player", target).executes(ctx -> {
+                    ServerPlayer p = net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player");
+                    LifeData.get(p.server).setJail(p.getUUID(), p.level().getGameTime());
+                    ctx.getSource().sendSuccess(() -> Component.translatable("citylife.wanted.cmd.released",
+                            p.getGameProfile().getName()), true);
+                    return 1;
+                })));
+        dispatcher.register(root);
+    }
+
+    private static int status(net.minecraft.commands.CommandSourceStack source, ServerPlayer player) {
+        LifeData life = LifeData.get(player.server);
+        int stars = life.wanted(player.getUUID());
+        long now = player.level().getGameTime();
+        Component msg = stars <= 0 ? Component.translatable("citylife.wanted.status.clean")
+                : Component.translatable("citylife.wanted.status", stars(stars),
+                (life.wantedDecay(player.getUUID()) - now) / 20, Money.format(bail(stars)));
+        source.sendSuccess(() -> msg, false);
+        return stars;
+    }
+
+    private static int clearCmd(net.minecraft.commands.CommandSourceStack source, ServerPlayer player) {
+        boolean jailed = LifeData.get(player.server).jailUntil(player.getUUID()) > player.level().getGameTime();
+        clear(player.server, player.getUUID());
+        if (jailed) {
+            // Из камеры — сразу на выход, а не ждать конца срока.
+            LifeData.get(player.server).setJail(player.getUUID(), player.level().getGameTime());
+        }
+        player.displayClientMessage(Component.translatable("citylife.wanted.cleared")
+                .withStyle(ChatFormatting.GREEN), false);
+        source.sendSuccess(() -> Component.translatable("citylife.wanted.cmd.cleared",
+                player.getGameProfile().getName()), true);
+        return 1;
     }
 
     /** Камера: центр клетки из решёток в участке, иначе вход в участок. */

@@ -31,9 +31,18 @@ public final class Estate {
     public record Unit(String id, String kind, String title, String address, String district,
                        long price, String rooms, int[] box, int[] plot, BlockPos door) {
 
-        /** Бизнес приносит доход, но открыт для всех: без замков и защиты участка. */
+        /**
+         * Бизнес приносит доход, но открыт для всех: без замков и защиты участка.
+         * Башня STARK («landmark») устроена так же — вестибюль остаётся
+         * общественным, а подвал охраняет «Джарвис».
+         */
         public boolean business() {
-            return "business".equals(kind);
+            return "business".equals(kind) || landmark();
+        }
+
+        /** Особый объект вроде башни STARK: один на город, вне лимита бизнесов. */
+        public boolean landmark() {
+            return "landmark".equals(kind);
         }
 
         public boolean inBox(double x, double y, double z) {

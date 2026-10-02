@@ -83,12 +83,36 @@ def business_units(lot) -> list[dict]:
     }]
 
 
+# Башня Старка целиком: 34 этажа, подвал с Залом брони и мастерской. Владелец
+# получает допуск охраны «Джарвиса» и вызов костюмов, а башня — доход как бизнес.
+STARK_PRICE = 10_000_000
+
+
+def stark_unit(lot) -> list[dict]:
+    if lot.label != "STARK TOWER":
+        return []
+    from citygen import towers as T
+    return [{
+        "id": "stark_tower",
+        "kind": "landmark",
+        "title": "Башня STARK",
+        "address": lot.address,
+        "district": lot.district,
+        "price": STARK_PRICE,
+        "rooms": "34 этажа · Зал брони",
+        "box": [lot.x0, 43, lot.z0, lot.x1, P.CITY_Y + 4 * 34 + 40, lot.z1],
+        "plot": [lot.x0, 43, lot.z0, lot.x1, P.CITY_Y + 4 * 34 + 40, lot.z1],
+        "door": list(T.entrance_point(lot)),
+    }]
+
+
 def main() -> int:
     city = P.build_plan(SEED)
     units = []
     for lot in city.lots:
         units += H.estate_units(lot)
         units += business_units(lot)
+        units += stark_unit(lot)
     ids = Counter(unit["id"] for unit in units)
     dup = [key for key, n in ids.items() if n > 1]
     if dup:

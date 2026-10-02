@@ -186,8 +186,8 @@ public final class EstateServer {
         int limit = unit.business() ? CityConfig.CONFIG.maxBusinesses.get()
                 : CityConfig.CONFIG.maxHomes.get();
         long have = life.ownedBy(player.getUUID()).stream().map(Estate::get)
-                .filter(u -> u != null && u.business() == unit.business()).count();
-        if (have >= limit) {
+                .filter(u -> u != null && !u.landmark() && u.business() == unit.business()).count();
+        if (have >= limit && !unit.landmark()) {
             say(player, Component.translatable("citylife.realty.limit", limit), ChatFormatting.RED);
             return;
         }

@@ -19,6 +19,7 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void onKeys(net.minecraftforge.client.event.RegisterKeyMappingsEvent event) {
         event.register(Keys.VEHICLE);
+        event.register(Keys.CONTROLS);
     }
 
     @SubscribeEvent

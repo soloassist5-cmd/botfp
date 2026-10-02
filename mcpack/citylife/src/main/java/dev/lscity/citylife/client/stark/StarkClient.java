@@ -27,6 +27,67 @@ public final class StarkClient {
     public static final List<Boolean> LOG_ALARM = new ArrayList<>();
 
     private static List<String> suits;
+    private static List<Suit> items;
+
+    /** Костюм для приложения «Джарвис»: id предмета, подпись, иконка. */
+    public record Suit(String id, String name, ItemStack stack) {
+    }
+
+    /** Все марки Satsu по порядку подписи. */
+    public static List<Suit> suitItems() {
+        if (items == null) {
+            List<Suit> out = new ArrayList<>();
+            for (Item item : ForgeRegistries.ITEMS.getValues()) {
+                ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+                if (dev.lscity.citylife.stark.StarkSuits.isSuit(id)) {
+                    ItemStack stack = new ItemStack(item);
+                    out.add(new Suit(id.toString(), shortName(stack), stack));
+                }
+            }
+            out.sort(java.util.Comparator.comparing(s -> sortKey(s.name())));
+            items = out;
+        }
+        return items;
+    }
+
+    public static String suitName(String id) {
+        for (Suit s : suitItems()) {
+            if (s.id().equals(id)) {
+                return s.name();
+            }
+        }
+        return id;
+    }
+
+    /** «Armor bracelet (Mark 42 Prodigal Son)» → «Mark 42 Prodigal Son». */
+    private static String shortName(ItemStack stack) {
+        String name = stack.getHoverName().getString();
+        int open = name.indexOf('(');
+        int close = name.lastIndexOf(')');
+        if (open < 0 || close <= open) {
+            return name;
+        }
+        String inner = name.substring(open + 1, close);
+        String kind = name.substring(0, open).trim();
+        // «Браслет», «кейс», «нано-модуль» — одно и то же для игрока, а «Чёрный костюм» — отдельная вещь.
+        String low = kind.toLowerCase(java.util.Locale.ROOT);
+        boolean generic = low.contains("bracelet") || low.contains("briefcase") || low.contains("modifier")
+                || low.contains("reactor") || low.contains("chest") || low.contains("necklace")
+                || low.contains("браслет") || low.contains("кейс") || low.contains("модуль");
+        return generic || kind.isEmpty() ? inner : inner + " · " + kind;
+    }
+
+    /** Mark 7 раньше Mark 10: числа сравниваем как числа. */
+    private static String sortKey(String name) {
+        var m = java.util.regex.Pattern.compile("(\\d+)").matcher(name);
+        StringBuilder out = new StringBuilder();
+        int last = 0;
+        while (m.find()) {
+            out.append(name, last, m.start()).append(String.format("%06d", Integer.parseInt(m.group(1))));
+            last = m.end();
+        }
+        return out.append(name.substring(last)).toString().toLowerCase(java.util.Locale.ROOT);
+    }
 
     private StarkClient() {
     }

@@ -108,6 +108,7 @@ public class DeviceScreen extends Screen {
             case "navigator" -> new NavigatorApp(this);
             case "locks" -> new LocksApp(this);
             case "cameras" -> new CamerasApp(this);
+            case "jarvis" -> new JarvisApp(this);
             case "browser" -> new BrowserApp(this, false);
             case "browser_board" -> new BrowserApp(this, true);
             case "mail" -> new MailApp(this);
