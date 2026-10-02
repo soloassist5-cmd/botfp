@@ -282,6 +282,12 @@ public final class ShotHarness {
             case "ui_controls" -> {
                 return new dev.lscity.citylife.client.controls.ControlsScreen(null);
             }
+            case "ui_controls_v" -> {
+                return new dev.lscity.citylife.client.controls.ControlsScreen(null).pin("key.keyboard.v");
+            }
+            case "ui_controls_find" -> {
+                return new dev.lscity.citylife.client.controls.ControlsScreen(null).search("карт");
+            }
             case "ui_controls_alt" -> {
                 return new dev.lscity.citylife.client.controls.ControlsScreen(null).layer("alt");
             }

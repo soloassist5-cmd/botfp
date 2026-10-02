@@ -5,6 +5,7 @@ import dev.lscity.citylife.client.ui.PhoneUi;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.controls.KeyBindsScreen;
 import net.minecraft.client.resources.language.I18n;
@@ -23,10 +24,15 @@ import java.util.Set;
 
 /**
  * Справочник управления: копия клавиатуры, на каждой клавише — что она
- * делает. Цвет клавиши — мод (легенда внизу), красная рамка — две команды
- * на одной клавише. Слои «Alt / Ctrl / Shift» показывают сочетания, справа —
- * мышь. Наведи на клавишу — полный список её действий; клик по моду в
- * легенде оставляет подсвеченными только его клавиши.
+ * делает, короткой понятной подписью («Колесо брони», «Перезарядка»).
+ *
+ * Занятые клавиши окрашены цветом группы (костюм, оружие, транспорт,
+ * голос, карта, дроны…), свободные — приглушены. Справа — панель: что на
+ * клавише под курсором (клик закрепляет), а пока ничего не выбрано —
+ * «Главное»: самые нужные клавиши сборки с тем, куда они назначены сейчас,
+ * и мышь. Поиск по названию действия подсвечивает его клавишу; вкладки
+ * Alt / Ctrl / Shift — сочетания; красная рамка с «!» — две команды
+ * срабатывают от одного нажатия.
  *
  * Данные берутся из настроек игры прямо сейчас, поэтому справочник всегда
  * совпадает с тем, что реально назначено, в том числе после переназначения.
@@ -94,14 +100,23 @@ public class ControlsScreen extends Screen {
     }
 
     private static final String[] LAYERS = {"none", "alt", "ctrl", "shift"};
+    private static final int TEXT = 0xFFEAF2F8;
+    private static final int DIM = 0xFF8A97A8;
+    private static final int ACCENT = 0xFF57D8FF;
+    private static final int PANEL = 0xE0121720;
 
     private final Screen parent;
     private String layer = "none";
+    /** Группа, выбранная в легенде, или пусто. */
     private String focus = "";
-    /** Что было под курсором при прошлом кадре — для панели подробностей. */
+    /** Клавиша под курсором в этом кадре и закреплённая кликом. */
     private String hovered = "";
-    private final Map<String, Integer> colours = new LinkedHashMap<>();
+    private String pinned = "";
+    private EditBox search;
+    private String query = "";
     private String status = "";
+    private final List<Object[]> legendHits = new ArrayList<>();
+    private final Map<String, int[]> capRects = new HashMap<>();
 
     public ControlsScreen(Screen parent) {
         super(Component.translatable("citylife.controls.title"));
@@ -114,10 +129,22 @@ public class ControlsScreen extends Screen {
         return this;
     }
 
+    /** Закрепить клавишу в панели (для кадров справочника). */
+    public ControlsScreen pin(String key) {
+        this.pinned = key;
+        return this;
+    }
+
+    /** Сразу с поиском (для кадров справочника). */
+    public ControlsScreen search(String text) {
+        this.query = text;
+        return this;
+    }
+
     // --- данные ------------------------------------------------------------------
 
-    private KeyModifier modifier() {
-        return switch (layer) {
+    private KeyModifier modifier(String l) {
+        return switch (l) {
             case "alt" -> KeyModifier.ALT;
             case "ctrl" -> KeyModifier.CONTROL;
             case "shift" -> KeyModifier.SHIFT;
@@ -125,7 +152,10 @@ public class ControlsScreen extends Screen {
         };
     }
 
-    /** Действия на клавише в текущем слое модификатора. */
+    private KeyModifier modifier() {
+        return modifier(layer);
+    }
+
     private List<KeyMapping> on(String key) {
         List<KeyMapping> out = new ArrayList<>();
         if (minecraft == null) {
@@ -139,103 +169,173 @@ public class ControlsScreen extends Screen {
         return out;
     }
 
+    private int count(String l) {
+        int n = 0;
+        for (KeyMapping km : minecraft.options.keyMappings) {
+            if (!km.isUnbound() && km.getKeyModifier() == modifier(l)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     private Set<String> conflicted() {
         Set<String> out = new HashSet<>();
-        if (minecraft != null) {
-            for (KeyMapping[] pair : Controls.clashes(minecraft)) {
-                if (pair[0].getKeyModifier() == modifier()) {
-                    out.add(pair[0].getKey().getName());
-                }
+        for (KeyMapping[] pair : Controls.clashes(minecraft)) {
+            if (pair[0].getKeyModifier() == modifier()) {
+                out.add(pair[0].getKey().getName());
             }
         }
         return out;
     }
 
-    private int colour(String category) {
-        return colours.computeIfAbsent(category, c -> {
-            int known = switch (c) {
-                case "key.categories.movement" -> 0xFF4E6A8C;
-                case "key.categories.gameplay" -> 0xFF5C7A4E;
-                case "key.categories.inventory" -> 0xFF7A6A4E;
-                case "key.categories.multiplayer" -> 0xFF6A4E7A;
-                case "key.categories.misc", "key.categories.ui", "key.categories.creative" -> 0xFF5A5F6B;
-                default -> 0;
-            };
-            if (known != 0) {
-                return known;
-            }
-            // Остальные моды — свой оттенок по имени категории, сочный, но тёмный.
-            float hue = (c.hashCode() & 0xFFFF) / 65535F;
-            int rgb = java.awt.Color.HSBtoRGB(hue, 0.55F, 0.62F);
-            return 0xFF000000 | rgb & 0xFFFFFF;
-        });
+    private boolean matches(KeyMapping km) {
+        if (query.isEmpty()) {
+            return true;
+        }
+        String q = query.toLowerCase(java.util.Locale.ROOT);
+        return KeyNames.shortName(km).toLowerCase(java.util.Locale.ROOT).contains(q)
+                || KeyNames.fullName(km).toLowerCase(java.util.Locale.ROOT).contains(q)
+                || KeyNames.groupTitle(KeyNames.group(km)).toLowerCase(java.util.Locale.ROOT).contains(q);
     }
 
-    private static String name(KeyMapping km) {
-        return I18n.get(km.getName());
+    /** Подходит ли клавиша под поиск и фильтр группы. */
+    private boolean lit(List<KeyMapping> acts) {
+        if (query.isEmpty() && focus.isEmpty()) {
+            return true;
+        }
+        for (KeyMapping km : acts) {
+            if ((focus.isEmpty() || KeyNames.group(km).id().equals(focus)) && matches(km)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // --- раскладка экрана -------------------------------------------------------
 
+    /**
+     * Во сколько раз уменьшить рисунок клавиатуры: шапка с кнопками — в
+     * пикселях интерфейса, а клавиатура — по возможности в настоящих
+     * пикселях экрана. При «Масштабе интерфейса 2» окно в 854 точки — это
+     * всего 427 точек интерфейса, и подписи на клавишах не влезали. Берём
+     * такой множитель, чтобы точка шрифта была целым числом пикселей экрана
+     * (буквы остаются чёткими) и по ширине вышло не меньше ~800 точек.
+     */
+    private float zoom() {
+        if (minecraft == null) {
+            return 1F;
+        }
+        int gui = (int) Math.round(minecraft.getWindow().getGuiScale());
+        int real = minecraft.getWindow().getWidth();
+        for (int k = gui; k >= 1; k--) {
+            if (real / k >= 800 || k == 1) {
+                return (float) k / gui;
+            }
+        }
+        return 1F;
+    }
+
+    private float vw() {
+        return width / zoom();
+    }
+
+    private float vh() {
+        return height / zoom();
+    }
+
+    /** Высота полосы под клавиатурой: «Главное» или выбранная клавиша и мышь. */
+    private static final int PANEL_H = 96;
+    private static final int LEGEND_H = 28;
+
     private float unit() {
-        return Math.min((width - 16) / 23.0F, (height - top() - 34) / 6.6F);
+        float byW = (vw() - 20) / 18.5F;
+        float byH = (vh() - top() - LEGEND_H - PANEL_H - 8) / 6.45F;
+        return Math.max(14, Math.min(byW, byH));
     }
 
     private int left() {
-        return (int) ((width - unit() * 23) / 2);
+        return (int) Math.max(10, (vw() - unit() * 18.5F) / 2);
     }
 
+    private int panelW() {
+        return (int) (unit() * 18.5F);
+    }
+
+    /** Верх клавиатуры в точках рисунка: под шапкой с кнопками. */
     private int top() {
-        return 42;
+        return (int) (44 / zoom());
+    }
+
+    private int panelX() {
+        return left();
+    }
+
+    /** Края области клавиатуры в точках интерфейса — для кнопок шапки. */
+    private int guiLeft() {
+        return (int) (left() * zoom());
+    }
+
+    private int guiRight() {
+        return (int) ((left() + panelW()) * zoom());
     }
 
     @Override
     protected void init() {
-        int x = left();
-        int y = 20;
+        int x = guiLeft();
+        int y = 22;
         for (String l : LAYERS) {
-            Component label = Component.translatable("citylife.controls.layer." + l);
+            Component label = Component.translatable("citylife.controls.layer." + l)
+                    .append(Component.literal(" " + count(l)));
             int w = font.width(label) + 12;
             Button b = Button.builder(label, btn -> {
                 layer = l;
+                pinned = "";
                 rebuildWidgets();
             }).bounds(x, y, w, 16).build();
             b.active = !l.equals(layer);
             addRenderableWidget(b);
             x += w + 3;
         }
-        int bx = left() + (int) (unit() * 23);
+        int right = guiRight();
         Component reset = Component.translatable("citylife.controls.reset");
         int rw = font.width(reset) + 12;
         addRenderableWidget(Button.builder(reset, b -> {
             int n = Controls.apply(minecraft, true);
             status = Component.translatable("citylife.controls.reset_done", n).getString();
-        }).bounds(bx - rw, y, rw, 16).build());
+            rebuildWidgets();
+        }).bounds(right - rw, 4, rw, 14).build());
         Component edit = Component.translatable("citylife.controls.edit");
         int ew = font.width(edit) + 12;
         addRenderableWidget(Button.builder(edit, b -> minecraft.setScreen(new KeyBindsScreen(this,
-                minecraft.options))).bounds(bx - rw - ew - 4, y, ew, 16).build());
+                minecraft.options))).bounds(right - rw - ew - 4, 4, ew, 14).build());
+        int sx = x + 8;
+        int sw = Math.max(80, right - sx);
+        search = new EditBox(font, sx, y + 1, sw, 14, Component.translatable("citylife.controls.search"));
+        search.setHint(Component.translatable("citylife.controls.search"));
+        search.setValue(query);
+        search.setResponder(v -> query = v.trim());
+        addRenderableWidget(search);
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
         renderBackground(g);
-        g.fill(0, 0, width, height, 0xC0080B10);
-        g.drawString(font, title, left(), 6, 0xFF57D8FF, false);
-        String hint = Component.translatable("citylife.controls.hint").getString();
-        int hx = left() + font.width(title) + 12;
-        int room = left() + (int) (unit() * 23) - hx;
-        if (room > 40) {
-            g.drawString(font, font.plainSubstrByWidth(hint, room), hx, 6, 0xFF7FA6B8, false);
-        }
+        g.fill(0, 0, width, height, 0xD007090D);
+        g.drawString(font, title, guiLeft(), 7, ACCENT, false);
         super.render(g, mouseX, mouseY, partial);
 
+        float z = zoom();
+        g.pose().pushPose();
+        g.pose().scale(z, z, 1);
+        mouseX = (int) (mouseX / z);
+        mouseY = (int) (mouseY / z);
         float u = unit();
         int x0 = left();
         int y0 = top();
         Set<String> bad = conflicted();
         hovered = "";
-        // Основной блок.
+        capRects.clear();
         float y = y0;
         for (int r = 0; r < ROWS.size(); r++) {
             float x = x0;
@@ -244,33 +344,36 @@ public class ControlsScreen extends Screen {
                 cap(g, cap.key(), cap.label(), x, y, cap.w() * u, u, bad, mouseX, mouseY);
                 x += cap.w() * u;
             }
-            y += u + (r == 0 ? u * 0.25F : 0);
+            y += u + (r == 0 ? u * 0.3F : 0);
         }
-        // Блок стрелок и Home/End.
         y = y0;
         for (int r = 0; r < NAV.size(); r++) {
-            float x = x0 + u * 15.25F;
+            float x = x0 + u * 15.5F;
             for (Cap cap : NAV.get(r)) {
                 x += cap.gap() * u;
                 cap(g, cap.key(), cap.label(), x, y, u, u, bad, mouseX, mouseY);
                 x += u;
             }
-            y += u + (r == 0 ? u * 0.25F : 0);
+            y += u + (r == 0 ? u * 0.3F : 0);
         }
-        mouse(g, x0 + u * 18.75F, y0, u, bad, mouseX, mouseY);
-        legend(g, x0, (int) (y0 + u * 6.4F), mouseX, mouseY);
-        details(g, mouseX, mouseY);
+        int ly = (int) (y0 + u * 6.45F);
+        int legendBottom = legend(g, x0, ly, panelW(), mouseX, mouseY);
+        int py = legendBottom + 4;
+        panel(g, x0, py, panelW(), (int) Math.max(70, vh() - py - 6), bad, mouseX, mouseY);
+        g.pose().popPose();
         if (!status.isEmpty()) {
-            g.drawString(font, status, left(), height - 12, 0xFF5CFF9D, false);
+            g.drawString(font, status, guiLeft(), height - 11, 0xFF5CFF9D, false);
         }
     }
 
+    /** Клавиша: объёмная, занятая — цвета группы, со значками конфликта и числа действий. */
     private void cap(GuiGraphics g, String key, String label, float fx, float fy, float fw, float fh,
                      Set<String> bad, int mouseX, int mouseY) {
         int x = Math.round(fx) + 1;
         int y = Math.round(fy) + 1;
         int w = Math.round(fw) - 2;
         int h = Math.round(fh) - 2;
+        capRects.put(key, new int[]{x, y, w, h});
         List<KeyMapping> acts = on(key);
         boolean hover = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         if (hover) {
@@ -278,142 +381,245 @@ public class ControlsScreen extends Screen {
         }
         boolean held = "alt".equals(layer) && key.endsWith(".alt") || "ctrl".equals(layer) && key.endsWith(".control")
                 || "shift".equals(layer) && key.endsWith(".shift");
-        boolean dim = !focus.isEmpty() && acts.stream().noneMatch(a -> a.getCategory().equals(focus));
-        int base = acts.isEmpty() ? 0xFF1A1E26 : colour(acts.get(0).getCategory());
+        boolean on = !acts.isEmpty();
+        boolean lit = lit(acts) && (on || query.isEmpty() && focus.isEmpty());
+        int colour = on ? KeyNames.group(acts.get(0)).colour() : 0xFF262C36;
         if (held) {
-            base = 0xFF2F8F9F;
+            colour = 0xFF2F8F9F;
         }
-        if (dim) {
-            base = PhoneUi.lerp(base, 0xFF101318, 0.75F);
+        int face = on || held ? PhoneUi.lerp(0xFF1B2029, colour, 0.62F) : 0xFF181C23;
+        int edge = on || held ? PhoneUi.lerp(colour, 0xFF000000, 0.45F) : 0xFF0F1217;
+        if (!lit) {
+            face = PhoneUi.lerp(face, 0xFF0B0D11, 0.7F);
+            edge = PhoneUi.lerp(edge, 0xFF0B0D11, 0.7F);
         }
-        PhoneUi.roundedRect(g, x, y, w, h, 3, hover ? PhoneUi.lerp(base, 0xFFFFFFFF, 0.2F) : base);
-        // Полоски снизу: по одной на каждое действие, цветом его мода.
-        if (acts.size() > 1) {
-            int sw = Math.max(2, (w - 4) / acts.size());
-            for (int i = 0; i < acts.size(); i++) {
-                g.fill(x + 2 + i * sw, y + h - 3, x + 2 + (i + 1) * sw - 1, y + h - 1,
-                        colour(acts.get(i).getCategory()));
-            }
+        if (hover || key.equals(pinned)) {
+            face = PhoneUi.lerp(face, 0xFFFFFFFF, 0.14F);
         }
-        boolean conflict = bad.contains(key) && !acts.isEmpty();
-        PhoneUi.roundedOutline(g, x, y, w, h, 3, conflict ? (System.currentTimeMillis() / 400 % 2 == 0
-                ? 0xFFFF3B3B : 0xFFAA2020) : 0x40FFFFFF);
-        float scale = Math.max(0.5F, Math.min(1.0F, h / 30F));
-        text(g, label, x + 2, y + 2, scale, 0xFFE8FBFF);
+        // Объём: тёмный «бортик» снизу и светлая кромка сверху.
+        PhoneUi.roundedRect(g, x, y, w, h, 3, edge);
+        PhoneUi.roundedRect(g, x, y, w, h - 2, 3, face);
+        g.fill(x + 3, y + 1, x + w - 3, y + 2, PhoneUi.alpha(0xFFFFFFFF, on && lit ? 0.18F : 0.06F));
+        if (key.equals(pinned)) {
+            PhoneUi.roundedOutline(g, x - 1, y - 1, w + 2, h + 2, 4, ACCENT);
+        } else if (!query.isEmpty() && on && lit) {
+            PhoneUi.roundedOutline(g, x - 1, y - 1, w + 2, h + 2, 4, 0xFFFFD35C);
+        }
+        boolean conflict = bad.contains(key) && on;
+        if (conflict) {
+            PhoneUi.roundedOutline(g, x, y, w, h, 3, System.currentTimeMillis() / 450 % 2 == 0
+                    ? 0xFFFF4040 : 0xFFB02020);
+        }
+        int textColour = !lit ? 0x55FFFFFF : on ? TEXT : 0xFF6B7584;
+        float s1 = Math.max(0.6F, Math.min(1.0F, h / 30F));
+        text(g, label, x + 3, y + 2, s1, textColour);
         String cyr = CYR.get(key);
-        if (cyr != null) {
-            text(g, cyr, x + w - 2 - font.width(cyr) * scale * 0.85F, y + 2, scale * 0.85F, 0x99E8FBFF);
+        if (cyr != null && w > 14) {
+            float sc = s1 * 0.8F;
+            text(g, cyr, x + w - 3 - font.width(cyr) * sc, y + 2, sc, PhoneUi.alpha(textColour, 0.55F));
         }
-        if (!acts.isEmpty()) {
-            float small = Math.max(0.5F, scale * 0.62F);
-            String what = name(acts.get(0)) + (acts.size() > 1 ? " +" + (acts.size() - 1) : "");
-            int lineW = (int) ((w - 4) / small);
-            List<String> lines = wrap(what, lineW, 2);
-            float ty = y + h - 3 - lines.size() * 9 * small - (acts.size() > 1 ? 2 : 0);
+        // Число действий на клавише и «!» при конфликте — в правом нижнем углу.
+        if (conflict || acts.size() > 1) {
+            String badge = conflict ? "!" : String.valueOf(acts.size());
+            int bw = Math.max(7, (int) (font.width(badge) * 0.6F) + 4);
+            PhoneUi.roundedRect(g, x + w - bw - 1, y + h - 9, bw, 7, 3, conflict ? 0xFFFF4040 : 0xCC000000);
+            text(g, badge, x + w - bw + 1, y + h - 8, 0.6F, 0xFFFFFFFF);
+        }
+        if (on && h >= 20) {
+            float s2 = Math.max(0.6F, Math.min(0.85F, h / 40F));
+            String what = KeyNames.shortName(acts.get(0));
+            int lineW = (int) ((w - 6) / s2);
+            List<String> lines = wrap(what, lineW, h >= 30 ? 2 : 1);
+            float ty = y + h - 4 - lines.size() * 9 * s2;
             for (String line : lines) {
-                text(g, line, x + 2, ty, small, dim ? 0x66FFFFFF : 0xFFFFFFFF);
-                ty += 9 * small;
+                float lw = font.width(line) * s2;
+                text(g, line, x + (w - lw) / 2, ty, s2, lit ? 0xFFFFFFFF : 0x55FFFFFF);
+                ty += 9 * s2;
             }
         }
     }
 
-    private void mouse(GuiGraphics g, float fx, float fy, float u, Set<String> bad, int mouseX, int mouseY) {
-        int x = Math.round(fx);
-        int y = Math.round(fy);
-        int w = Math.round(u * 4);
-        int h = Math.round(u * 5.6F);
-        PhoneUi.roundedRect(g, x, y, w, h, Math.round(u * 1.4F), 0xFF141820);
-        PhoneUi.roundedOutline(g, x, y, w, h, Math.round(u * 1.4F), 0x40FFFFFF);
-        text(g, Component.translatable("citylife.controls.mouse").getString(), x + 4, y + h + 3, 1, 0xFF7FA6B8);
-        float half = u * 1.8F;
-        cap(g, MOUSE[0], "ЛКМ", x + u * 0.2F, y + u * 0.2F, half, u * 2.0F, bad, mouseX, mouseY);
-        cap(g, MOUSE[1], "ПКМ", x + u * 2.0F, y + u * 0.2F, half, u * 2.0F, bad, mouseX, mouseY);
-        cap(g, MOUSE[2], "Колесо", x + u * 1.2F, y + u * 2.3F, u * 1.6F, u * 1.1F, bad, mouseX, mouseY);
-        cap(g, MOUSE[3], "Бок. 4", x + u * 0.2F, y + u * 3.5F, u * 1.7F, u * 0.95F, bad, mouseX, mouseY);
-        cap(g, MOUSE[4], "Бок. 5", x + u * 0.2F, y + u * 4.5F, u * 1.7F, u * 0.95F, bad, mouseX, mouseY);
+    /** Полоса под клавиатурой: слева выбранная клавиша или «Главное», справа — мышь. */
+    private void panel(GuiGraphics g, int x, int y, int w, int h, Set<String> bad, int mouseX, int mouseY) {
+        PhoneUi.roundedRect(g, x, y, w, h, 6, PANEL);
+        PhoneUi.roundedOutline(g, x, y, w, h, 6, 0x3357D8FF);
+        int mouseW = Math.min(230, w / 3);
+        int listW = w - mouseW - 18;
+        int bottom = y + h - 4;
+        String key = !hovered.isEmpty() ? hovered : pinned;
+        int ty = y + 6;
+        if (key.isEmpty()) {
+            g.drawString(font, Component.translatable("citylife.controls.main"), x + 8, ty, ACCENT, false);
+            ty += 13;
+            // «Главное» в две колонки: действие слева, его клавиша — плашкой справа.
+            int colW = listW / 2 - 6;
+            int col = 0;
+            int rowY = ty;
+            for (String name : KeyNames.ESSENTIALS) {
+                KeyMapping km = find(name);
+                if (km == null) {
+                    continue;
+                }
+                if (rowY + 10 > bottom - 10) {
+                    if (col == 1) {
+                        break;
+                    }
+                    col = 1;
+                    rowY = ty;
+                }
+                int cx = x + 8 + col * (colW + 12);
+                String keyText = km.isUnbound() ? "—" : km.getTranslatedKeyMessage().getString();
+                int kw = font.width(keyText) + 8;
+                PhoneUi.roundedRect(g, cx + colW - kw, rowY - 1, kw, 11, 3,
+                        PhoneUi.lerp(0xFF1B2029, KeyNames.group(km).colour(), 0.65F));
+                g.drawString(font, keyText, cx + colW - kw + 4, rowY + 1, TEXT, false);
+                g.drawString(font, font.plainSubstrByWidth(KeyNames.shortName(km), colW - kw - 6), cx, rowY + 1,
+                        TEXT, false);
+                rowY += 12;
+            }
+            String tip = Component.translatable("citylife.controls.tip").getString();
+            g.drawString(font, font.plainSubstrByWidth(tip, listW), x + 8, bottom - 9, DIM, false);
+        } else {
+            InputConstants.Key k = InputConstants.getKey(key);
+            String prefix = switch (layer) {
+                case "alt" -> "Alt + ";
+                case "ctrl" -> "Ctrl + ";
+                case "shift" -> "Shift + ";
+                default -> "";
+            };
+            g.drawString(font, prefix + k.getDisplayName().getString()
+                    + (key.equals(pinned) ? "  · " + Component.translatable("citylife.controls.pinned").getString()
+                    : ""), x + 8, ty, ACCENT, false);
+            ty += 14;
+            List<KeyMapping> acts = on(key);
+            if (acts.isEmpty()) {
+                g.drawString(font, Component.translatable("citylife.controls.free"), x + 8, ty, DIM, false);
+            }
+            for (KeyMapping km : acts) {
+                KeyNames.Group grp = KeyNames.group(km);
+                if (ty + 10 > bottom) {
+                    break;
+                }
+                PhoneUi.disc(g, x + 11, ty + 4, 3, grp.colour());
+                String head = KeyNames.shortName(km);
+                g.drawString(font, head, x + 18, ty, TEXT, false);
+                String sub = "  " + KeyNames.groupTitle(grp) + " · " + KeyNames.fullName(km);
+                g.drawString(font, font.plainSubstrByWidth(sub, listW - 22 - font.width(head)),
+                        x + 18 + font.width(head), ty, DIM, false);
+                ty += 11;
+            }
+            if (acts.size() > 1 && ty + 10 <= bottom) {
+                boolean clash = bad.contains(key);
+                g.drawString(font, font.plainSubstrByWidth(Component.translatable(clash ? "citylife.controls.clash"
+                        : "citylife.controls.shared").getString(), listW), x + 8, ty + 2,
+                        clash ? 0xFFFF6B6B : 0xFF5CFF9D, false);
+            }
+        }
+        g.fill(x + listW + 10, y + 6, x + listW + 11, y + h - 6, 0x2257D8FF);
+        mouse(g, x + listW + 16, y + 6, mouseW - 6, h - 12, bad, mouseX, mouseY);
     }
 
-    /** Легенда: моды и их цвета; клик — подсветить только этот мод. */
-    private final List<Object[]> legendHits = new ArrayList<>();
+    private KeyMapping find(String name) {
+        for (KeyMapping km : minecraft.options.keyMappings) {
+            if (km.getName().equals(name)) {
+                return km;
+            }
+        }
+        return null;
+    }
 
-    private void legend(GuiGraphics g, int x0, int y, int mouseX, int mouseY) {
+    private void mouse(GuiGraphics g, int x, int y, int w, int h, Set<String> bad, int mouseX, int mouseY) {
+        g.drawString(font, Component.translatable("citylife.controls.mouse"), x, y, DIM, false);
+        int mw = Math.min(w / 2, (int) (h * 0.62F));
+        int mx = x + 2;
+        int my = y + 11;
+        int mh = h - 12;
+        PhoneUi.roundedRect(g, mx, my, mw, mh, mw / 3, 0xFF181C23);
+        PhoneUi.roundedOutline(g, mx, my, mw, mh, mw / 3, 0x40FFFFFF);
+        float half = mw / 2F;
+        cap(g, MOUSE[0], "Л", mx, my, half, mh * 0.42F, bad, mouseX, mouseY);
+        cap(g, MOUSE[1], "П", mx + half, my, half, mh * 0.42F, bad, mouseX, mouseY);
+        cap(g, MOUSE[2], "◎", mx + half - mw * 0.14F, my + mh * 0.08F, mw * 0.28F, mh * 0.26F, bad, mouseX, mouseY);
+        cap(g, MOUSE[3], "4", mx - 2, my + mh * 0.5F, mw * 0.3F, mh * 0.2F, bad, mouseX, mouseY);
+        cap(g, MOUSE[4], "5", mx - 2, my + mh * 0.72F, mw * 0.3F, mh * 0.2F, bad, mouseX, mouseY);
+        // Подписи кнопок мыши справа от неё: «ЛКМ — Удар / ломать», по строке на кнопку.
+        int lx = mx + mw + 6;
+        int ly = my + 1;
+        int step = Math.max(10, Math.min(14, mh / 5));
+        String[] names = {"ЛКМ", "ПКМ", "Колесо", "Бок. 4", "Бок. 5"};
+        for (int i = 0; i < MOUSE.length; i++) {
+            List<KeyMapping> acts = on(MOUSE[i]);
+            String what = acts.isEmpty() ? "—" : KeyNames.shortName(acts.get(0))
+                    + (acts.size() > 1 ? " +" + (acts.size() - 1) : "");
+            g.drawString(font, names[i], lx, ly, DIM, false);
+            int nx = lx + font.width("Колесо ") ;
+            g.drawString(font, font.plainSubstrByWidth(what, Math.max(10, x + w - nx)), nx, ly,
+                    acts.isEmpty() ? DIM : TEXT, false);
+            ly += step;
+        }
+    }
+
+    /** Легенда групп: цвет, название, сколько клавиш; клик — только эта группа. */
+    private int legend(GuiGraphics g, int x0, int y, int maxW, int mouseX, int mouseY) {
         legendHits.clear();
-        Map<String, Integer> counts = new LinkedHashMap<>();
+        Map<KeyNames.Group, Integer> counts = new LinkedHashMap<>();
+        for (KeyNames.Group grp : KeyNames.GROUPS) {
+            counts.put(grp, 0);
+        }
         for (KeyMapping km : minecraft.options.keyMappings) {
             if (!km.isUnbound() && km.getKeyModifier() == modifier()) {
-                counts.merge(km.getCategory(), 1, Integer::sum);
+                counts.merge(KeyNames.group(km), 1, Integer::sum);
             }
         }
         int x = x0;
-        int maxX = x0 + (int) (unit() * 23);
         for (var e : counts.entrySet()) {
-            String label = I18n.get(e.getKey()) + " " + e.getValue();
+            if (e.getValue() == 0) {
+                continue;
+            }
+            String label = KeyNames.groupTitle(e.getKey()) + " " + e.getValue();
             int w = font.width(label) + 16;
-            if (x + w > maxX) {
+            if (x + w > x0 + maxW) {
                 x = x0;
                 y += 13;
             }
-            boolean on = e.getKey().equals(focus);
+            boolean on = e.getKey().id().equals(focus);
             boolean hover = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + 11;
-            PhoneUi.roundedRect(g, x, y, w, 11, 4, on ? 0x60FFFFFF : hover ? 0x30FFFFFF : 0x18FFFFFF);
-            g.fill(x + 3, y + 3, x + 9, y + 8, colour(e.getKey()));
-            g.drawString(font, label, x + 12, y + 2, 0xFFE8FBFF, false);
-            legendHits.add(new Object[]{x, y, w, e.getKey()});
+            PhoneUi.roundedRect(g, x, y, w, 11, 5, on ? PhoneUi.alpha(e.getKey().colour(), 0.55F)
+                    : hover ? 0x30FFFFFF : 0x18FFFFFF);
+            PhoneUi.disc(g, x + 6, y + 5, 3, e.getKey().colour());
+            g.drawString(font, label, x + 12, y + 2, TEXT, false);
+            legendHits.add(new Object[]{x, y, w, e.getKey().id()});
             x += w + 3;
         }
-    }
-
-    /** Под курсором клавиша — справа внизу полный список её действий. */
-    private void details(GuiGraphics g, int mouseX, int mouseY) {
-        if (hovered.isEmpty()) {
-            return;
-        }
-        List<Component> lines = new ArrayList<>();
-        InputConstants.Key key = InputConstants.getKey(hovered);
-        String prefix = switch (layer) {
-            case "alt" -> "Alt + ";
-            case "ctrl" -> "Ctrl + ";
-            case "shift" -> "Shift + ";
-            default -> "";
-        };
-        lines.add(Component.literal(prefix + key.getDisplayName().getString())
-                .withStyle(net.minecraft.ChatFormatting.AQUA));
-        List<KeyMapping> acts = on(hovered);
-        if (acts.isEmpty()) {
-            lines.add(Component.translatable("citylife.controls.free").withStyle(net.minecraft.ChatFormatting.GRAY));
-        }
-        for (KeyMapping km : acts) {
-            lines.add(Component.literal("■ ").withStyle(s -> s.withColor(colour(km.getCategory()) & 0xFFFFFF))
-                    .append(Component.literal(I18n.get(km.getCategory()) + ": ")
-                            .withStyle(net.minecraft.ChatFormatting.GRAY))
-                    .append(Component.literal(name(km))));
-        }
-        if (acts.size() > 1) {
-            boolean clash = false;
-            for (int i = 0; i < acts.size(); i++) {
-                for (int j = i + 1; j < acts.size(); j++) {
-                    clash |= Controls.clash(acts.get(i), acts.get(j));
-                }
-            }
-            lines.add(Component.translatable(clash ? "citylife.controls.clash" : "citylife.controls.shared")
-                    .withStyle(clash ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.GREEN));
-        }
-        g.renderComponentTooltip(font, lines, mouseX, mouseY);
+        return y + 12;
     }
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(double gx, double gy, int button) {
+        if (super.mouseClicked(gx, gy, button)) {
+            return true;
+        }
+        double mx = gx / zoom();
+        double my = gy / zoom();
         for (Object[] hit : legendHits) {
             int x = (int) hit[0];
             int y = (int) hit[1];
             int w = (int) hit[2];
             if (mx >= x && mx < x + w && my >= y && my < y + 11) {
-                String cat = (String) hit[3];
-                focus = cat.equals(focus) ? "" : cat;
+                String id = (String) hit[3];
+                focus = id.equals(focus) ? "" : id;
                 return true;
             }
         }
-        return super.mouseClicked(mx, my, button);
+        for (var e : capRects.entrySet()) {
+            int[] r = e.getValue();
+            if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] && my < r[1] + r[3]) {
+                pinned = e.getKey().equals(pinned) ? "" : e.getKey();
+                return true;
+            }
+        }
+        pinned = "";
+        return false;
     }
 
     private void text(GuiGraphics g, String s, float x, float y, float scale, int colour) {
@@ -424,21 +630,22 @@ public class ControlsScreen extends Screen {
         g.pose().popPose();
     }
 
-    /** Разбить подпись на строки шириной width (в пикселях шрифта), не больше max строк. */
+    /** Разбить подпись на строки шириной width, не больше max строк; лишнее — многоточием. */
     private List<String> wrap(String text, int width, int max) {
         List<String> out = new ArrayList<>();
         StringBuilder line = new StringBuilder();
-        for (String word : text.split(" ")) {
-            String next = line.isEmpty() ? word : line + " " + word;
-            if (font.width(next) <= width) {
+        String[] words = text.split(" ");
+        for (int i = 0; i < words.length; i++) {
+            String next = line.isEmpty() ? words[i] : line + " " + words[i];
+            if (font.width(next) <= width || line.isEmpty()) {
                 line = new StringBuilder(next);
                 continue;
             }
-            if (!line.isEmpty()) {
-                out.add(line.toString());
-            }
-            line = new StringBuilder(word);
+            out.add(line.toString());
+            line = new StringBuilder(words[i]);
             if (out.size() == max) {
+                line = new StringBuilder();
+                out.set(max - 1, out.get(max - 1) + "…");
                 break;
             }
         }
@@ -447,10 +654,10 @@ public class ControlsScreen extends Screen {
         }
         for (int i = 0; i < out.size(); i++) {
             if (font.width(out.get(i)) > width) {
-                out.set(i, font.plainSubstrByWidth(out.get(i), width));
+                out.set(i, font.plainSubstrByWidth(out.get(i), Math.max(0, width - font.width("…"))) + "…");
             }
         }
-        return out.size() > max ? out.subList(0, max) : out;
+        return out;
     }
 
     @Override
