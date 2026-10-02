@@ -132,6 +132,9 @@ def code_block(text: str, lang: str = "команда") -> str:
             f'<code>{esc(text)}</code></div>')
 
 
+MSK = datetime.timezone(datetime.timedelta(hours=3), "МСК")
+
+
 def file_facts(path: str) -> tuple[str, str, str]:
     """Размер, короткая метка содержимого и дата сборки файла для страницы."""
     if not os.path.exists(path):
@@ -142,10 +145,12 @@ def file_facts(path: str) -> tuple[str, str, str]:
             digest.update(chunk)
     months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля",
               "августа", "сентября", "октября", "ноября", "декабря"]
-    built = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+    # Время — по Москве и с пометкой: сборка идёт на машине с часами в UTC,
+    # и без пояса на странице пак выглядел на три часа старше.
+    built = datetime.datetime.fromtimestamp(os.path.getmtime(path), MSK)
     return (f"{os.path.getsize(path) / 1048576:.1f}".replace(".", ","),
             digest.hexdigest()[:8],
-            f"{built.day} {months[built.month - 1]}, {built:%H:%M}")
+            f"{built.day} {months[built.month - 1]}, {built:%H:%M} МСК")
 
 
 def main() -> int:
