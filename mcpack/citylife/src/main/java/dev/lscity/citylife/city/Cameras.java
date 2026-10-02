@@ -45,6 +45,14 @@ public final class Cameras {
 
     /** Включить просмотр камеры. Чанк с камерой подгружается, если он далеко. */
     public static Result view(ServerPlayer player, BlockPos pos) {
+        return view(player, pos, false);
+    }
+
+    /**
+     * force — смотреть без проверки владельца: так пульт охраны башни STARK
+     * показывает свои камеры всем, у кого есть допуск.
+     */
+    public static Result view(ServerPlayer player, BlockPos pos, boolean force) {
         ServerLevel level = player.serverLevel();
         level.getChunk(pos);
         if (!isCamera(level, pos)) {
@@ -54,7 +62,7 @@ public final class Cameras {
         if (be == null || call(be, "isDisabled") || call(be, "isShutDown")) {
             return Result.OFF;
         }
-        if (!allowed(level, pos, player)) {
+        if (!force && !allowed(level, pos, player)) {
             return Result.NOT_OWNER;
         }
         try {

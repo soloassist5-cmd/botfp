@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from . import blocks as B
 from . import furniture as F
 from . import interiors as I
+from . import stark_base
 from .frame import Frame
 from .plan import CITY_Y, Lot
 
@@ -148,15 +149,21 @@ def _corner(cells, u, v) -> bool:
     return n <= 2
 
 
-def core(frame: Frame, t: Tower) -> None:
-    """Ядро башни: лестница на все этажи и лифтовая шахта с панелями вызова."""
+def core(frame: Frame, t: Tower, below: list[int] = (), stops: list[int] = ()) -> None:
+    """
+    Ядро башни: лестница на все этажи и лифтовая шахта с панелями вызова.
+
+    below — уровни полов подвала (шаг 4) для лестницы и шахты, stops — те
+    из них, где есть выход: там двери лифта и кнопка вызова.
+    """
     cu0, cv0, cu1, cv1 = t.core()
     floors = [CITY_Y + STOREY * k for k in range(t.floors)]
-    frame.stairwell(cu0 + 1, cv0, floors, "smooth_quartz", B.QUARTZ_SMOOTH, t.core_wall,
+    frame.stairwell(cu0 + 1, cv0, list(below) + floors, "smooth_quartz", B.QUARTZ_SMOOTH, t.core_wall,
                     B.IRON_BARS)
     # Шахта лифта пробивает перекрытия насквозь — это один сплошной ствол.
-    frame.fill(cu0 + 5, CITY_Y + 1, cv0, cu1, floors[-1] + 3, cv1, t.core_wall)
-    for fy in floors:
+    bottom = (below[0] if below else CITY_Y) + 1
+    frame.fill(cu0 + 5, bottom, cv0, cu1, floors[-1] + 3, cv1, t.core_wall)
+    for fy in list(stops) + floors:
         # Двери лифта — тёмные створки на передней грани шахты, рядом кнопка.
         frame.fill(cu0 + 6, fy + 1, cv0, cu0 + 7, fy + 2, cv0, "minecraft:polished_deepslate")
         elevator_panel(frame, cu0 + 8, fy + 2, cv0 - 1, "front")
@@ -477,11 +484,20 @@ def build_stark(canvas, lot: Lot) -> None:
               [:31] + ["restaurant", "penthouse"],
               name="STARK TOWER")
     plaza(frame, lot, rng, [t], "STARK TOWER")
+    base = stark_base.Basement(frame, rng)
+    base.dig()
     shell(frame, t, rng)
     entrance(frame, t)
-    core(frame, t)
+    core(frame, t, stark_base.BELOW, stark_base.STOPS)
     furnish(frame, t, rng, statue="suit")
     lights(frame, t)
+    # Подвал: Зал брони, мастерская и пост охраны (после мебели вестибюля —
+    # туда встают голо-экраны и камера).
+    base.landings()
+    base.hall()
+    base.workshop()
+    base.lobby(t.front_v(t.cu, 0))
+    base.finish()
     top = t.top()
     letters(frame, t, "STARK", top - 6)
     # Посадочная площадка-консоль у вершины, выход на неё — из ресторана.

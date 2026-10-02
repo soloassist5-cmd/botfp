@@ -113,7 +113,7 @@ class Frame:
         return template.format(f=self.dir(local))
 
     def wall_sign(self, u: int, y: int, v: int, out: str, lines: list[str],
-                  color: str = "black", glowing: bool = False) -> None:
+                  color: str = "black", glowing: bool = False, wood: str = "oak") -> None:
         """
         Табличка на стене: (u, y, v) — сам блок стены, табличка встаёт
         в клетку перед ним со стороны out и смотрит туда же.
@@ -123,8 +123,8 @@ class Frame:
         """
         du, dv = LOCAL_VEC[out]
         x, z = self.world(u + du, v + dv)
-        self.canvas.sign(x, y + self.dy, z, B.SIGN_WALL.format(f=self.dir(out)), lines,
-                         color=color, glowing=glowing)
+        state = B.SIGN_WALL.replace("oak", wood).format(f=self.dir(out))
+        self.canvas.sign(x, y + self.dy, z, state, lines, color=color, glowing=glowing)
 
     def door(self, u: int, y: int, v: int, out: str, material: str = "oak",
              hinge: str = "left") -> None:

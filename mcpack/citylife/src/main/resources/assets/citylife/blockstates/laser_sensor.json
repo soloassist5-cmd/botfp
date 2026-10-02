@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "citylife:block/laser_sensor"
+    },
+    "facing=east": {
+      "model": "citylife:block/laser_sensor",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "citylife:block/laser_sensor",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "citylife:block/laser_sensor",
+      "y": 270
+    }
+  }
+}

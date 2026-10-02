@@ -213,6 +213,43 @@ public final class Registration {
     public static final RegistryObject<Item> ATM_ITEM = ITEMS.register("atm",
             () -> new BlockItem(ATM.get(), new Item.Properties()));
 
+    // --- башня STARK: охрана, голо-мониторы, 3D-принтер -------------------------
+
+    private static BlockBehaviour.Properties stark() {
+        return BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).strength(3.0F, 9.0F)
+                .sound(SoundType.METAL).noOcclusion();
+    }
+
+    public static final RegistryObject<Block> SECURITY_CONSOLE = BLOCKS.register("security_console",
+            () -> new dev.lscity.citylife.stark.SecurityConsoleBlock(stark().lightLevel(state -> 7)));
+    public static final RegistryObject<Block> LASER = BLOCKS.register("laser_sensor",
+            () -> new dev.lscity.citylife.stark.LaserBlock(stark().strength(2.0F, 6.0F).lightLevel(state -> 5)));
+    public static final RegistryObject<Block> HOLO_SCREEN = BLOCKS.register("holo_screen",
+            () -> new dev.lscity.citylife.stark.HoloScreenBlock(stark().strength(1.5F, 6.0F)
+                    .lightLevel(state -> 10)));
+    public static final RegistryObject<Block> PRINTER = BLOCKS.register("printer_3d",
+            () -> new dev.lscity.citylife.stark.PrinterBlock(stark().lightLevel(state -> 9)));
+
+    static {
+        for (RegistryObject<Block> block : java.util.List.of(SECURITY_CONSOLE, LASER, HOLO_SCREEN, PRINTER)) {
+            ITEMS.register(block.getId().getPath(),
+                    () -> new BlockItem(block.get(), new Item.Properties()));
+        }
+    }
+
+    public static final RegistryObject<BlockEntityType<dev.lscity.citylife.stark.SecurityConsoleBlockEntity>>
+            SECURITY_CONSOLE_BE = BLOCK_ENTITIES.register("security_console", () -> BlockEntityType.Builder
+                    .of(dev.lscity.citylife.stark.SecurityConsoleBlockEntity::new, SECURITY_CONSOLE.get()).build(null));
+    public static final RegistryObject<BlockEntityType<dev.lscity.citylife.stark.LaserBlockEntity>>
+            LASER_BE = BLOCK_ENTITIES.register("laser_sensor", () -> BlockEntityType.Builder
+                    .of(dev.lscity.citylife.stark.LaserBlockEntity::new, LASER.get()).build(null));
+    public static final RegistryObject<BlockEntityType<dev.lscity.citylife.stark.HoloScreenBlockEntity>>
+            HOLO_SCREEN_BE = BLOCK_ENTITIES.register("holo_screen", () -> BlockEntityType.Builder
+                    .of(dev.lscity.citylife.stark.HoloScreenBlockEntity::new, HOLO_SCREEN.get()).build(null));
+    public static final RegistryObject<BlockEntityType<dev.lscity.citylife.stark.PrinterBlockEntity>>
+            PRINTER_BE = BLOCK_ENTITIES.register("printer_3d", () -> BlockEntityType.Builder
+                    .of(dev.lscity.citylife.stark.PrinterBlockEntity::new, PRINTER.get()).build(null));
+
     public static final RegistryObject<BlockEntityType<SmartLockBlockEntity>> SMART_LOCK_BE =
             BLOCK_ENTITIES.register("smart_lock", () -> BlockEntityType.Builder
                     .of(SmartLockBlockEntity::new, SMART_LOCK.get()).build(null));
@@ -260,6 +297,10 @@ public final class Registration {
                             output.accept(item(id));
                         }
                         PC_PARTS.values().forEach(part -> output.accept(part.get()));
+                        for (String id : new String[]{"printer_3d", "holo_screen", "security_console",
+                                "laser_sensor"}) {
+                            output.accept(item(id));
+                        }
                     })
                     .build());
 

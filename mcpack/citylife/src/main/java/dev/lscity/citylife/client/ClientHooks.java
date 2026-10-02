@@ -65,6 +65,24 @@ public final class ClientHooks {
             }
             return;
         }
+        if ("stark".equals(packet.kind())) {
+            dev.lscity.citylife.client.stark.StarkClient.update(packet.snapshot());
+            return;
+        }
+        if ("security".equals(packet.kind())) {
+            if (minecraft.screen instanceof dev.lscity.citylife.client.screen.SecurityScreen screen) {
+                screen.update(packet.snapshot());
+            } else if (packet.open()) {
+                minecraft.setScreen(new dev.lscity.citylife.client.screen.SecurityScreen(packet.snapshot()));
+            }
+            return;
+        }
+        if ("printer".equals(packet.kind())) {
+            if (packet.open()) {
+                minecraft.setScreen(new dev.lscity.citylife.client.screen.PrinterScreen(packet.snapshot()));
+            }
+            return;
+        }
         if ("elevator".equals(packet.kind())) {
             if (packet.open()) {
                 minecraft.setScreen(

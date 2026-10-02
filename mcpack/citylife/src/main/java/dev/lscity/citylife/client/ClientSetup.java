@@ -26,6 +26,13 @@ public final class ClientSetup {
         // Сиденье невидимо: рисовать нечего.
         event.registerEntityRenderer(Registration.SEAT.get(),
                 net.minecraft.client.renderer.entity.NoopRenderer::new);
+        // Башня STARK: голо-мониторы, лучи датчиков и печать на 3D-принтере.
+        event.registerBlockEntityRenderer(Registration.HOLO_SCREEN_BE.get(),
+                dev.lscity.citylife.client.stark.HoloScreenRenderer::new);
+        event.registerBlockEntityRenderer(Registration.LASER_BE.get(),
+                dev.lscity.citylife.client.stark.LaserRenderer::new);
+        event.registerBlockEntityRenderer(Registration.PRINTER_BE.get(),
+                dev.lscity.citylife.client.stark.PrinterRenderer::new);
     }
 
     @SubscribeEvent

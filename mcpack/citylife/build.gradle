@@ -60,29 +60,49 @@ repositories {
 // попадают и без -Pscenes не нужны.
 if (project.hasProperty('scenes')) {
     repositories { flatDir { dirs '../build/.cache/jars', 'build/scene-jars' } }
-    // Pehkui цепляет миксин к лямбде AbstractContainerMenu.stillValid, а в
-    // клиенте разработки Minecraft пересобран из исходников и параметры этой
-    // лямбды идут в другом порядке: игра падает на старте. Для кадров берём
-    // копию Pehkui без двух таких миксинов — в jar сборки она не попадает.
-    def src = file('../build/.cache/jars/Pehkui-3.8.2+1.20.1-forge.jar')
-    def dst = file('build/scene-jars/Pehkui-3.8.2+1.20.1-scenes.jar')
-    if (src.exists() && !dst.exists()) {
-        dst.parentFile.mkdirs()
+    // Копии модов для кадров (в jar сборки они не попадают):
+    // - Pehkui цепляет миксин к лямбде AbstractContainerMenu.stillValid, а в
+    //   клиенте разработки Minecraft пересобран из исходников и параметры этой
+    //   лямбды идут в другом порядке — два таких миксина убираем;
+    // - Palladium везёт внутри себя PalladiumCore и PlayerAnimator, а
+    //   вложенные jar ForgeGradle не переводит на имена разработки: достаём
+    //   их отдельными модами, а из Palladium вычёркиваем.
+    def cache = file('../build/.cache/jars')
+    def out = file('build/scene-jars')
+    def rewrite = { String from, String to, Closure edit ->
+        def src = new File(cache, from)
+        def dst = new File(out, to)
+        if (!src.exists() || dst.exists()) return
+        out.mkdirs()
         new java.util.zip.ZipFile(src).withCloseable { zin ->
             new java.util.zip.ZipOutputStream(new FileOutputStream(dst)).withCloseable { zout ->
                 zin.entries().each { e ->
-                    byte[] data = zin.getInputStream(e).bytes
-                    if (e.name == 'pehkui.mixins.json') {
-                        def text = new String(data, 'UTF-8')
-                        text = text.replaceAll(/\s*"(reach\.)?compat1204minus\.ScreenHandlerMixin",?/, '')
-                        data = text.getBytes('UTF-8')
-                    }
+                    byte[] data = edit(e.name, zin.getInputStream(e).bytes)
+                    if (data == null) return
                     zout.putNextEntry(new java.util.zip.ZipEntry(e.name))
                     zout.write(data)
                     zout.closeEntry()
                 }
             }
         }
+    }
+    rewrite('Pehkui-3.8.2+1.20.1-forge.jar', 'Pehkui-3.8.2+1.20.1-scenes.jar') { String name, byte[] data ->
+        if (name != 'pehkui.mixins.json') return data
+        new String(data, 'UTF-8')
+                .replaceAll(/\s*"(reach\.)?compat1204minus\.ScreenHandlerMixin",?/, '').getBytes('UTF-8')
+    }
+    def nested = ['palladiumcore-forge-1.0.1+1.20.1-forge.jar': 'palladiumcore-1.0.1-scenes.jar',
+                  'player-animation-lib-forge-1.0.2-rc1+1.20.jar': 'playeranimator-1.0.2-scenes.jar']
+    rewrite('palladium-4.5.9+1.20.1-forge.jar', 'palladium-4.5.9-scenes.jar') { String name, byte[] data ->
+        def base = name.tokenize('/').last()
+        if (nested.containsKey(base)) {
+            new File(out, nested[base]).bytes = data
+            return null
+        }
+        if (name != 'META-INF/jarjar/metadata.json') return data
+        def meta = new groovy.json.JsonSlurper().parseText(new String(data, 'UTF-8'))
+        meta.jars = meta.jars.findAll { !nested.containsKey(it.path.tokenize('/').last()) }
+        groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(meta)).getBytes('UTF-8')
     }
 }
 
@@ -98,7 +118,8 @@ dependencies {
          'FarmersDelight-1.20.1:1.3.4', 'supplementaries-1.20:3.1.43-forge',
          'moonlight-1.20:2.16.35-forge',
          // Костюмы Железного человека и всё, что им нужно.
-         'Satsu_iron_man_addon:3.5.4', 'palladium:4.5.9+1.20.1-forge', 'gravecore:1.2.6-forge',
+         'Satsu_iron_man_addon:3.5.4', 'palladium:4.5.9-scenes',
+         'palladiumcore:1.0.1-scenes', 'playeranimator:1.0.2-scenes', 'gravecore:1.2.6-forge',
          'corewithstuff:v1.6', 'kubejs-forge:2001.6.5-build.26', 'rhino-forge:2001.2.3-build.10',
          'architectury:9.2.14-forge', 'geckolib-forge-1.20.1:4.8.4', 'Pehkui:3.8.2+1.20.1-scenes',
          'curios-forge:5.14.1+1.20.1', 'packetfixer:3.3.2-1.18-1.20.4-merged',

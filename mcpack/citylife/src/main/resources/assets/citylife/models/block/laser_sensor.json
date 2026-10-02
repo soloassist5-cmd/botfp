@@ -1,0 +1,71 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "body": "citylife:block/laser_body",
+    "lens": "citylife:block/laser_lens",
+    "particle": "citylife:block/laser_body"
+  },
+  "elements": [
+    {
+      "from": [
+        5,
+        5,
+        13
+      ],
+      "to": [
+        11,
+        11,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        6,
+        12
+      ],
+      "to": [
+        10,
+        10,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lens"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    }
+  ]
+}

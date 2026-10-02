@@ -1492,4 +1492,155 @@ public final class CityTests {
         }
         h.succeed();
     }
+
+    // --- башня STARK -------------------------------------------------------------
+
+    /** Пульт охраны на площадке: зона — вся площадка. */
+    private static dev.lscity.citylife.stark.SecurityConsoleBlockEntity console(TestKit h) {
+        h.setBlock(new BlockPos(1, 1, 1), Registration.SECURITY_CONSOLE.get());
+        var be = (dev.lscity.citylife.stark.SecurityConsoleBlockEntity) h.getBlockEntity(new BlockPos(1, 1, 1));
+        BlockPos a = h.absolutePos(new BlockPos(0, 0, 0));
+        BlockPos b = h.absolutePos(new BlockPos(16, 6, 16));
+        be.setZones(java.util.List.of(new net.minecraft.world.phys.AABB(a, b)));
+        return be;
+    }
+
+    /** Охрана: посторонний получает отсчёт, потом тревогу и розыск; с допуском — ничего. */
+    @SelfTest
+    public static void starkIntruderAlarm(TestKit h) {
+        FakePlayer stranger = player(h, "Intruder");
+        FakePlayer tony = player(h, "Tony");
+        var server = h.getLevel().getServer();
+        var data = dev.lscity.citylife.stark.StarkData.get(server);
+        LifeData life = LifeData.get(server);
+        console(h);
+        boolean armed = data.armed();
+        try {
+            data.setArmed(true);
+            dev.lscity.citylife.stark.StarkSecurity.resetForTests();
+            data.grant(tony.getUUID(), "Tony");
+            long now = h.getLevel().getGameTime();
+            int grace = dev.lscity.citylife.stark.StarkSecurity.GRACE;
+            if (!dev.lscity.citylife.stark.StarkSecurity.check(stranger, data, now)) {
+                h.fail("игрок на площадке не в охраняемой зоне");
+            }
+            dev.lscity.citylife.stark.StarkSecurity.check(stranger, data, now + grace - 20);
+            if (life.wanted(stranger.getUUID()) != 0) {
+                h.fail("тревога раньше конца отсчёта");
+            }
+            dev.lscity.citylife.stark.StarkSecurity.check(tony, data, now + grace + 5);
+            if (life.wanted(tony.getUUID()) != 0) {
+                h.fail("охрана подняла тревогу на игрока с допуском");
+            }
+            dev.lscity.citylife.stark.StarkSecurity.check(stranger, data, now + grace + 5);
+            if (life.wanted(stranger.getUUID()) < 3) {
+                h.fail("после отсчёта нет розыска: " + life.wanted(stranger.getUUID()));
+            }
+            if (!dev.lscity.citylife.stark.StarkSecurity.alarm(now + grace + 10)) {
+                h.fail("тревога не включилась");
+            }
+        } finally {
+            life.setWanted(stranger.getUUID(), 0, 0);
+            data.revoke(tony.getUUID());
+            data.setArmed(armed);
+            dev.lscity.citylife.stark.StarkSecurity.removeZones(h.getLevel(), h.absolutePos(new BlockPos(1, 1, 1)));
+            dev.lscity.citylife.stark.StarkSecurity.resetForTests();
+        }
+        h.succeed();
+    }
+
+    /** 3D-принтер: печатает телефон Старка с допуском, без допуска и деньги — нет. */
+    @SelfTest(timeout = 240)
+    public static void starkPrinterPrints(TestKit h) {
+        FakePlayer tony = player(h, "TonyPrinter");
+        FakePlayer stranger = player(h, "NoAccess");
+        var data = dev.lscity.citylife.stark.StarkData.get(h.getLevel().getServer());
+        BlockPos rel = new BlockPos(8, 1, 6);
+        h.setBlock(rel, Registration.PRINTER.get());
+        BlockPos pos = h.absolutePos(rel);
+        var printer = (dev.lscity.citylife.stark.PrinterBlockEntity) h.getBlockEntity(rel);
+        CompoundTag args = new CompoundTag();
+        args.putLong("pos", pos.asLong());
+        args.putString("item", "citylife:banknote_5000");
+        args.putInt("count", 1);
+        data.grant(tony.getUUID(), "TonyPrinter");
+        dev.lscity.citylife.stark.Printer.handle(tony, "printer_print", args);
+        if (printer.busy()) {
+            data.revoke(tony.getUUID());
+            h.fail("принтер напечатал деньги");
+        }
+        args.putString("item", "citylife:phone_stark");
+        dev.lscity.citylife.stark.Printer.handle(stranger, "printer_print", args);
+        if (printer.busy()) {
+            data.revoke(tony.getUUID());
+            h.fail("принтер печатает без допуска");
+        }
+        dev.lscity.citylife.stark.Printer.handle(tony, "printer_print", args);
+        data.revoke(tony.getUUID());
+        if (!printer.busy()) {
+            h.fail("принтер не начал печать телефона");
+        }
+        h.succeedWhen(() -> {
+            var drops = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                    new net.minecraft.world.phys.AABB(pos).inflate(2),
+                    e -> e.getItem().is(Registration.DEVICES.get("phone_stark").get()));
+            if (drops.isEmpty()) {
+                h.fail("телефон Старка не напечатан");
+            }
+        });
+    }
+
+    /** Зал брони: пульт ставит недостающую стойку и возвращает снятый костюм. */
+    @SelfTest
+    public static void starkSuitRestock(TestKit h) {
+        BlockPos at = h.absolutePos(new BlockPos(5, 1, 5));
+        var suit = new dev.lscity.citylife.stark.SecurityConsoleBlockEntity.Suit(
+                new net.minecraft.world.phys.Vec3(at.getX() + 0.5, at.getY(), at.getZ() + 0.5), 180F,
+                "minecraft:diamond_chestplate", "chest");
+        var stand = dev.lscity.citylife.stark.StarkSecurity.stock(h.getLevel(), suit);
+        if (stand == null || !stand.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST)
+                .is(net.minecraft.world.item.Items.DIAMOND_CHESTPLATE)) {
+            h.fail("стойка с костюмом не появилась");
+            return;
+        }
+        stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.item.ItemStack.EMPTY);
+        var again = dev.lscity.citylife.stark.StarkSecurity.stock(h.getLevel(), suit);
+        int stands = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.decoration.ArmorStand.class,
+                new net.minecraft.world.phys.AABB(at).inflate(2)).size();
+        boolean refilled = again == stand && stand.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST)
+                .is(net.minecraft.world.item.Items.DIAMOND_CHESTPLATE);
+        stand.discard();
+        if (stands != 1) {
+            h.fail("стоек " + stands + ", нужна одна");
+        }
+        if (!refilled) {
+            h.fail("снятый костюм не вернулся на стойку");
+        }
+        h.succeed();
+    }
+
+    /** Лазерный датчик: луч до первого твёрдого блока; подвальные этажи лифта — «-1». */
+    @SelfTest
+    public static void starkLaserAndBasement(TestKit h) {
+        h.setBlock(new BlockPos(2, 1, 8), Registration.LASER.get().defaultBlockState()
+                .setValue(dev.lscity.citylife.stark.LaserBlock.FACING, net.minecraft.core.Direction.EAST));
+        h.setBlock(new BlockPos(7, 1, 8), Blocks.STONE);
+        var laser = (dev.lscity.citylife.stark.LaserBlockEntity) h.getBlockEntity(new BlockPos(2, 1, 8));
+        if (laser.length() != 4) {
+            h.fail("длина луча " + laser.length() + ", нужно 4");
+        }
+        var beam = laser.beam();
+        BlockPos mid = h.absolutePos(new BlockPos(5, 1, 8));
+        if (beam == null || !beam.contains(mid.getCenter())) {
+            h.fail("луч не проходит через клетку между датчиком и стеной");
+        }
+        java.util.List<BlockPos> floors = java.util.List.of(new BlockPos(0, 46, 0), new BlockPos(0, 62, 0),
+                new BlockPos(0, 70, 0), new BlockPos(0, 74, 0));
+        String labels = floors.stream().map(p -> dev.lscity.citylife.building.Elevator.label(floors, p))
+                .collect(java.util.stream.Collectors.joining(","));
+        if (!labels.equals("-2,-1,1,2")) {
+            h.fail("подписи этажей " + labels + ", нужно -2,-1,1,2");
+        }
+        h.succeed();
+    }
 }

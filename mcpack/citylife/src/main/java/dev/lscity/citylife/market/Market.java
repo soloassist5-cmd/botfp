@@ -39,6 +39,9 @@ public final class Market {
         offers.add(new Offer("mouse", "periphery", "citylife:mouse", 1, 600));
         offers.add(new Offer("headset", "periphery", "citylife:headset", 1, 1500));
         for (DeviceModel model : Devices.items()) {
+            if (model.price() <= 0) {
+                continue; // телефон Старка не продаётся, его печатают
+            }
             String category = model.kind() == DeviceModel.Kind.PHONE ? "phones" : "devices";
             offers.add(new Offer(model.id(), category, "citylife:" + model.id(), 1,
                     model.price()));

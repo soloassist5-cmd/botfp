@@ -64,7 +64,8 @@ public class ElevatorScreen extends Screen {
             }
             int target = floor.getInt("y");
             boolean here = floor.getBoolean("here");
-            Button button = Button.builder(Component.literal(String.valueOf(floor.getInt("n"))),
+            Button button = Button.builder(Component.literal(floor.contains("label")
+                            ? floor.getString("label") : String.valueOf(floor.getInt("n"))),
                     b -> {
                         CompoundTag args = new CompoundTag();
                         args.putLong("pos", data.getLong("pos"));

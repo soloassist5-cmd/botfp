@@ -15,7 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public final class DeviceFrame {
 
-    public enum Style { PHONE, KEYPAD, FOLD, TABLET, LAPTOP, MONITOR }
+    public enum Style { PHONE, KEYPAD, FOLD, TABLET, LAPTOP, MONITOR, GLASS }
 
     public final Style style;
     public final int baseW;
@@ -49,6 +49,7 @@ public final class DeviceFrame {
                 case "phone_nokta" -> new DeviceFrame(Style.KEYPAD, 150, 320, 2, 30, body);
                 case "phone_fold" -> new DeviceFrame(Style.FOLD, 280, 340, 4, 34, body);
                 case "phone_mini" -> new DeviceFrame(Style.PHONE, 164, 300, 3, 30, body);
+                case "phone_stark" -> new DeviceFrame(Style.GLASS, 188, 340, 3, 34, body);
                 default -> new DeviceFrame(Style.PHONE, 188, 340, 3, 34, body);
             };
         };
@@ -84,6 +85,10 @@ public final class DeviceFrame {
 
     public void draw(GuiGraphics g) {
         int rim = PhoneUi.lerp(body, 0xFFFFFFFF, 0.18F);
+        if (style == Style.GLASS) {
+            drawGlass(g);
+            return;
+        }
         switch (style) {
             case LAPTOP -> {
                 int lidH = h - 40;
@@ -152,6 +157,43 @@ public final class DeviceFrame {
         }
         int[] s = screen();
         PhoneUi.roundedRect(g, s[0], s[1], s[2], s[3], screenRadius(), 0xFF05070C);
+    }
+
+    /**
+     * Стеклянный телефон Старка: корпуса почти нет — пластина прозрачного
+     * стекла с голубой кромкой, бликом наискосок и светящимся «реактором»
+     * камеры. Под экраном нет подложки, сквозь него видно мир.
+     */
+    private void drawGlass(GuiGraphics g) {
+        int radius = 18;
+        long now = System.currentTimeMillis();
+        float pulse = 0.5F + 0.5F * (float) Math.sin(now / 600.0);
+        PhoneUi.roundedRect(g, x, y, w, h, radius, 0x269FDCFF);
+        PhoneUi.roundedOutline(g, x, y, w, h, radius, PhoneUi.alpha(0xFF9BE8FF, 0.75F + 0.25F * pulse));
+        PhoneUi.roundedOutline(g, x + 2, y + 2, w - 4, h - 4, radius - 2, 0x5584E1FF);
+        // Блик: светлая полоса наискосок через всё стекло.
+        for (int i = 0; i < h; i++) {
+            int bx = x + w - 30 - i * 2 / 3;
+            if (bx > x + 8 && bx + 14 < x + w - 4) {
+                g.fill(bx, y + i, bx + 14, y + i + 1, 0x12FFFFFF);
+                g.fill(bx + 18, y + i, bx + 22, y + i + 1, 0x0CFFFFFF);
+            }
+        }
+        // Кнопки на торцах — тонкие светящиеся риски.
+        g.fill(x + w, y + 64, x + w + 1, y + 96, 0x999BE8FF);
+        g.fill(x - 1, y + 72, x, y + 92, 0x999BE8FF);
+        // Камера-«реактор» сверху и тонкая полоска динамика.
+        int cx = x + w / 2;
+        PhoneUi.ring(g, cx, y + 12, 4, 1, PhoneUi.alpha(0xFF9BE8FF, 0.6F + 0.4F * pulse));
+        PhoneUi.disc(g, cx, y + 12, 2, 0xFFE6FBFF);
+        PhoneUi.roundedRect(g, cx - 18, y + 4, 10, 2, 1, 0x669BE8FF);
+        PhoneUi.roundedRect(g, cx + 8, y + 4, 10, 2, 1, 0x669BE8FF);
+        int[] s = screen();
+        PhoneUi.roundedOutline(g, s[0], s[1], s[2], s[3], screenRadius(), 0x339BE8FF);
+    }
+
+    public boolean glass() {
+        return style == Style.GLASS;
     }
 
     /** У кнопочной «Нокты» экран монохромный: зелёная подсветка вместо обоев. */

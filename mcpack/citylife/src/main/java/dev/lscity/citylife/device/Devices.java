@@ -71,6 +71,16 @@ public final class Devices {
             "navigator", "jobs", "homes", "cars", "music", "notes", "calc", "terminal", "mines", "game2048", "store",
             "settings"), 28000, 0xFF2C3038);
 
+    /**
+     * Телефон Старка: стеклянный корпус, сквозь который видно мир. В магазинах
+     * его нет — печатается на 3D-принтере в башне STARK. Всё, что есть у
+     * флагмана, плюс почта, музыка, терминал и игры прямо в прошивке.
+     */
+    public static final DeviceModel STARK = new DeviceModel("phone_stark", Kind.PHONE,
+            true, 12, List.of("messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "cars", "locks",
+            "cameras", "sos", "store", "marketplace", "browser", "mail", "music", "notes", "calc", "compass",
+            "flashlight", "terminal", "tetris", "snake", "game2048", "settings"), 0, 0x3384E1FF);
+
     /** Компьютер собирается из комплектующих, отдельным предметом не продаётся. */
     public static final DeviceModel COMPUTER = new DeviceModel("computer", Kind.COMPUTER,
             false, 10, computerApps(), 0, 0xFF15171C);
@@ -89,7 +99,7 @@ public final class Devices {
     public static final Map<String, DeviceModel> BY_ID = new LinkedHashMap<>();
 
     static {
-        for (DeviceModel model : List.of(LS_PHONE, NOKTA, GRAN_A5, GRAN_X, POLUS, FOLD, MINIFON,
+        for (DeviceModel model : List.of(LS_PHONE, NOKTA, GRAN_A5, GRAN_X, POLUS, FOLD, MINIFON, STARK,
                 TABLET, LAPTOP, COMPUTER)) {
             BY_ID.put(model.id(), model);
         }

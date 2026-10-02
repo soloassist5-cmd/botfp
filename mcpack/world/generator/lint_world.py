@@ -242,7 +242,10 @@ def lint_region(blocks: np.ndarray, palette: Palette, ox: int, oz: int,
     pit_ids = [i for i, n in enumerate(names)
                if (n.endswith("_stairs") and props[i].get("half") == "bottom")
                or (n.endswith("_slab") and props[i].get("type") == "bottom")]
-    pit = np.isin(layer, pit_ids) & air[ground + 1]
+    # Ямы ищем только под открытым небом: под крышей ступень в полу — верх
+    # лестницы из подвала (башня Старка), а не яма у фасада.
+    covered = np.any(~air[ground + 2:ground + 9], axis=0)
+    pit = np.isin(layer, pit_ids) & air[ground + 1] & ~covered
     mask = np.zeros_like(air)
     mask[ground] = pit
     report("pit", mask)
@@ -255,8 +258,9 @@ def lint_region(blocks: np.ndarray, palette: Palette, ox: int, oz: int,
     if falling:
         report("falling_over_air", np.isin(blocks, falling) & shift(air, -1, 0, 0))
 
-    # Висящие блоки: все шесть соседей — воздух.
-    alone = ~air
+    # Висящие блоки: все шесть соседей — воздух. Голо-экраны Stark висят
+    # в воздухе нарочно: это голограммы.
+    alone = ~air & ~np.isin(blocks, [i for i, n in enumerate(names) if n == "citylife:holo_screen"])
     for d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
         alone &= shift(air, *d, fill=True)
     report("floating_block", alone)

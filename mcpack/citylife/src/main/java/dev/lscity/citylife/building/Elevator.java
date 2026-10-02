@@ -32,6 +32,9 @@ public final class Elevator {
     /** Сколько блоков вверх и вниз искать кнопки той же шахты. */
     public static final int REACH = 256;
 
+    /** Кнопки ниже этой высоты — подвал: земля города на высоте 68, кнопка висит на 2 выше пола. */
+    public static final int GROUND_Y = 66;
+
     private Elevator() {
     }
 
@@ -50,6 +53,13 @@ public final class Elevator {
         return out;
     }
 
+    /** Подпись этажа: подземные — «-1», «-2» и далее вниз, первый над землёй — «1». */
+    public static String label(List<BlockPos> floors, BlockPos at) {
+        int under = (int) floors.stream().filter(f -> f.getY() < GROUND_Y).count();
+        int i = floors.indexOf(at);
+        return i < under ? "-" + (under - i) : String.valueOf(i - under + 1);
+    }
+
     public static void open(ServerPlayer player, BlockPos at) {
         List<BlockPos> floors = floors(player.level(), at);
         if (floors.size() < 2) {
@@ -64,6 +74,7 @@ public final class Elevator {
             CompoundTag floor = new CompoundTag();
             floor.putInt("y", floors.get(i).getY());
             floor.putInt("n", i + 1);
+            floor.putString("label", label(floors, floors.get(i)));
             floor.putBoolean("here", floors.get(i).equals(at));
             list.add(floor);
         }
@@ -113,8 +124,8 @@ public final class Elevator {
         player.moveTo(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5, yaw, 0);
         level.playSound(null, feet, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.BLOCKS,
                 0.6F, 2.0F);
-        int floor = floors(level, to).indexOf(to) + 1;
-        player.displayClientMessage(Component.translatable("citylife.elevator.arrived", floor)
+        List<BlockPos> all = floors(level, to);
+        player.displayClientMessage(Component.translatable("citylife.elevator.arrived", label(all, to))
                 .withStyle(ChatFormatting.AQUA), true);
     }
 }

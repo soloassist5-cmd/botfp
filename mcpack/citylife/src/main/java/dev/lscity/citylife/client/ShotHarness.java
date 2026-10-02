@@ -189,6 +189,19 @@ public final class ShotHarness {
                     CityLife.LOG.info("City Life: кадры карты ждут, экран {}",
                             mc.screen == null ? "нет" : mc.screen.getClass().getName());
                 }
+                if (opening && mc.screen instanceof net.minecraft.client.gui.screens.ConfirmScreen confirm
+                        && titleTicks % 100 == 50) {
+                    // Вопрос при загрузке мира (резервная копия, изменённый набор модов) —
+                    // отвечаем «да»: мир для кадров одноразовый.
+                    try {
+                        var field = net.minecraft.client.gui.screens.ConfirmScreen.class
+                                .getDeclaredField("callback");
+                        field.setAccessible(true);
+                        ((it.unimi.dsi.fastutil.booleans.BooleanConsumer) field.get(confirm)).accept(true);
+                    } catch (ReflectiveOperationException e) {
+                        CityLife.LOG.error("City Life: не ответить на вопрос экрана", e);
+                    }
+                }
                 if ((mc.screen instanceof TitleScreen || titleTicks > 600) && !opening) {
                     opening = true;
                     try {
@@ -228,6 +241,9 @@ public final class ShotHarness {
             Screenshot.grab(mc.gameDirectory, "scene_" + VIEWS.get(view - 1)[0] + ".png",
                     mc.getMainRenderTarget(), msg -> {
                     });
+            if (mc.screen != null) {
+                mc.setScreen(null);
+            }
         }
         if (view >= VIEWS.size()) {
             CityLife.LOG.info("City Life: кадры карты готовы ({})", VIEWS.size());
@@ -242,6 +258,65 @@ public final class ShotHarness {
         }
         mc.player.connection.sendCommand("tp @s " + p[1] + " " + p[2] + " " + p[3] + " " + p[4] + " " + p[5]);
         wait = p.length > 6 ? Integer.parseInt(p[6]) : 60;
+        // Кадры «ui_…»: поверх мира открывается окно — стеклянный телефон Старка,
+        // каталог 3D-принтера, пульт охраны.
+        Screen ui = sceneScreen(p[0]);
+        if (ui != null) {
+            mc.setScreen(ui);
+        }
+    }
+
+    private static Screen sceneScreen(String name) {
+        var stark = dev.lscity.citylife.device.Devices.STARK;
+        switch (name) {
+            case "ui_phone_stark" -> {
+                return new dev.lscity.citylife.client.device.DeviceScreen(device("phone_stark", "PHONE", stark.apps()));
+            }
+            case "ui_phone_stark_bank" -> {
+                var screen = new dev.lscity.citylife.client.device.DeviceScreen(
+                        device("phone_stark", "PHONE", stark.apps()));
+                Minecraft.getInstance().setScreen(screen);
+                screen.open("bank");
+                return screen;
+            }
+            case "ui_printer" -> {
+                CompoundTag tag = new CompoundTag();
+                tag.putLong("pos", new net.minecraft.core.BlockPos(20, 61, 22).asLong());
+                tag.putBoolean("cleared", true);
+                return new dev.lscity.citylife.client.screen.PrinterScreen(tag);
+            }
+            case "ui_security" -> {
+                CompoundTag tag = new CompoundTag();
+                tag.putBoolean("armed", true);
+                tag.putBoolean("me", true);
+                tag.putInt("cleared", 2);
+                tag.putLong("price", dev.lscity.citylife.stark.StarkSecurity.ACCESS_PRICE);
+                tag.putLong("balance", 312500);
+                ListTag cams = new ListTag();
+                for (String n : new String[]{"ЗАЛ БРОНИ · СЗ", "ЗАЛ БРОНИ · СВ", "МАСТЕРСКАЯ", "ВЕСТИБЮЛЬ"}) {
+                    CompoundTag c = new CompoundTag();
+                    c.putString("name", n);
+                    cams.add(c);
+                }
+                tag.put("cams", cams);
+                ListTag log = new ListTag();
+                String[][] lines = {{"14:02", "Выдан допуск: Tony", "0"}, {"13:40", "ТРЕВОГА: Ivan — кража костюма из Зала брони", "1"},
+                        {"13:39", "Посторонний в зоне: Ivan", "0"}, {"12:15", "Tony печатает: Телефон Старка ×1", "0"}};
+                for (String[] l : lines) {
+                    CompoundTag e = new CompoundTag();
+                    e.putString("t", l[0]);
+                    e.putString("s", l[1]);
+                    e.putBoolean("a", l[2].equals("1"));
+                    log.add(e);
+                }
+                tag.put("log", log);
+                tag.putBoolean("bought", true);
+                return new dev.lscity.citylife.client.screen.SecurityScreen(tag);
+            }
+            default -> {
+                return null;
+            }
+        }
     }
 
     @SubscribeEvent

@@ -153,10 +153,18 @@ public class DeviceScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
-        renderBackground(g);
+        if (!frame.glass()) {
+            // Сквозь стеклянный телефон Старка видно мир — его не затемняем.
+            renderBackground(g);
+        }
         frame.draw(g);
         int[] s = frame.screen();
-        if (frame.monochrome()) {
+        if (frame.glass()) {
+            glassScreen(g, s);
+            if (!appId.equals("home")) {
+                g.fill(s[0], s[1] + STATUS_H, s[0] + s[2], s[1] + s[3] - BOTTOM_H, 0xA8061018);
+            }
+        } else if (frame.monochrome()) {
             PhoneUi.roundedGradient(g, s[0], s[1], s[2], s[3], frame.screenRadius(),
                     0xFFA7C957, 0xFF8BAC3F);
         } else {
@@ -181,6 +189,19 @@ public class DeviceScreen extends Screen {
 
         renderBottom(g, s, mouseX, mouseY);
         super.render(g, mouseX, mouseY, partial);
+    }
+
+    /** Экран-голограмма: лёгкая голубая дымка, сетка и бегущая строка развёртки. */
+    private void glassScreen(GuiGraphics g, int[] s) {
+        PhoneUi.roundedGradient(g, s[0], s[1], s[2], s[3], frame.screenRadius(), 0x40081A2A, 0x700A1622);
+        for (int gx = s[0] + 12; gx < s[0] + s[2] - 4; gx += 16) {
+            g.fill(gx, s[1] + 8, gx + 1, s[1] + s[3] - 8, 0x0F9BE8FF);
+        }
+        for (int gy = s[1] + 12; gy < s[1] + s[3] - 4; gy += 16) {
+            g.fill(s[0] + 6, gy, s[0] + s[2] - 6, gy + 1, 0x0F9BE8FF);
+        }
+        int scan = (int) (System.currentTimeMillis() / 18 % Math.max(1, s[3]));
+        g.fill(s[0] + 4, s[1] + scan, s[0] + s[2] - 4, s[1] + scan + 1, 0x229BE8FF);
     }
 
     private void renderStatusBar(GuiGraphics g, int[] s) {

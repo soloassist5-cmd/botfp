@@ -41,6 +41,10 @@ public record ActionPacket(String action, CompoundTag args) {
                 dev.lscity.citylife.vehicle.Garage.handle(player, packet.action(), packet.args());
             } else if (packet.action().startsWith("elevator_")) {
                 dev.lscity.citylife.building.Elevator.handle(player, packet.action(), packet.args());
+            } else if (packet.action().startsWith("stark_")) {
+                dev.lscity.citylife.stark.StarkSecurity.handle(player, packet.action(), packet.args());
+            } else if (packet.action().startsWith("printer_")) {
+                dev.lscity.citylife.stark.Printer.handle(player, packet.action(), packet.args());
             } else if (packet.action().startsWith("realty_")) {
                 dev.lscity.citylife.estate.EstateServer.handle(player, packet.action(),
                         packet.args());

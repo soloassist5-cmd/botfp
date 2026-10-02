@@ -1,0 +1,83 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "side": "citylife:block/console_side",
+    "panel": "citylife:block/console_panel",
+    "particle": "citylife:block/console_side"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0,
+        1
+      ],
+      "to": [
+        15,
+        10,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "west": {
+          "texture": "#side"
+        },
+        "down": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        9,
+        0
+      ],
+      "to": [
+        16,
+        11,
+        16
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          10,
+          8
+        ],
+        "axis": "x",
+        "angle": -22.5
+      },
+      "faces": {
+        "up": {
+          "texture": "#panel"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "west": {
+          "texture": "#side"
+        },
+        "down": {
+          "texture": "#side"
+        }
+      }
+    }
+  ]
+}
