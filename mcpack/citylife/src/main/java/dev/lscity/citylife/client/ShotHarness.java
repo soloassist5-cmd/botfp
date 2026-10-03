@@ -41,6 +41,9 @@ public final class ShotHarness {
     /** Зажатая клавиша для кадров со способностями и сколько тиков ещё держать. */
     private static net.minecraft.client.KeyMapping held;
     private static int heldTicks;
+    /** «!hold key.forward,key.right 40» — несколько клавиш сразу. */
+    private static final java.util.List<net.minecraft.client.KeyMapping> HELD = new java.util.ArrayList<>();
+    private static int holdTicks;
 
     private record Shot(String name, Supplier<Screen> screen, Runnable after) {
     }
@@ -242,6 +245,20 @@ public final class ShotHarness {
             wait = 200;
             return;
         }
+        if (!HELD.isEmpty()) {
+            boolean keep = holdTicks-- > 0;
+            for (var km : HELD) {
+                km.setDown(keep);
+            }
+            if (mc.player != null && holdTicks % 5 == 0) {
+                CityLife.LOG.info("City Life: кадры — игрок {} движение {} xxa {} zza {} бег {}",
+                        mc.player.position(), mc.player.getDeltaMovement(), mc.player.xxa, mc.player.zza,
+                        mc.player.isSprinting());
+            }
+            if (!keep) {
+                HELD.clear();
+            }
+        }
         if (held != null && heldTicks-- <= 0) {
             held.setDown(false);
             held = null;
@@ -277,6 +294,20 @@ public final class ShotHarness {
                 mc.gameMode.useItem(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND);
             }
             wait = 4;
+            return;
+        }
+        if (p.length == 1 && p[0].startsWith("!hold ")) {
+            String[] k = p[0].split("\\s+");
+            HELD.clear();
+            for (String name : k[1].split(",")) {
+                for (var mapping : mc.options.keyMappings) {
+                    if (mapping.getName().equals(name)) {
+                        HELD.add(mapping);
+                    }
+                }
+            }
+            holdTicks = Integer.parseInt(k[2]);
+            wait = 1;
             return;
         }
         if (p.length == 1 && p[0].startsWith("!wait ")) {
