@@ -297,8 +297,13 @@ public final class Registration {
                             output.accept(item(id));
                         }
                         PC_PARTS.values().forEach(part -> output.accept(part.get()));
+                        for (String id : new String[]{"drone_camera", "drone_racer", "drone_courier",
+                                "drone_remote"}) {
+                            output.accept(item(id));
+                        }
                         for (String id : new String[]{"printer_3d", "holo_screen", "security_console",
-                                "laser_sensor"}) {
+                                "laser_sensor", "mark42_gantry", "mark42_helmet", "mark42_chestplate",
+                                "mark42_leggings", "mark42_boots"}) {
                             output.accept(item(id));
                         }
                     })
@@ -313,6 +318,8 @@ public final class Registration {
     }
 
     public static void register(IEventBus bus) {
+        dev.lscity.citylife.stark.Mark42.init();
+        dev.lscity.citylife.drone.Drones.init();
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);

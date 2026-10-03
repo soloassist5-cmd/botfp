@@ -38,6 +38,9 @@ public final class ShotHarness {
     private static final List<Shot> SHOTS = new ArrayList<>();
     private static int index = -1;
     private static int wait;
+    /** Зажатая клавиша для кадров со способностями и сколько тиков ещё держать. */
+    private static net.minecraft.client.KeyMapping held;
+    private static int heldTicks;
 
     private record Shot(String name, Supplier<Screen> screen, Runnable after) {
     }
@@ -213,7 +216,7 @@ public final class ShotHarness {
                         for (String line : java.nio.file.Files.readAllLines(
                                 mc.gameDirectory.toPath().resolve("scenes.txt"))) {
                             String[] parts = line.trim().split("\\s+");
-                            if (line.startsWith("/")) {
+                            if (line.startsWith("/") || line.startsWith("!")) {
                                 // Команда перед следующим кадром: расставить подставки и т.п.
                                 VIEWS.add(new String[]{line.trim()});
                             } else if (parts.length >= 6 && !line.startsWith("#")) {
@@ -239,6 +242,12 @@ public final class ShotHarness {
             wait = 200;
             return;
         }
+        if (held != null && heldTicks-- <= 0) {
+            held.setDown(false);
+            held = null;
+        } else if (held != null) {
+            held.setDown(true);
+        }
         if (wait-- > 0) {
             return;
         }
@@ -259,6 +268,49 @@ public final class ShotHarness {
             return;
         }
         String[] p = VIEWS.get(view++);
+        if (p.length == 1 && p[0].equals("!use")) {
+            // ПКМ предметом в руке: по блоку под прицелом или в воздух.
+            if (mc.hitResult instanceof net.minecraft.world.phys.BlockHitResult hit
+                    && hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+            } else {
+                mc.gameMode.useItem(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND);
+            }
+            wait = 4;
+            return;
+        }
+        if (p.length == 1 && p[0].startsWith("!wait ")) {
+            wait = Integer.parseInt(p[0].substring(6).trim());
+            return;
+        }
+        if (p.length == 1 && p[0].startsWith("!cam ")) {
+            // «!cam front|back|first» — камера от третьего лица для кадров с костюмом.
+            String mode = p[0].substring(5).trim();
+            mc.options.setCameraType(mode.equals("front") ? net.minecraft.client.CameraType.THIRD_PERSON_FRONT
+                    : mode.equals("back") ? net.minecraft.client.CameraType.THIRD_PERSON_BACK
+                    : net.minecraft.client.CameraType.FIRST_PERSON);
+            wait = 2;
+            return;
+        }
+        if (p.length == 1 && p[0].startsWith("!key ")) {
+            // «!key key.palladium.ability_1 30» — зажать клавишу на 30 тиков (способности в кадре).
+            String[] k = p[0].split("\\s+");
+            if (held != null) {
+                held.setDown(false);
+                held = null;
+            }
+            for (var mapping : mc.options.keyMappings) {
+                if (mapping.getName().equals(k[1])) {
+                    mapping.setDown(true);
+                    net.minecraft.client.KeyMapping.click(mapping.getKey());
+                    held = mapping;
+                    CityLife.LOG.info("City Life: кадры — зажата {} на {} тиков", k[1], k.length > 2 ? k[2] : "2");
+                    heldTicks = k.length > 2 ? Integer.parseInt(k[2]) : 2;
+                }
+            }
+            wait = 2;
+            return;
+        }
         if (p.length == 1) {
             mc.player.connection.sendCommand(p[0].substring(1));
             wait = 4;
@@ -266,6 +318,8 @@ public final class ShotHarness {
         }
         mc.player.connection.sendCommand("tp @s " + p[1] + " " + p[2] + " " + p[3] + " " + p[4] + " " + p[5]);
         wait = p.length > 6 ? Integer.parseInt(p[6]) : 60;
+        // Кадры «hud_…» — с интерфейсом игры (HUD шлема Mark 42 и т.п.).
+        mc.options.hideGui = !p[0].startsWith("hud_");
         // Кадры «ui_…»: поверх мира открывается окно — стеклянный телефон Старка,
         // каталог 3D-принтера, пульт охраны.
         Screen ui = sceneScreen(p[0]);

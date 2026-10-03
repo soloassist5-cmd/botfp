@@ -20,16 +20,16 @@ public final class Devices {
     /** Без интернета не открываются. */
     public static final Set<String> NETWORK_APPS =
             Set.of("messages", "contacts", "bank", "navigator", "locks", "store", "marketplace",
-                    "cameras", "browser", "mail", "jobs", "homes", "cars", "phone", "jarvis");
+                    "cameras", "browser", "mail", "jobs", "homes", "cars", "phone", "jarvis", "drones");
 
     /** Что можно доставить из магазина приложений, если этого нет в прошивке. */
     public static final List<String> STORE_APPS =
             List.of("tetris", "snake", "calc", "notes", "compass", "cameras", "browser", "mail",
-                    "music", "mines", "game2048", "terminal", "jobs", "homes", "cars", "jarvis");
+                    "music", "mines", "game2048", "terminal", "jobs", "homes", "cars", "jarvis", "drones");
 
     private static final List<String> BASIC = List.of(
-            "messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "cars", "locks", "cameras", "sos",
-            "store", "marketplace", "settings");
+            "messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "cars", "locks", "cameras", "drones",
+            "sos", "store", "marketplace", "settings");
 
     public static final DeviceModel LS_PHONE = new DeviceModel("smartphone", Kind.PHONE,
             true, 4, BASIC, 9000, 0xFF0E1018);
@@ -78,7 +78,7 @@ public final class Devices {
      */
     public static final DeviceModel STARK = new DeviceModel("phone_stark", Kind.PHONE,
             true, 12, List.of("jarvis", "messages", "phone", "contacts", "bank", "navigator", "jobs", "homes", "cars", "locks",
-            "cameras", "sos", "store", "marketplace", "browser", "mail", "music", "notes", "calc", "compass",
+            "cameras", "drones", "sos", "store", "marketplace", "browser", "mail", "music", "notes", "calc", "compass",
             "flashlight", "terminal", "tetris", "snake", "game2048", "settings"), 0, 0x3384E1FF);
 
     /** Компьютер собирается из комплектующих, отдельным предметом не продаётся. */

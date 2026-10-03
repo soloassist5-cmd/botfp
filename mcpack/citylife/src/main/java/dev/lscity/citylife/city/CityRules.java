@@ -19,8 +19,8 @@ import net.minecraftforge.registries.ForgeRegistries;
  * проходами крипер успевал подойти, а животные и стражи оставались вовсе.
  * Здесь любой моб отклоняется ещё при входе в мир — при естественном
  * спавне, из яйца, из спавнера и при загрузке старого чанка. Пропускаем
- * жителей Easy NPC (городские продавцы) и технику модов: FPV-дрон и турель
- * SecurityCraft тоже «мобы» для игры, но не звери и не монстры — у них
+ * жителей Easy NPC (городские продавцы) и технику модов: турель
+ * SecurityCraft тоже «моб» для игры, но не звери и не монстры — у них
  * категория MISC. Ванильные мобы не проходят никогда: деревенские жители и
  * големы тоже MISC, но в городе им не место.
  *
@@ -32,7 +32,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 public final class CityRules {
 
     /** Моды, чьи «мобы» — это жители города, а не животные или монстры. */
-    private static final String[] ALLOWED_NAMESPACES = {"easy_npc", "fpvdrone", "diligentstalker"};
+    private static final String[] ALLOWED_NAMESPACES = {"easy_npc"};
 
     private CityRules() {
     }

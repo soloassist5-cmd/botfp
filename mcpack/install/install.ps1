@@ -332,21 +332,21 @@ $Profiles = @{
         options = @{ renderDistance = '6'; simulationDistance = '5'; maxFps = '60'; graphicsMode = '0'
                      ao = 'false'; entityShadows = 'false'; entityDistanceScaling = '0.5'
                      particles = '2'; mipmapLevels = '0'; biomeBlendRadius = '0' }
-        city    = @{ pedestrians = '2'; pedestriansMax = '16' }
+        city    = @{ pedestrians = '2'; pedestriansMax = '16'; detailDistance = '0.6' }
         server  = @{ 'view-distance' = '6'; 'simulation-distance' = '5' }
     }
     normal = @{
         options = @{ renderDistance = '12'; simulationDistance = '8'; maxFps = '120'; graphicsMode = '1'
                      ao = 'true'; entityShadows = 'true'; entityDistanceScaling = '0.75'
                      particles = '1'; mipmapLevels = '4'; biomeBlendRadius = '2' }
-        city    = @{ pedestrians = '6'; pedestriansMax = '48' }
+        city    = @{ pedestrians = '6'; pedestriansMax = '48'; detailDistance = '1.0' }
         server  = @{ 'view-distance' = '8'; 'simulation-distance' = '6' }
     }
     high = @{
         options = @{ renderDistance = '16'; simulationDistance = '10'; maxFps = '260'; graphicsMode = '1'
                      ao = 'true'; entityShadows = 'true'; entityDistanceScaling = '1.0'
                      particles = '0'; mipmapLevels = '4'; biomeBlendRadius = '3' }
-        city    = @{ pedestrians = '10'; pedestriansMax = '80' }
+        city    = @{ pedestrians = '10'; pedestriansMax = '80'; detailDistance = '1.6' }
         server  = @{ 'view-distance' = '12'; 'simulation-distance' = '8' }
     }
 }

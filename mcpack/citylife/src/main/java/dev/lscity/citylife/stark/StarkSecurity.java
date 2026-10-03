@@ -459,6 +459,17 @@ public final class StarkSecurity {
         if (mark == null) {
             return;   // пустая витрина: игрок сдаёт костюм на место
         }
+        if (markId == 42) {
+            // В витрине — Mark 42 мода (он для подписчиков автора). Вместо него
+            // летит наш: из витрины прямо на игрока.
+            event.setCanceled(true);
+            if (!cleared(player) && StarkData.get(player.server).armed()) {
+                raise(player, 4, "citylife.wanted.stark_theft");
+            }
+            StarkSuits.stripSym(player);
+            Mark42.assemble(player, net.minecraft.world.phys.Vec3.atBottomCenterOf(event.getPos()));
+            return;
+        }
         if (!mark.playable()) {
             event.setCanceled(true);
             player.displayClientMessage(Component.translatable("citylife.stark.exhibit", mark.title())

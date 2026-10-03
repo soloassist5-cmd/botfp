@@ -633,15 +633,11 @@ ROLE_TRADES: dict[str, list[dict]] = {
         sell("cameracraft:video_camera", 1, 4000),
         sell("cameracraft:tripod", 1, 800),
         sell("cameracraft:laptop", 1, 6000),
-        # Дроны: FPV Drones (дрон, пульт, очки, батарея) и дрон-камера Diligent Stalker.
-        sell("fpvdrone:drone", 1, 25000),
-        sell("fpvdrone:thermal_drone", 1, 40000),
-        sell("fpvdrone:remote_control", 1, 6000),
-        sell("fpvdrone:fpv_goggles", 1, 8000),
-        sell("fpvdrone:battery", 1, 1500),
-        sell("fpvdrone:propeller", 1, 200),
-        sell("diligentstalker:drone_stalker", 1, 12000),
-        sell("diligentstalker:stalker_master", 1, 4000),
+        # Дроны города: камера «Сокол», гоночный «Стриж», курьер «Пеликан» и пульт.
+        sell("citylife:drone_camera", 1, 18000),
+        sell("citylife:drone_racer", 1, 26000),
+        sell("citylife:drone_courier", 1, 32000),
+        sell("citylife:drone_remote", 1, 4000),
     ],
     # Салон связи: SIM-карты и все семь телефонов, планшет.
     "phone_seller": [

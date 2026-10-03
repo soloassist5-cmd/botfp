@@ -48,6 +48,8 @@ public record ActionPacket(String action, CompoundTag args) {
                 DeviceServer.handle(player, "refresh", packet.args());
             } else if (packet.action().startsWith("printer_")) {
                 dev.lscity.citylife.stark.Printer.handle(player, packet.action(), packet.args());
+            } else if (packet.action().startsWith("drone_")) {
+                dev.lscity.citylife.drone.Drones.handle(player, packet.action(), packet.args());
             } else if (packet.action().startsWith("realty_")) {
                 dev.lscity.citylife.estate.EstateServer.handle(player, packet.action(),
                         packet.args());

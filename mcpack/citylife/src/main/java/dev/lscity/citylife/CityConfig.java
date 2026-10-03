@@ -56,6 +56,8 @@ public final class CityConfig {
     public final ForgeConfigSpec.IntValue lanSimulationDistance;
     public final ForgeConfigSpec.BooleanValue tuneDistantHorizons;
     public final ForgeConfigSpec.IntValue dhBandwidthPerPlayer;
+    public final ForgeConfigSpec.DoubleValue detailDistance;
+    public final ForgeConfigSpec.BooleanValue tuneDistantHorizonsClient;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -104,6 +106,15 @@ public final class CityConfig {
         npcFacePlayers = builder
                 .comment("Продавцы поворачиваются к подошедшему игроку.")
                 .define("npcFacePlayers", true);
+        detailDistance = builder
+                .comment("Дальность прорисовки мелочей города: товары на полках, кровати, надписи на табличках,",
+                        "плиты и корзины. 1.0 — полки 14 блоков, кровати 32, таблички 24. Больше — красивее, но",
+                        "медленнее: в городе 20 тысяч таких блоков. Установщик ставит: слабый 0.6, обычный 1.0, мощный 1.6.")
+                .defineInRange("detailDistance", 1.0, 0.3, 4.0);
+        tuneDistantHorizonsClient = builder
+                .comment("Distant Horizons у игрока: дальность LOD 64 чанка × detailDistance вместо 256 и «щадящая»",
+                        "нагрузка на процессор. Меняется, только пока в DistantHorizons.toml заводские значения.")
+                .define("tuneDistantHorizonsClient", true);
         builder.pop();
 
         builder.comment("Недвижимость").push("estate");

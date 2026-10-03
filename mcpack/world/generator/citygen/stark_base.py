@@ -343,11 +343,13 @@ class Basement:
                     f.set(u, FLOOR_B2, v, GLOW if d > 2.3 else "minecraft:smooth_quartz")
                 elif d <= 4.2:
                     f.set(u, FLOOR_B2, v, FRAME)
-        self.case(cu, FLOOR_B2 + 1, cv, "front", S.CENTER)
+        # Mark 42 — наш (citylife): на стенде сборки, ПКМ — детали летят на игрока.
+        f.block_entity(cu, FLOOR_B2 + 1, cv, f"citylife:mark42_gantry[facing={f.dir('front')}]",
+                       "citylife:mark42_gantry", {})
         for u, v in ((cu - 3, cv), (cu + 3, cv), (cu, cv + 3)):
             f.set(u, FLOOR_B2 + 1, v, "minecraft:end_rod[facing=up]")
         f.set(cu, FLOOR_B2 + 1, cv - 4, FRAME)
-        f.wall_sign(cu, FLOOR_B2 + 1, cv - 4, "front", ["MARK 42", "PRODIGAL SON", "EXTREMIS"],
+        f.wall_sign(cu, FLOOR_B2 + 1, cv - 4, "front", ["MARK 42", "PRODIGAL SON", "ПКМ — НАДЕТЬ"],
                     color="light_blue", glowing=True, wood=SIGN)
 
     # --- мастерская −1 ------------------------------------------------------------

@@ -66,6 +66,7 @@ public final class AppIcons {
             case "snake" -> new int[]{0xFF7BE07B, 0xFF2F9E4F};
             case "cameras" -> new int[]{0xFF5B6B8C, 0xFF263049};
             case "jarvis" -> new int[]{0xFF0E3550, 0xFF06121C};
+            case "drones" -> new int[]{0xFF2F9C95, 0xFF145650};
             case "browser" -> new int[]{0xFF45A3F0, 0xFF1A5FA8};
             case "mail" -> new int[]{0xFFFF8A65, 0xFFD04A2E};
             case "music" -> new int[]{0xFFFF5C8A, 0xFFB0245A};
@@ -237,6 +238,18 @@ public final class AppIcons {
                             PhoneUi.alpha(0xFFFFE066, 0.2F + i / (float) (s / 4)));
                 }
                 g.fill(cx - 2, cy + s / 20, cx + 3, cy + s / 4, WHITE);
+            }
+            case "drones" -> {
+                // Квадрокоптер сверху: корпус и четыре винта на лучах.
+                int r = s / 4;
+                g.fill(cx - r, cy - 1, cx + r + 1, cy + 1, SOFT);
+                g.fill(cx - 1, cy - r, cx + 1, cy + r + 1, SOFT);
+                for (int dx : new int[]{-r, r}) {
+                    for (int dy : new int[]{-r, r}) {
+                        PhoneUi.ring(g, cx + dx, cy + dy, Math.max(2, s / 9), 1, WHITE);
+                    }
+                }
+                PhoneUi.roundedRect(g, cx - s / 10, cy - s / 10, s / 5 + 1, s / 5 + 1, 2, WHITE);
             }
             case "jarvis" -> {
                 // Дуговой реактор: светящееся кольцо, перемычки и белое ядро.

@@ -1623,6 +1623,53 @@ public final class CityTests {
         h.succeed();
     }
 
+    /**
+     * Свой Mark 42: Palladium разобрал силу (все способности на месте), а
+     * вызов собирает костюм по частям — четыре детали долетают и садятся
+     * на игрока; «Протокол „Дом“» снимает их обратно.
+     */
+    @SelfTest
+    public static void mark42Assembles(TestKit h) {
+        try {
+            var manager = Class.forName("net.threetag.palladium.power.PowerManager")
+                    .getMethod("getInstance", net.minecraft.world.level.Level.class).invoke(null, h.getLevel());
+            Object power = manager.getClass().getMethod("getPower", net.minecraft.resources.ResourceLocation.class)
+                    .invoke(manager, new net.minecraft.resources.ResourceLocation("citylife", "mark42"));
+            if (power == null) {
+                h.fail("Palladium не загрузил силу citylife:mark42 (ошибка в powers/mark42.json?)");
+                return;
+            }
+            int abilities = ((List<?>) power.getClass().getMethod("getAbilities").invoke(power)).size();
+            if (abilities < 30) {
+                h.fail("в силе Mark 42 только " + abilities + " способностей — часть не разобралась");
+                return;
+            }
+        } catch (ReflectiveOperationException e) {
+            h.fail("Palladium недоступен: " + e);
+            return;
+        }
+        FakePlayer tony = player(h, "TonyMark42");
+        tony.getInventory().clearContent();
+        tony.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,
+                new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_HELMET));
+        if (!dev.lscity.citylife.stark.Mark42.assemble(tony, null)) {
+            h.fail("вызов Mark 42 не запустил сборку");
+            return;
+        }
+        h.succeedWhen(() -> {
+            if (!dev.lscity.citylife.stark.Mark42.wears(tony)) {
+                h.fail("детали ещё летят или не сели");
+            }
+            if (tony.getInventory().countItem(net.minecraft.world.item.Items.IRON_HELMET) != 1) {
+                h.fail("свой шлем игрока должен уйти в инвентарь, а не пропасть");
+            }
+            if (!dev.lscity.citylife.stark.Mark42.home(tony, null) || dev.lscity.citylife.stark.Mark42.wearsAny(tony)) {
+                h.fail("«Протокол „Дом“» не снял костюм");
+            }
+            tony.getInventory().clearContent();
+        });
+    }
+
     /** Способности костюмов Sym открыты сразу: Palladium видит наши файлы сил, а не файлы мода. */
     @SelfTest
     public static void symAbilitiesUnlocked(TestKit h) {
@@ -1694,9 +1741,12 @@ public final class CityTests {
                     || !dev.lscity.citylife.stark.StarkSuits.curio(tony, "body").isEmpty()) {
                 h.fail("«Снять» оставило костюм или реактор");
             }
-            if (dev.lscity.citylife.stark.StarkSuits.mark(42).playable()
-                    || dev.lscity.citylife.stark.StarkSuits.mark(7).playable()) {
-                h.fail("Mark 7 и 42 — только для подписчиков мода, Джарвис не должен их предлагать");
+            if (dev.lscity.citylife.stark.StarkSuits.mark(7).playable()) {
+                h.fail("Mark 7 — только для подписчиков мода, Джарвис не должен его предлагать");
+            }
+            if (!dev.lscity.citylife.stark.StarkSuits.mark(42).playable()
+                    || !dev.lscity.citylife.stark.StarkSuits.mark(42).icon().startsWith("citylife:")) {
+                h.fail("Mark 42 в списке Джарвиса должен быть свой, citylife");
             }
         } finally {
             tony.getInventory().clearContent();
@@ -1765,30 +1815,90 @@ public final class CityTests {
         h.succeed();
     }
 
-    /** Дроны — тоже «мобы», но технику модов правило «без мобов» не убирает, а зомби — убирает. */
+    /** Заказ с маркетплейса привозит курьерский дрон: спускается к игроку и сбрасывает посылку. */
+    @SelfTest(timeout = 900)
+    public static void courierDelivers(TestKit h) {
+        FakePlayer buyer = player(h, "DroneBuyer");
+        buyer.getInventory().clearContent();
+        var data = dev.lscity.citylife.data.CityData.get(h.getLevel().getServer());
+        var offer = dev.lscity.citylife.market.Market.BY_ID.values().iterator().next();
+        data.deposit(buyer.getUUID(), 10000);
+        long now = h.getLevel().getGameTime();
+        data.placeOrder(buyer.getUUID(), offer.id(), "тест", 1, now - 1);
+        var order = data.orders(buyer.getUUID()).stream().filter(o -> o.ready(now)).reduce((a, b) -> b).orElse(null);
+        if (order == null) {
+            h.fail("заказ не появился");
+            return;
+        }
+        long before = data.balance(buyer.getUUID());
+        dev.lscity.citylife.drone.Courier.deliver(buyer, data, order.id());
+        if (data.balance(buyer.getUUID()) != before - dev.lscity.citylife.drone.Courier.FEE) {
+            h.fail("за доставку дроном не списано " + dev.lscity.citylife.drone.Courier.FEE + " ₽"
+                    + " (небо над площадкой закрыто?)");
+            return;
+        }
+        net.minecraft.world.item.Item goods = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
+                new net.minecraft.resources.ResourceLocation(offer.item()));
+        h.succeedWhen(() -> {
+            var near = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                    buyer.getBoundingBox().inflate(2), e -> e.getItem().getItem() == goods);
+            if (near.isEmpty() && buyer.getInventory().countItem(goods) == 0) {
+                h.fail("посылка ещё не долетела");
+            }
+            near.forEach(Entity::discard);
+            buyer.getInventory().clearContent();
+        });
+    }
+
+    /**
+     * Свои дроны: встают в мир (правило «без мобов» их не трогает), пилот
+     * двигает дрон, но прыжок дальше возможного сервер не принимает, батарея
+     * садится и роняет дрон, хозяин подбирает дрон вместе с зарядом.
+     * Зомби в город по-прежнему не пускают.
+     */
     @SelfTest
-    public static void dronesArePlaceable(TestKit h) {
-        BlockPos at = h.absolutePos(new BlockPos(6, 1, 6));
-        var droneType = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValue(
-                new net.minecraft.resources.ResourceLocation("fpvdrone", "drone"));
-        if (droneType != null) {
-            Entity drone = droneType.create(h.getLevel());
-            if (drone == null) {
-                h.fail("дрон не создаётся");
-                return;
-            }
-            drone.moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
-            boolean added = h.getLevel().addFreshEntity(drone);
-            boolean alive = added && drone.isAddedToWorld() && !drone.isRemoved();
-            drone.discard();
-            if (!alive) {
-                h.fail("FPV-дрон не встал на землю: правило «без мобов» его убрало");
-            }
+    public static void dronesFly(TestKit h) {
+        BlockPos at = h.absolutePos(new BlockPos(6, 4, 6));
+        FakePlayer pilot = player(h, "DronePilot");
+        pilot.getInventory().clearContent();
+        var drone = dev.lscity.citylife.drone.Drones.spawn(h.getLevel(), pilot,
+                dev.lscity.citylife.drone.DroneType.CAMERA,
+                new net.minecraft.world.phys.Vec3(at.getX() + 0.5, at.getY(), at.getZ() + 0.5), 0, 1.0F);
+        if (drone == null || drone.isRemoved() || !drone.isAddedToWorld()) {
+            h.fail("дрон не встал в мир: правило «без мобов» его убрало");
+            return;
         }
-        if (!dev.lscity.citylife.city.CityRules.machine(new net.minecraft.resources.ResourceLocation("somemod", "turret"),
-                net.minecraft.world.entity.MobCategory.MISC)) {
-            h.fail("техника модов (MISC) не пропускается");
+        dev.lscity.citylife.drone.Drones.start(pilot, drone);
+        double x0 = drone.getX();
+        dev.lscity.citylife.drone.Drones.move(pilot, new dev.lscity.citylife.drone.DroneMovePacket(drone.getId(),
+                x0 + 0.4, drone.getY() + 0.3, drone.getZ(), 0, 0, 0));
+        if (Math.abs(drone.getX() - (x0 + 0.4)) > 1.0E-3) {
+            h.fail("сервер не принял честный шаг пилота");
         }
+        dev.lscity.citylife.drone.Drones.move(pilot, new dev.lscity.citylife.drone.DroneMovePacket(drone.getId(),
+                x0 + 60, drone.getY(), drone.getZ(), 0, 0, 0));
+        if (drone.getX() > x0 + 5) {
+            h.fail("сервер принял прыжок дрона на 60 блоков за тик");
+        }
+        dev.lscity.citylife.drone.Drones.stop(drone, null);
+        if (dev.lscity.citylife.drone.Drones.session(pilot) != null) {
+            h.fail("после отключения пилот всё ещё на связи");
+        }
+        drone.setBattery(0.3F);
+        drone.pickUp(pilot);
+        var stack = pilot.getInventory().items.stream()
+                .filter(s -> s.getItem() instanceof dev.lscity.citylife.drone.DroneItem).findFirst().orElse(null);
+        if (stack == null || Math.abs(dev.lscity.citylife.drone.DroneItem.battery(stack) - 0.3F) > 0.01F
+                || !drone.isRemoved()) {
+            h.fail("хозяин не подобрал дрон с его зарядом");
+        }
+        pilot.getInventory().clearContent();
+        // Батарея кончилась в воздухе — моторы встают, дрон падает.
+        var falling = dev.lscity.citylife.drone.Drones.spawn(h.getLevel(), pilot,
+                dev.lscity.citylife.drone.DroneType.RACER,
+                new net.minecraft.world.phys.Vec3(at.getX() + 0.5, at.getY() + 2, at.getZ() + 0.5), 0, 0.0005F);
+        falling.setHoming(true);
+        double y0 = falling.getY();
         Entity zombie = EntityType.ZOMBIE.create(h.getLevel());
         zombie.moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
         boolean zombieAdded = h.getLevel().addFreshEntity(zombie) && !zombie.isRemoved();
@@ -1796,7 +1906,12 @@ public final class CityTests {
         if (zombieAdded) {
             h.fail("зомби появился в городе");
         }
-        h.succeed();
+        h.succeedWhen(() -> {
+            if (falling.battery() > 0 || falling.motors() || falling.getY() > y0 - 1) {
+                h.fail("дрон с пустой батареей не упал");
+            }
+            falling.discard();
+        });
     }
 
     /** Застрявший прохожий: не сдвинулся за проверку — замечен и выручается; пошёл — счётчик сброшен. */

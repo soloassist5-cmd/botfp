@@ -255,15 +255,15 @@ set_settings() {
 case "$QUALITY" in
   low)    OPTS=(renderDistance=6 simulationDistance=5 maxFps=60 graphicsMode=0 ao=false
                 entityShadows=false entityDistanceScaling=0.5 particles=2 mipmapLevels=0 biomeBlendRadius=0)
-          CITY=(pedestrians=2 pedestriansMax=16); PROPS=(view-distance=6 simulation-distance=5)
+          CITY=(pedestrians=2 pedestriansMax=16 detailDistance=0.6); PROPS=(view-distance=6 simulation-distance=5)
           NOTE="слабый ПК: короткая дальность, простая графика, меньше прохожих, без Distant Horizons и шейдеров" ;;
   high)   OPTS=(renderDistance=16 simulationDistance=10 maxFps=260 graphicsMode=1 ao=true
                 entityShadows=true entityDistanceScaling=1.0 particles=0 mipmapLevels=4 biomeBlendRadius=3)
-          CITY=(pedestrians=10 pedestriansMax=80); PROPS=(view-distance=12 simulation-distance=8)
+          CITY=(pedestrians=10 pedestriansMax=80 detailDistance=1.6); PROPS=(view-distance=12 simulation-distance=8)
           NOTE="мощный ПК: большая дальность, красивая графика, больше прохожих" ;;
   *)      OPTS=(renderDistance=12 simulationDistance=8 maxFps=120 graphicsMode=1 ao=true
                 entityShadows=true entityDistanceScaling=0.75 particles=1 mipmapLevels=4 biomeBlendRadius=2)
-          CITY=(pedestrians=6 pedestriansMax=48); PROPS=(view-distance=8 simulation-distance=6)
+          CITY=(pedestrians=6 pedestriansMax=48 detailDistance=1.0); PROPS=(view-distance=8 simulation-distance=6)
           NOTE="обычный ПК: настройки сборки как есть" ;;
 esac
 set_settings "$DEST/config/citylife-common.toml" " = " "${CITY[@]}"

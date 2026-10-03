@@ -1,0 +1,17 @@
+{
+  "body_part": "right_arm",
+  "offset": [
+    -1,
+    -11,
+    0
+  ],
+  "glow_color": "#7fd8ff",
+  "core_color": "#ffffff",
+  "glow_opacity": 0.6,
+  "core_opacity": 1.0,
+  "bloom": 2,
+  "size": [
+    1,
+    1
+  ]
+}

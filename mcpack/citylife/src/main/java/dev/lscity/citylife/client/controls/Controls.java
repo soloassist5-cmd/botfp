@@ -92,18 +92,6 @@ public final class Controls {
         // Карты Xaero: M — карта мира, настройки миникарты — Alt+Y.
         put("gui.xaero_open_map", "key.keyboard.m");
         put("gui.xaero_minimap_settings", "alt+key.keyboard.y");
-        // FPV-дрон: блок клавиш над стрелками, взвести моторы — Enter.
-        put("key.fpvdrone.arm_motors", "key.keyboard.enter");
-        put("key.fpvdrone.thermal_toggle", "key.keyboard.end");
-        put("key.fpvdrone.thermal_focus_mode", "key.keyboard.home");
-        put("key.fpvdrone.thermal_nuc", "key.keyboard.insert");
-        put("key.fpvdrone.thermal_agc_mode", "key.keyboard.page.up");
-        put("key.fpvdrone.thermal_cycle_palette", "key.keyboard.page.down");
-        put("key.fpvdrone.cycle_resolution", "key.keyboard.f7");
-        // Дрон-камера Diligent Stalker.
-        put("key.diligentstalker.control.desc", "alt+key.keyboard.x");
-        put("key.diligentstalker.view.desc", "alt+key.keyboard.b");
-        put("key.diligentstalker.disconnect.desc", "key.keyboard.delete");
         // Служебное прочих модов — с дороги.
         put("key.tctcore.tc_tcore_key", "alt+key.keyboard.o");
         put("key.corpse.death_history", "alt+key.keyboard.u");

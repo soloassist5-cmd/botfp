@@ -51,7 +51,7 @@ public final class DeviceServer {
 
     /** Действия, которым нужен интернет (SIM или провод). */
     private static final List<String> NEEDS_NETWORK = List.of("msg", "pay", "wp_add", "nav_set",
-            "lock_toggle", "lock_grant", "lock_pin", "app_install", "market_order", "cam_view",
+            "lock_toggle", "lock_grant", "lock_pin", "app_install", "market_order", "market_drone", "cam_view",
             "mail_send", "ad_post");
 
     /** Сколько стоит объявление на городской доске. */
@@ -246,6 +246,7 @@ public final class DeviceServer {
         tag.put("locks", locks(player, data));
         tag.put("cameras", cameras(player, data));
         tag.put("jarvis", dev.lscity.citylife.stark.StarkSuits.snapshot(player));
+        tag.put("drones", dev.lscity.citylife.drone.Drones.snapshot(player));
 
         long now = player.level().getGameTime();
         ListTag inbox = new ListTag();
@@ -577,6 +578,7 @@ public final class DeviceServer {
                 }
             }
             case "market_order" -> order(player, data, args.getString("offer"));
+            case "market_drone" -> dev.lscity.citylife.drone.Courier.deliver(player, data, args.getInt("order"));
             case "lock_toggle" -> lockToggle(player, data, args);
             case "cam_view" -> cameraView(player, args);
             case "mail_send" -> mailSend(player, data, args);

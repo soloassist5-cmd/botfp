@@ -38,8 +38,8 @@ import java.util.regex.Pattern;
  * есть допуск охраны.
  *
  * Mark 7 и Mark 42 в моде только для подписчиков Patreon автора: их
- * облачение у обычного игрока не запускается. В Зале брони они стоят как
- * экспонаты, а в списке Джарвиса их нет.
+ * облачение у обычного игрока не запускается. Mark 7 в Зале брони — экспонат.
+ * Mark 42 у города свой (Mark42): Джарвис присылает его по частям.
  */
 public final class StarkSuits {
 
@@ -57,14 +57,14 @@ public final class StarkSuits {
             return switch (id) {
                 case 5 -> SYM + ":mark_5_suitcase";
                 case 7 -> SYM + ":mark_7_bracelet";
-                case 42 -> SYM + ":mark_42_implant";
+                case 42 -> "citylife:mark42_chestplate";
                 default -> SYM + ":mark_" + id + "_chestplate";
             };
         }
 
         /** Четыре части брони или пусто, если марка надевается одним предметом. */
         public boolean armour() {
-            return id != 5 && id != 7 && id != 42;
+            return id != 5 && id != 7;
         }
     }
 
@@ -81,7 +81,7 @@ public final class StarkSuits {
             new Mark(33, "Silver Centurion", 2, true),
             new Mark(38, "Igor", 2, true),
             new Mark(39, "Starboost", 2, true),
-            new Mark(42, "Prodigal Son", 2, false));
+            new Mark(42, "Prodigal Son", 0, true));
 
     private static final Pattern PIECE = Pattern.compile("mark_(\\d+)_(helmet|chestplate|leggings|boots)");
     private static final Map<String, Integer> SINGLE = Map.of(
@@ -107,6 +107,10 @@ public final class StarkSuits {
 
     /** Номер марки по предмету костюма; 0 — это не костюм. */
     public static int markOf(ResourceLocation id) {
+        if (id != null && "citylife".equals(id.getNamespace()) && id.getPath().startsWith(Mark42.PREFIX)
+                && id.getPath().matches("mark42_(helmet|chestplate|leggings|boots)")) {
+            return 42;
+        }
         if (id == null || !SYM.equals(id.getNamespace())) {
             return 0;
         }
@@ -171,6 +175,15 @@ public final class StarkSuits {
 
     /** Надеть марку целиком, с реактором и навыками, с эффектом прилёта. true — получилось. */
     public static boolean summon(ServerPlayer player, Mark mark) {
+        if (mark.id() == 42) {
+            // Свой Mark 42: детали прилетают по одной, сообщения — по прибытии.
+            stripSym(player);
+            if (Mark42.wears(player) || Mark42.assemble(player, null)) {
+                CURRENT.put(player.getUUID(), 42);
+                return true;
+            }
+            return false;
+        }
         strip(player);
         if (mark.armour()) {
             for (int i = 0; i < 4; i++) {
@@ -229,6 +242,9 @@ public final class StarkSuits {
      * только броню.
      */
     public static boolean prepare(ServerPlayer player, Mark mark) {
+        if (mark.id() == 42) {
+            return true;   // у нашего Mark 42 реактор встроенный
+        }
         boolean reactor = curio(player, "body", item(SYM + ":arc_reactor_tier_" + mark.reactor()));
         skills(player);
         return reactor;
@@ -248,6 +264,21 @@ public final class StarkSuits {
         }
     }
 
+    /** Снять с игрока костюмы Sym (наш Mark 42 остаётся на месте). */
+    public static void stripSym(ServerPlayer player) {
+        for (EquipmentSlot slot : ARMOUR) {
+            ResourceLocation id = ForgeRegistries.ITEMS.getKey(player.getItemBySlot(slot).getItem());
+            if (id != null && SYM.equals(id.getNamespace()) && isSuit(id)) {
+                player.setItemSlot(slot, ItemStack.EMPTY);
+            }
+        }
+        for (String slot : new String[]{"necklace", "head", "body"}) {
+            if (isSuitOrReactor(curio(player, slot))) {
+                curio(player, slot, ItemStack.EMPTY);
+            }
+        }
+    }
+
     /** Снять с игрока всё от костюмов: части брони, кейс, реактор. */
     private static void strip(ServerPlayer player) {
         for (EquipmentSlot slot : ARMOUR) {
@@ -263,6 +294,9 @@ public final class StarkSuits {
     }
 
     public static void off(ServerPlayer player) {
+        if (Mark42.wearsAny(player)) {
+            Mark42.home(player, null);   // Mark 42 улетает сам
+        }
         strip(player);
         CURRENT.remove(player.getUUID());
         player.playNotifySound(SoundEvents.ARMOR_EQUIP_IRON, SoundSource.PLAYERS, 1.0F, 0.8F);

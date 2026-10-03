@@ -1,0 +1,1173 @@
+{
+  "name": {
+    "translate": "citylife.mark42.power"
+  },
+  "background": "citylife:textures/gui/mark42_background.png",
+  "icon": "citylife:mark42_helmet",
+  "energy_bars": {
+    "energy": {
+      "max": 1000,
+      "auto_increase_per_tick": 4,
+      "auto_increase_interval": 1,
+      "color": "#ffc23d"
+    }
+  },
+  "persistent_data": true,
+  "abilities": {
+    "suit": {
+      "type": "palladium:dummy",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "conditions": {
+        "unlocking": [
+          {
+            "type": "palladium:item_in_slot",
+            "item": {
+              "item": "citylife:mark42_helmet"
+            },
+            "slot": "head"
+          },
+          {
+            "type": "palladium:item_in_slot",
+            "item": {
+              "item": "citylife:mark42_chestplate"
+            },
+            "slot": "chest"
+          },
+          {
+            "type": "palladium:item_in_slot",
+            "item": {
+              "item": "citylife:mark42_leggings"
+            },
+            "slot": "legs"
+          },
+          {
+            "type": "palladium:item_in_slot",
+            "item": {
+              "item": "citylife:mark42_boots"
+            },
+            "slot": "feet"
+          }
+        ]
+      }
+    },
+    "repulsor": {
+      "type": "palladium:aim",
+      "title": {
+        "translate": "citylife.mark42.ability.repulsor"
+      },
+      "icon": "citylife:textures/icon/mark42_repulsor.png",
+      "description": {
+        "translate": "citylife.mark42.ability.repulsor.desc"
+      },
+      "list_index": 0,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "time": 3,
+      "arm": "right_arm",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:held",
+            "cooldown": 0,
+            "key_type": "key_bind",
+            "needs_empty_hand": true
+          },
+          {
+            "type": "palladium:energy_bar",
+            "energy_bar": "energy",
+            "min": 10
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "repulsor_beam": {
+      "type": "palladium:energy_beam",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "energy_beam": "citylife:mark42_repulsor",
+      "damage": 3.0,
+      "max_distance": 40.0,
+      "speed": 1.2,
+      "set_on_fire_seconds": 0,
+      "cause_fire": false,
+      "smelt_blocks": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "repulsor",
+            "min": 3,
+            "max": 1000000
+          },
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "repulsor"
+          },
+          {
+            "type": "palladium:energy_bar",
+            "energy_bar": "energy",
+            "min": 5
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      },
+      "energy_bar_usage": {
+        "energy_bar": "energy",
+        "amount": 3
+      }
+    },
+    "repulsor_sound": {
+      "type": "palladium:play_sound",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "sound": "minecraft:block.beacon.ambient",
+      "volume": 0.9,
+      "pitch": 1.8,
+      "looping": true,
+      "play_self": true,
+      "play_others": true,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "repulsor_beam"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "unibeam": {
+      "type": "palladium:energy_beam",
+      "title": {
+        "translate": "citylife.mark42.ability.unibeam"
+      },
+      "icon": "citylife:textures/icon/mark42_unibeam.png",
+      "description": {
+        "translate": "citylife.mark42.ability.unibeam.desc"
+      },
+      "list_index": 1,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "energy_beam": "citylife:mark42_unibeam",
+      "damage": 6.0,
+      "max_distance": 56.0,
+      "speed": 0.9,
+      "set_on_fire_seconds": 0,
+      "cause_fire": false,
+      "smelt_blocks": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:held",
+            "cooldown": 0,
+            "key_type": "key_bind",
+            "needs_empty_hand": false
+          },
+          {
+            "type": "palladium:energy_bar",
+            "energy_bar": "energy",
+            "min": 40
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      },
+      "energy_bar_usage": {
+        "energy_bar": "energy",
+        "amount": 8
+      }
+    },
+    "unibeam_sound": {
+      "type": "palladium:play_sound",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "sound": "minecraft:block.beacon.power_select",
+      "volume": 1.0,
+      "pitch": 0.7,
+      "looping": true,
+      "play_self": true,
+      "play_others": true,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "unibeam"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "missiles": {
+      "type": "palladium:dummy",
+      "title": {
+        "translate": "citylife.mark42.ability.missiles"
+      },
+      "icon": "citylife:textures/icon/mark42_missiles.png",
+      "description": {
+        "translate": "citylife.mark42.ability.missiles.desc"
+      },
+      "list_index": 2,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:activation",
+            "cooldown": 100,
+            "key_type": "key_bind",
+            "needs_empty_hand": false,
+            "ticks": 24
+          },
+          {
+            "type": "palladium:energy_bar",
+            "energy_bar": "energy",
+            "min": 150
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      },
+      "energy_bar_usage": {
+        "energy_bar": "energy",
+        "amount": 6
+      }
+    },
+    "missile_0": {
+      "type": "palladium:projectile",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "entity_type": "palladium:custom_projectile",
+      "entity_data": {
+        "Damage": 6.0,
+        "Gravity": 0.0,
+        "Lifetime": 60,
+        "ExplosionRadius": 1.2,
+        "ExplosionCausesFire": false,
+        "ExplosionBlockInteraction": "none",
+        "DieOnEntityHit": true,
+        "DieOnBlockHit": true,
+        "Size": 0.4,
+        "Appearances": [
+          {
+            "Type": "item",
+            "Item": {
+              "id": "citylife:mark42_missile",
+              "Count": 1
+            }
+          },
+          {
+            "Type": "trail",
+            "Trail": "citylife:mark42_missile"
+          },
+          {
+            "Type": "particles",
+            "ParticleType": "minecraft:smoke",
+            "Amount": 1,
+            "Spread": 0.02
+          }
+        ]
+      },
+      "inaccuracy": 3.0,
+      "velocity": 2.0,
+      "swinging_arm": "off_arm",
+      "damage_from_player": true,
+      "ignore_player_movement": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "missiles",
+            "min": 1,
+            "max": 1
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "missile_1": {
+      "type": "palladium:projectile",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "entity_type": "palladium:custom_projectile",
+      "entity_data": {
+        "Damage": 6.0,
+        "Gravity": 0.0,
+        "Lifetime": 60,
+        "ExplosionRadius": 1.2,
+        "ExplosionCausesFire": false,
+        "ExplosionBlockInteraction": "none",
+        "DieOnEntityHit": true,
+        "DieOnBlockHit": true,
+        "Size": 0.4,
+        "Appearances": [
+          {
+            "Type": "item",
+            "Item": {
+              "id": "citylife:mark42_missile",
+              "Count": 1
+            }
+          },
+          {
+            "Type": "trail",
+            "Trail": "citylife:mark42_missile"
+          },
+          {
+            "Type": "particles",
+            "ParticleType": "minecraft:smoke",
+            "Amount": 1,
+            "Spread": 0.02
+          }
+        ]
+      },
+      "inaccuracy": 3.0,
+      "velocity": 2.0,
+      "swinging_arm": "none",
+      "damage_from_player": true,
+      "ignore_player_movement": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "missiles",
+            "min": 5,
+            "max": 5
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "missile_2": {
+      "type": "palladium:projectile",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "entity_type": "palladium:custom_projectile",
+      "entity_data": {
+        "Damage": 6.0,
+        "Gravity": 0.0,
+        "Lifetime": 60,
+        "ExplosionRadius": 1.2,
+        "ExplosionCausesFire": false,
+        "ExplosionBlockInteraction": "none",
+        "DieOnEntityHit": true,
+        "DieOnBlockHit": true,
+        "Size": 0.4,
+        "Appearances": [
+          {
+            "Type": "item",
+            "Item": {
+              "id": "citylife:mark42_missile",
+              "Count": 1
+            }
+          },
+          {
+            "Type": "trail",
+            "Trail": "citylife:mark42_missile"
+          },
+          {
+            "Type": "particles",
+            "ParticleType": "minecraft:smoke",
+            "Amount": 1,
+            "Spread": 0.02
+          }
+        ]
+      },
+      "inaccuracy": 3.0,
+      "velocity": 2.0,
+      "swinging_arm": "off_arm",
+      "damage_from_player": true,
+      "ignore_player_movement": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "missiles",
+            "min": 9,
+            "max": 9
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "missile_3": {
+      "type": "palladium:projectile",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "entity_type": "palladium:custom_projectile",
+      "entity_data": {
+        "Damage": 6.0,
+        "Gravity": 0.0,
+        "Lifetime": 60,
+        "ExplosionRadius": 1.2,
+        "ExplosionCausesFire": false,
+        "ExplosionBlockInteraction": "none",
+        "DieOnEntityHit": true,
+        "DieOnBlockHit": true,
+        "Size": 0.4,
+        "Appearances": [
+          {
+            "Type": "item",
+            "Item": {
+              "id": "citylife:mark42_missile",
+              "Count": 1
+            }
+          },
+          {
+            "Type": "trail",
+            "Trail": "citylife:mark42_missile"
+          },
+          {
+            "Type": "particles",
+            "ParticleType": "minecraft:smoke",
+            "Amount": 1,
+            "Spread": 0.02
+          }
+        ]
+      },
+      "inaccuracy": 3.0,
+      "velocity": 2.0,
+      "swinging_arm": "none",
+      "damage_from_player": true,
+      "ignore_player_movement": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "missiles",
+            "min": 13,
+            "max": 13
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "missile_4": {
+      "type": "palladium:projectile",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "entity_type": "palladium:custom_projectile",
+      "entity_data": {
+        "Damage": 6.0,
+        "Gravity": 0.0,
+        "Lifetime": 60,
+        "ExplosionRadius": 1.2,
+        "ExplosionCausesFire": false,
+        "ExplosionBlockInteraction": "none",
+        "DieOnEntityHit": true,
+        "DieOnBlockHit": true,
+        "Size": 0.4,
+        "Appearances": [
+          {
+            "Type": "item",
+            "Item": {
+              "id": "citylife:mark42_missile",
+              "Count": 1
+            }
+          },
+          {
+            "Type": "trail",
+            "Trail": "citylife:mark42_missile"
+          },
+          {
+            "Type": "particles",
+            "ParticleType": "minecraft:smoke",
+            "Amount": 1,
+            "Spread": 0.02
+          }
+        ]
+      },
+      "inaccuracy": 3.0,
+      "velocity": 2.0,
+      "swinging_arm": "off_arm",
+      "damage_from_player": true,
+      "ignore_player_movement": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "missiles",
+            "min": 17,
+            "max": 17
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "missile_5": {
+      "type": "palladium:projectile",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "entity_type": "palladium:custom_projectile",
+      "entity_data": {
+        "Damage": 6.0,
+        "Gravity": 0.0,
+        "Lifetime": 60,
+        "ExplosionRadius": 1.2,
+        "ExplosionCausesFire": false,
+        "ExplosionBlockInteraction": "none",
+        "DieOnEntityHit": true,
+        "DieOnBlockHit": true,
+        "Size": 0.4,
+        "Appearances": [
+          {
+            "Type": "item",
+            "Item": {
+              "id": "citylife:mark42_missile",
+              "Count": 1
+            }
+          },
+          {
+            "Type": "trail",
+            "Trail": "citylife:mark42_missile"
+          },
+          {
+            "Type": "particles",
+            "ParticleType": "minecraft:smoke",
+            "Amount": 1,
+            "Spread": 0.02
+          }
+        ]
+      },
+      "inaccuracy": 3.0,
+      "velocity": 2.0,
+      "swinging_arm": "none",
+      "damage_from_player": true,
+      "ignore_player_movement": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "missiles",
+            "min": 21,
+            "max": 21
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "missile_sound": {
+      "type": "palladium:play_sound",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "sound": "minecraft:entity.firework_rocket.launch",
+      "volume": 1.0,
+      "pitch": 0.6,
+      "looping": false,
+      "play_self": true,
+      "play_others": true,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_ticks",
+            "ability": "missiles",
+            "min": 1,
+            "max": 1
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "flight": {
+      "type": "palladium:dummy",
+      "title": {
+        "translate": "citylife.mark42.ability.flight"
+      },
+      "icon": "citylife:textures/icon/mark42_flight.png",
+      "description": {
+        "translate": "citylife.mark42.ability.flight.desc"
+      },
+      "list_index": 3,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:toggle",
+            "cooldown": 0,
+            "key_type": "key_bind",
+            "needs_empty_hand": false
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "flight_speed": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "palladium:flight_speed",
+      "amount": 0.3,
+      "operation": 0,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004201",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "flight"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "flight_sprint": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "palladium:flight_sprint_speed",
+      "amount": 1.6,
+      "operation": 0,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004202",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "flight"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "flight_heroic": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "palladium:heroic_flight_type",
+      "amount": 1.0,
+      "operation": 0,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004203",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "flight"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "thrusters": {
+      "type": "palladium:render_layer",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "render_layer": "citylife:mark42_thrusters",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "flight"
+          },
+          {
+            "type": "palladium:is_hovering_or_flying"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "thruster_fire": {
+      "type": "palladium:particles",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "emitter": [
+        "citylife:mark42_thrusters"
+      ],
+      "particle_type": "minecraft:flame",
+      "options": "",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "flight"
+          },
+          {
+            "type": "palladium:is_hovering_or_flying"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "trail": {
+      "type": "palladium:trail",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "trail": "citylife:mark42_flight",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "flight"
+          },
+          {
+            "type": "palladium:is_fast_flying"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "flight_sound": {
+      "type": "palladium:play_sound",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "sound": "minecraft:item.elytra.flying",
+      "volume": 0.35,
+      "pitch": 1.5,
+      "looping": true,
+      "play_self": true,
+      "play_others": true,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "flight"
+          },
+          {
+            "type": "palladium:is_hovering_or_flying"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "shield": {
+      "type": "palladium:dummy",
+      "title": {
+        "translate": "citylife.mark42.ability.shield"
+      },
+      "icon": "citylife:textures/icon/mark42_shield.png",
+      "description": {
+        "translate": "citylife.mark42.ability.shield.desc"
+      },
+      "list_index": 4,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:toggle",
+            "cooldown": 0,
+            "key_type": "key_bind",
+            "needs_empty_hand": false
+          },
+          {
+            "type": "palladium:energy_bar",
+            "energy_bar": "energy",
+            "min": 30
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      },
+      "energy_bar_usage": {
+        "energy_bar": "energy",
+        "amount": 2
+      }
+    },
+    "shield_armor": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "minecraft:generic.armor",
+      "amount": 12.0,
+      "operation": 0,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004211",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "shield"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "shield_toughness": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "minecraft:generic.armor_toughness",
+      "amount": 8.0,
+      "operation": 0,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004212",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "shield"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "shield_knockback": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "minecraft:generic.knockback_resistance",
+      "amount": 1.0,
+      "operation": 0,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004213",
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:ability_enabled",
+            "ability": "shield"
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "faceplate": {
+      "type": "palladium:dummy",
+      "title": {
+        "translate": "citylife.mark42.ability.faceplate"
+      },
+      "icon": "citylife:textures/icon/mark42_faceplate.png",
+      "description": {
+        "translate": "citylife.mark42.ability.faceplate.desc"
+      },
+      "list_index": 5,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:toggle",
+            "cooldown": 0,
+            "key_type": "key_bind",
+            "needs_empty_hand": false
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "night_vision": {
+      "type": "palladium:command",
+      "title": {
+        "translate": "citylife.mark42.ability.night"
+      },
+      "icon": "citylife:textures/icon/mark42_night.png",
+      "description": {
+        "translate": "citylife.mark42.ability.night.desc"
+      },
+      "list_index": 6,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "first_tick_commands": [
+        "effect give @s minecraft:night_vision infinite 0 true"
+      ],
+      "last_tick_commands": [
+        "effect clear @s minecraft:night_vision"
+      ],
+      "commands": [],
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:toggle",
+            "cooldown": 0,
+            "key_type": "key_bind",
+            "needs_empty_hand": false
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "scan": {
+      "type": "palladium:entity_glow",
+      "title": {
+        "translate": "citylife.mark42.ability.scan"
+      },
+      "icon": "citylife:textures/icon/mark42_scan.png",
+      "description": {
+        "translate": "citylife.mark42.ability.scan.desc"
+      },
+      "list_index": 7,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "mode": "others",
+      "color": "#7fd8ff",
+      "distance": 48.0,
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:toggle",
+            "cooldown": 0,
+            "key_type": "key_bind",
+            "needs_empty_hand": false
+          },
+          {
+            "type": "palladium:energy_bar",
+            "energy_bar": "energy",
+            "min": 10
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      },
+      "energy_bar_usage": {
+        "energy_bar": "energy",
+        "amount": 1
+      }
+    },
+    "home": {
+      "type": "palladium:command",
+      "title": {
+        "translate": "citylife.mark42.ability.home"
+      },
+      "icon": "citylife:textures/icon/mark42_home.png",
+      "description": {
+        "translate": "citylife.mark42.ability.home.desc"
+      },
+      "list_index": 8,
+      "hidden": false,
+      "hidden_in_bar": false,
+      "first_tick_commands": [
+        "mark42 home"
+      ],
+      "last_tick_commands": [],
+      "commands": [],
+      "conditions": {
+        "enabling": [
+          {
+            "type": "palladium:action",
+            "cooldown": 40,
+            "key_type": "key_bind",
+            "needs_empty_hand": false
+          }
+        ],
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "strength": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "palladium:punch_damage",
+      "amount": 7.0,
+      "operation": 0,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004221",
+      "conditions": {
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "speed": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "minecraft:generic.movement_speed",
+      "amount": 0.25,
+      "operation": 1,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004222",
+      "conditions": {
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "jump": {
+      "type": "palladium:attribute_modifier",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "attribute": "palladium:jump_power",
+      "amount": 0.3,
+      "operation": 1,
+      "uuid": "8a9e1f2c-4b42-4d42-9f42-000000004223",
+      "conditions": {
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    },
+    "no_fall": {
+      "type": "palladium:damage_immunity",
+      "list_index": -1,
+      "hidden": true,
+      "hidden_in_bar": true,
+      "damage_sources": [
+        "minecraft:is_fall"
+      ],
+      "conditions": {
+        "unlocking": [
+          {
+            "type": "palladium:ability_unlocked",
+            "ability": "suit"
+          }
+        ]
+      }
+    }
+  }
+}

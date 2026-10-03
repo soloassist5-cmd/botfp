@@ -13,7 +13,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 /** Сетевой канал мода: телефон синхронизируется снимками состояния. */
 public final class Net {
-    private static final String VERSION = "2";
+    private static final String VERSION = "3";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
             .named(new net.minecraft.resources.ResourceLocation(CityLife.MOD_ID, "main"))
@@ -52,10 +52,23 @@ public final class Net {
                 .decoder(PanelPacket::decode)
                 .consumerMainThread(PanelPacket::handle)
                 .add();
-        CHANNEL.messageBuilder(ActionPacket.class, id, NetworkDirection.PLAY_TO_SERVER)
+        CHANNEL.messageBuilder(ActionPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(ActionPacket::encode)
                 .decoder(ActionPacket::decode)
                 .consumerMainThread(ActionPacket::handle)
+                .add();
+        // Дроны: координаты от пилота каждый тик и команды «начать/закончить».
+        CHANNEL.messageBuilder(dev.lscity.citylife.drone.DroneMovePacket.class, id++,
+                        NetworkDirection.PLAY_TO_SERVER)
+                .encoder(dev.lscity.citylife.drone.DroneMovePacket::encode)
+                .decoder(dev.lscity.citylife.drone.DroneMovePacket::decode)
+                .consumerNetworkThread(dev.lscity.citylife.drone.DroneMovePacket::handle)
+                .add();
+        CHANNEL.messageBuilder(dev.lscity.citylife.drone.DroneControlPacket.class, id,
+                        NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(dev.lscity.citylife.drone.DroneControlPacket::encode)
+                .decoder(dev.lscity.citylife.drone.DroneControlPacket::decode)
+                .consumerNetworkThread(dev.lscity.citylife.drone.DroneControlPacket::handle)
                 .add();
     }
 

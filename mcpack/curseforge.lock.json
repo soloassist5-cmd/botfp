@@ -1,6 +1,6 @@
 {
  "mc": "1.20.1",
- "found": 67,
+ "found": 65,
  "missing": [
   "Memory Leak Fix",
   "PrismProtect"
@@ -15,16 +15,6 @@
    "projectID": 819401,
    "fileID": 8724047,
    "cf_url": "https://www.curseforge.com/minecraft/mc-mods/cctv-camera"
-  },
-  {
-   "slug": "diligentstalker",
-   "title": "Diligent Stalker",
-   "filename": "diligentstalker-forge-1.20.1-1.1.1.jar",
-   "side": "both",
-   "optional": false,
-   "projectID": 1256172,
-   "fileID": 7328075,
-   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/diligentstalker"
   },
   {
    "slug": "easy-npc-config-ui",
@@ -55,16 +45,6 @@
    "projectID": 1084662,
    "fileID": 7952352,
    "cf_url": "https://www.curseforge.com/minecraft/mc-mods/elite-x-quality-guns"
-  },
-  {
-   "slug": "fpvdrones",
-   "title": "FPV Drones",
-   "filename": "FPVtoMinecraft-1.20.1-V1.1.4.jar",
-   "side": "both",
-   "optional": false,
-   "projectID": 1483366,
-   "fileID": 8187486,
-   "cf_url": "https://www.curseforge.com/minecraft/mc-mods/fpvdrones"
   },
   {
    "slug": "guard-villagers",

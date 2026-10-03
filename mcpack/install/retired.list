@@ -19,3 +19,6 @@ Satsu_iron_man_addon-*.jar
 corewithstuff-*.jar
 gravecore-*.jar
 lodestone-*.jar
+# Дроны: FPV Drones и Diligent Stalker — теперь свои дроны City Life.
+FPVtoMinecraft-*.jar
+diligentstalker-*.jar

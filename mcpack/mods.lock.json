@@ -4,8 +4,8 @@
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 69,
-  "total_size": 320173503,
+  "mod_count": 67,
+  "total_size": 317892948,
   "mods": [
     {
       "slug": "cameracraft",
@@ -29,29 +29,6 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/cameracraft"
-    },
-    {
-      "slug": "diligentstalker",
-      "title": "Diligent Stalker",
-      "project_id": "cYG2StiC",
-      "version_id": "1AIlFjBU",
-      "version_number": "1.1.1",
-      "version_type": "release",
-      "filename": "diligentstalker-forge-1.20.1-1.1.1.jar",
-      "url": "https://cdn.modrinth.com/data/cYG2StiC/versions/1AIlFjBU/diligentstalker-forge-1.20.1-1.1.1.jar",
-      "size": 152548,
-      "sha1": "66883e7dbc20609c48f6bcb5af7962f5cdad3804",
-      "sha512": "b70ac8aff86b085a57df6aa00c2db3c358b3e596bc2b08f56e73972ab5f2d13ec62d5f8d74fafffa256d964fe58042e65677beb3c477f65220b96d7b09236881",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "core",
-      "note": "Дрон-камера с удалённым управлением",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/diligentstalker"
     },
     {
       "slug": "easy-npc-config-ui",
@@ -121,29 +98,6 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/elite-x-quality-guns"
-    },
-    {
-      "slug": "fpvdrones",
-      "title": "FPV Drones",
-      "project_id": "HZmTdhEw",
-      "version_id": "pJb5Xagl",
-      "version_number": "1.1.4",
-      "version_type": "release",
-      "filename": "FPVtoMinecraft-1.20.1-V1.1.4.jar",
-      "url": "https://cdn.modrinth.com/data/HZmTdhEw/versions/pJb5Xagl/FPVtoMinecraft-1.20.1-V1.1.4.jar",
-      "size": 2128007,
-      "sha1": "59036cc0656263e2af913453f1178c36fe8ed13c",
-      "sha512": "d11c0e2d03c56b8268d8b691c479977cbb0b123c0ef626569a9d9cd368f456b9731813c32fe989ccd4ea6e779393db31d4cff56fcc920592e444614924fee828",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "core",
-      "note": "Дроны с пультом и FPV-очками: полёты, гонки, груз",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/fpvdrones"
     },
     {
       "slug": "guard-villagers",

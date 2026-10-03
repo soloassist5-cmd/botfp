@@ -96,7 +96,7 @@ class MarketApp extends DeviceApp {
         String balance = Money.format(screen.data().getLong("balance"));
         int top = listTop(area);
         if (tabs.get(tab).equals(ORDERS)) {
-            renderOrders(g, area, top, t);
+            renderOrders(g, area, top, t, mouseX, mouseY);
             return;
         }
         List<Market.Offer> offers = Market.in(tabs.get(tab));
@@ -117,7 +117,7 @@ class MarketApp extends DeviceApp {
                 area[0] + area[2] / 2, area[1] + area[3] - 8, area[2], t.dim());
     }
 
-    private void renderOrders(GuiGraphics g, int[] area, int top, DeviceScreen.Theme t) {
+    private void renderOrders(GuiGraphics g, int[] area, int top, DeviceScreen.Theme t, int mouseX, int mouseY) {
         ListTag orders = screen.list("orders");
         if (orders.isEmpty()) {
             screen.empty(g, area, "citylife.market.no_orders");
@@ -142,6 +142,12 @@ class MarketApp extends DeviceApp {
                 default -> 0xFFFFD166;
             };
             screen.text(g, line, r[0] + 6, r[1] + 12, colour);
+            if (status.equals("ready")) {
+                // Готовый заказ можно не забирать самому: привезёт курьерский дрон.
+                String drone = Component.translatable("citylife.market.drone").getString();
+                int bw = screen.buttonWidth(drone);
+                screen.button(g, r[0] + r[2] - bw - 3, r[1] + 3, 0, drone, 0xFF2F9C95, mouseX, mouseY);
+            }
         }
         screen.fitted(g, Component.translatable("citylife.market.pickup_hint").getString(),
                 area[0] + area[2] / 2, area[1] + area[3] - 8, area[2], t.dim());
@@ -159,6 +165,18 @@ class MarketApp extends DeviceApp {
         }
         List<String> tabs = tabs();
         if (tabs.get(tab).equals(ORDERS)) {
+            ListTag orders = screen.list("orders");
+            int bw = screen.buttonWidth(Component.translatable("citylife.market.drone").getString());
+            int top = listTop(area);
+            for (int i = scroll, shown = 0; i < orders.size() && shown < rowsFit(area); i++, shown++) {
+                int[] button = {area[0] + area[2] - bw - 3, top + shown * 24 + 3, bw, 16};
+                if (orders.getCompound(i).getString("status").equals("ready") && screen.inside(mx, my, button)) {
+                    CompoundTag args = new CompoundTag();
+                    args.putInt("order", orders.getCompound(i).getInt("id"));
+                    screen.send("market_drone", args);
+                    return true;
+                }
+            }
             return false;
         }
         List<Market.Offer> offers = Market.in(tabs.get(tab));

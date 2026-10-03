@@ -31,7 +31,6 @@ public final class KeyNames {
             new Group("transport", 0xFF2F9C95, List.of("vehicle", "citylife")),
             new Group("voice", 0xFF3A8FD6, List.of("voicechat")),
             new Group("map", 0xFF4CAF7A, List.of("xaero", "minimap", "worldmap")),
-            new Group("drone", 0xFF9B59B6, List.of("fpvdrone", "diligentstalker")),
             new Group("action", 0xFF6A9A5B, List.of("key.categories.gameplay")),
             new Group("inventory", 0xFFA68A4E, List.of("key.categories.inventory", "key.categories.creative")),
             new Group("chat", 0xFF8A6BB0, List.of("key.categories.multiplayer")),
@@ -84,5 +83,5 @@ public final class KeyNames {
     public static final List<String> ESSENTIALS = List.of(
             "key.citylife.controls", "key.palladium.ability_1", "key.curios.open.desc", "key.tacz.reload.desc",
             "gui.xaero_open_map", "key.push_to_talk", "key.citylife.vehicle", "key.inventory", "key.chat",
-            "key.vehicle.horn", "key.fpvdrone.arm_motors");
+            "key.vehicle.horn");
 }

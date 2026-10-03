@@ -1,0 +1,17 @@
+{
+  "body_part": "chest",
+  "offset": [
+    0,
+    -3.25,
+    -2.6
+  ],
+  "glow_color": "#9fe8ff",
+  "core_color": "#ffffff",
+  "glow_opacity": 0.7,
+  "core_opacity": 1.0,
+  "bloom": 3,
+  "size": [
+    3,
+    3
+  ]
+}

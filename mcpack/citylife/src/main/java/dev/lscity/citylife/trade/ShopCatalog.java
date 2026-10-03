@@ -920,14 +920,10 @@ public final class ShopCatalog {
                     new ShopOffer(new ShopItem("citylife:banknote_1000", 4, null), new ShopItem("cameracraft:video_camera", 1, null)),
                     new ShopOffer(new ShopItem("citylife:banknote_100", 8, null), new ShopItem("cameracraft:tripod", 1, null)),
                     new ShopOffer(new ShopItem("citylife:banknote_1000", 6, null), new ShopItem("cameracraft:laptop", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_5000", 5, null), new ShopItem("fpvdrone:drone", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_5000", 8, null), new ShopItem("fpvdrone:thermal_drone", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_1000", 6, null), new ShopItem("fpvdrone:remote_control", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_1000", 8, null), new ShopItem("fpvdrone:fpv_goggles", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_100", 15, null), new ShopItem("fpvdrone:battery", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_100", 2, null), new ShopItem("fpvdrone:propeller", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_1000", 12, null), new ShopItem("diligentstalker:drone_stalker", 1, null)),
-                    new ShopOffer(new ShopItem("citylife:banknote_1000", 4, null), new ShopItem("diligentstalker:stalker_master", 1, null)))))
+                    new ShopOffer(new ShopItem("citylife:banknote_1000", 18, null), new ShopItem("citylife:drone_camera", 1, null)),
+                    new ShopOffer(new ShopItem("citylife:banknote_1000", 26, null), new ShopItem("citylife:drone_racer", 1, null)),
+                    new ShopOffer(new ShopItem("citylife:banknote_1000", 32, null), new ShopItem("citylife:drone_courier", 1, null)),
+                    new ShopOffer(new ShopItem("citylife:banknote_1000", 4, null), new ShopItem("citylife:drone_remote", 1, null)))))
     );
 
     /** Что говорят те, у кого нет прилавка. */
