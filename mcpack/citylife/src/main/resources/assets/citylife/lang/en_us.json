@@ -354,7 +354,7 @@
   "citylife.realty.key_give": "Give key",
   "citylife.realty.keys": "Keys:",
   "citylife.realty.no_keys": "No keys given yet.",
-  "citylife.realty.need_agent": "Deals are made by a realtor: walk up to one and click.",
+  "citylife.realty.need_agent": "Deals are made by a realtor: one sits in the city hall, see «Агентство недвижимости» in the navigator. Walk up and click.",
   "citylife.realty.taken": "This home is already sold.",
   "citylife.realty.limit": "No more than %s homes per resident.",
   "citylife.realty.no_money": "Not enough money: %s needed.",

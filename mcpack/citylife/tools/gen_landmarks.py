@@ -85,6 +85,14 @@ def main() -> int:
         icon = KIND_RU.get(kind, ("", "pin"))[1]
         rows.append((title(kind, label), icon, x, y, z))
 
+    # Службы внутри других зданий. Риелтор сидит в мэрии, и метка «Мэрия»
+    # не говорит игроку, где покупать дом. Поэтому у агентства своя метка —
+    # прямо у стола риелтора (та же точка, где датапак ставит NPC).
+    for spot in city.npc_spots:
+        if spot["role"] == "realtor" and spot["kind"] == "city_hall":
+            rows.append(("Агентство недвижимости (мэрия)", "realty",
+                         spot["x"], spot["y"], spot["z"]))
+
     # Прибрежные районы усадеб: въезд с городской улицы.
     for point in city.landmark_points:
         if point["name"] in ("Береговой", "Приморский"):

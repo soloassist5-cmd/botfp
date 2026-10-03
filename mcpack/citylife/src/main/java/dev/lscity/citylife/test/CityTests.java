@@ -1179,6 +1179,11 @@ public final class CityTests {
             if (route == null || !"bank".equals(route.icon())) {
                 h.fail("прохожий не подсказал дорогу до банка");
             }
+            dev.lscity.citylife.city.Citizens.answer(talker, walker, "way:realty");
+            route = bank.route(talker.getUUID());
+            if (route == null || !"realty".equals(route.icon())) {
+                h.fail("прохожий не подсказал дорогу до агентства недвижимости");
+            }
             dev.lscity.citylife.city.Citizens.answer(talker, walker, "chat");
             if (!"chat".equals(dev.lscity.citylife.city.Citizens.lastOutcome)) {
                 h.fail("на «как дела» нет ответа");

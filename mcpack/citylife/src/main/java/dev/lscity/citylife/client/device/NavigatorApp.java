@@ -58,6 +58,23 @@ class NavigatorApp extends DeviceApp {
         return text.toLowerCase(java.util.Locale.ROOT).replace('ё', 'е');
     }
 
+    /**
+     * Другие слова, по которым ищется метка с таким значком. Агентство
+     * недвижимости ищут как «риелтор», «дом», «квартира», а не по вывеске.
+     */
+    private static final java.util.Map<String, String> ALIASES = java.util.Map.of(
+            "realty", "риелтор риэлтор недвижимость жилье дом квартира купить дом агентство",
+            "bank", "деньги счет карта кредит",
+            "hospital", "врач лечение скорая",
+            "police", "полиция штраф розыск",
+            "gas", "заправка бензин топливо",
+            "food", "еда поесть кафе");
+
+    private static boolean matches(CompoundTag point, String query) {
+        return norm(point.getString("name")).contains(query)
+                || ALIASES.getOrDefault(point.getString("icon"), "").contains(query);
+    }
+
     /** Метки, подходящие под строку поиска (все, если строка пустая). */
     private ListTag filtered() {
         String query = norm(screen.value("nav_search").trim());
@@ -71,7 +88,7 @@ class NavigatorApp extends DeviceApp {
         }
         ListTag out = new ListTag();
         for (int i = 0; i < all.size(); i++) {
-            if (norm(all.getCompound(i).getString("name")).contains(query)) {
+            if (matches(all.getCompound(i), query)) {
                 out.add(all.getCompound(i));
             }
         }

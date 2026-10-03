@@ -354,7 +354,7 @@
   "citylife.realty.key_give": "Дать ключ",
   "citylife.realty.keys": "Ключи у:",
   "citylife.realty.no_keys": "Ключей пока никому не давали.",
-  "citylife.realty.need_agent": "Сделки оформляет риелтор: подойдите к нему и кликните.",
+  "citylife.realty.need_agent": "Сделки оформляет риелтор: он в мэрии, в навигаторе метка «Агентство недвижимости». Подойдите и кликните по нему.",
   "citylife.realty.taken": "Этот дом уже купили.",
   "citylife.realty.limit": "Больше %s объектов на одного жителя не продаём.",
   "citylife.realty.no_money": "Не хватает денег на счёте: нужно %s.",

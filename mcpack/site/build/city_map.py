@@ -70,7 +70,7 @@ PINS = [
     ("MERIDIAN", "MERIDIAN", None, "tower"),
     ("SUNSET PLAZA", "SUNSET PLAZA", None, "tower"),
     ("Торговый центр", "ТОРГОВЫЙ ЦЕНТР", None, "mall"),
-    ("Мэрия", "МЭРИЯ", None, "civic"),
+    ("Мэрия · агентство недвижимости", "МЭРИЯ", None, "civic"),
     ("Городской банк", "ГОРОДСКОЙ БАНК", None, "civic"),
     ("Полиция", "ПОЛИЦИЯ", None, "civic"),
     ("Больница", "БОЛЬНИЦА", None, "civic"),
