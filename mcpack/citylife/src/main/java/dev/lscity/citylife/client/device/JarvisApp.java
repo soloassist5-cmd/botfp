@@ -12,8 +12,8 @@ import java.util.List;
 /**
  * «J.A.R.V.I.S.»: вызов костюма Железного человека.
  *
- * Список всех марок; тап — Джарвис присылает костюм и сам надевает его в
- * нужный слот, заряженным. Внизу — «Снять костюм» и «Управление»: короткая
+ * Список марок; тап — Джарвис присылает костюм и сам надевает его вместе
+ * с дуговым реактором и открытыми навыками. Внизу — «Снять костюм» и «Управление»: короткая
  * памятка по клавишам. Доступно владельцу башни STARK и всем с допуском.
  */
 @OnlyIn(Dist.CLIENT)
@@ -61,8 +61,8 @@ class JarvisApp extends DeviceApp {
         String status = Component.translatable(st.getBoolean("owner") ? "citylife.jarvis.app.owner"
                 : allowed ? "citylife.jarvis.app.cleared" : "citylife.jarvis.app.locked").getString();
         screen.text(g, screen.trim(status, area[2]), area[0], area[1] + 2, allowed ? t.accent() : t.red());
-        String suit = st.getString("suit");
-        String now = suit.isEmpty() ? Component.translatable("citylife.jarvis.app.none").getString()
+        int suit = st.getInt("mark");
+        String now = suit == 0 ? Component.translatable("citylife.jarvis.app.none").getString()
                 : StarkClient.suitName(suit);
         screen.text(g, screen.trim(Component.translatable("citylife.jarvis.app.current", now).getString(),
                 area[2]), area[0], area[1] + 13, t.dim());
@@ -95,7 +95,7 @@ class JarvisApp extends DeviceApp {
                     continue;
                 }
                 StarkClient.Suit s = suits.get(i);
-                boolean on = s.id().equals(suit);
+                boolean on = s.mark() == suit;
                 screen.card(g, r, screen.inside(mouseX, mouseY, r) && mouseY >= box[1]
                         && mouseY <= box[1] + box[3]);
                 g.renderItem(s.stack(), r[0] + 2, r[1] + 1);
@@ -139,7 +139,7 @@ class JarvisApp extends DeviceApp {
         List<StarkClient.Suit> suits = StarkClient.suitItems();
         if (i >= 0 && i < suits.size()) {
             CompoundTag args = new CompoundTag();
-            args.putString("item", suits.get(i).id());
+            args.putInt("mark", suits.get(i).mark());
             screen.send("jarvis_suit", args);
             return true;
         }

@@ -310,30 +310,289 @@ CLOTH_COLOURS = [0x1D1D21, 0xF9FFFE, 0x3C44AA, 0xB02E26, 0xC8AD7F]
 CLOTH_PIECES = [("leather_helmet", 150), ("leather_chestplate", 300),
                 ("leather_leggings", 250), ("leather_boots", 120)]
 
+def group(title: str, offers: list[dict]) -> list[dict]:
+    """Раздел прилавка: в кассе товары разложены по вкладкам с этим названием."""
+    for one in offers:
+        one["group"] = title
+    return offers
+
+
+COLOURS16 = ("white", "light_gray", "gray", "black", "brown", "red", "orange", "yellow",
+             "lime", "green", "cyan", "light_blue", "blue", "purple", "magenta", "pink")
+WOODS = ("oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry")
+
+
+def _wood(kind: str) -> list[dict]:
+    log = "minecraft:" + ("mangrove_log" if kind == "mangrove" else f"{kind}_log")
+    return [sell(f"minecraft:{kind}_planks", 32, 60), sell(log, 16, 100),
+            sell(f"minecraft:{kind}_stairs", 16, 80), sell(f"minecraft:{kind}_slab", 16, 50),
+            sell(f"minecraft:{kind}_fence", 16, 80), sell(f"minecraft:{kind}_fence_gate", 2, 60)]
+
+
+# Строймаркет: всё, из чего строят и чем обставляют дом. Раньше доски, стекло
+# и двери лежали в «Магазине у дома» рядом с хлебом, а строительного магазина
+# в городе был один, на окраине.
+HARDWARE_TRADES: list[dict] = (
+    group("Камень", [
+        sell("minecraft:stone", 32, 60), sell("minecraft:cobblestone", 64, 60),
+        sell("minecraft:smooth_stone", 32, 100), sell("minecraft:stone_bricks", 32, 100),
+        sell("minecraft:mossy_stone_bricks", 16, 100), sell("minecraft:cracked_stone_bricks", 16, 100),
+        sell("minecraft:bricks", 16, 100), sell("minecraft:mud_bricks", 16, 100),
+        sell("minecraft:polished_andesite", 32, 100), sell("minecraft:polished_diorite", 32, 100),
+        sell("minecraft:polished_granite", 32, 100), sell("minecraft:deepslate_bricks", 16, 120),
+        sell("minecraft:deepslate_tiles", 16, 120), sell("minecraft:polished_blackstone_bricks", 16, 120),
+        sell("minecraft:sandstone", 32, 80), sell("minecraft:smooth_sandstone", 32, 100),
+        sell("minecraft:cut_sandstone", 32, 100), sell("minecraft:red_sandstone", 32, 80),
+        sell("minecraft:quartz_block", 16, 200), sell("minecraft:quartz_bricks", 16, 220),
+        sell("minecraft:smooth_quartz", 16, 220), sell("minecraft:quartz_pillar", 16, 220),
+        sell("minecraft:calcite", 16, 100), sell("minecraft:tuff", 16, 80),
+        sell("minecraft:prismarine_bricks", 16, 200), sell("minecraft:dark_prismarine", 16, 220),
+        sell("minecraft:nether_bricks", 16, 120), sell("minecraft:end_stone_bricks", 16, 200),
+        sell("minecraft:stone_brick_stairs", 16, 100), sell("minecraft:stone_brick_slab", 16, 60),
+        sell("minecraft:brick_stairs", 16, 100), sell("minecraft:brick_slab", 16, 60),
+        sell("minecraft:smooth_stone_slab", 16, 60), sell("minecraft:quartz_stairs", 16, 200),
+        sell("minecraft:quartz_slab", 16, 120), sell("minecraft:sandstone_stairs", 16, 80),
+        sell("minecraft:polished_andesite_stairs", 16, 100), sell("minecraft:stone_brick_wall", 16, 100),
+        sell("minecraft:brick_wall", 16, 100), sell("minecraft:cobblestone_wall", 16, 60),
+        sell("minecraft:gravel", 32, 40), sell("minecraft:sand", 32, 40),
+        sell("minecraft:clay", 16, 80),
+    ])
+    + group("Бетон, плитка",
+            [sell(f"minecraft:{c}_concrete", 16, 100) for c in COLOURS16]
+            + [sell("minecraft:white_concrete_powder", 16, 80),
+               sell("minecraft:gray_concrete_powder", 16, 80),
+               sell("minecraft:terracotta", 16, 80)]
+            + [sell(f"minecraft:{c}_terracotta", 16, 80) for c in COLOURS16]
+            + [sell(f"minecraft:{c}_glazed_terracotta", 8, 120)
+               for c in ("white", "light_gray", "cyan", "blue", "light_blue", "orange")])
+    + group("Дерево", [o for kind in WOODS for o in _wood(kind)] + [
+        sell("minecraft:bamboo_planks", 32, 60), sell("minecraft:bamboo_block", 16, 80),
+        sell("minecraft:bamboo_mosaic", 16, 80), sell("minecraft:stripped_oak_log", 16, 100),
+        sell("minecraft:stripped_spruce_log", 16, 100), sell("minecraft:stripped_dark_oak_log", 16, 100),
+        sell("decorative_blocks:oak_beam", 8, 120), sell("decorative_blocks:spruce_beam", 8, 120),
+        sell("decorative_blocks:dark_oak_beam", 8, 120), sell("decorative_blocks:oak_support", 8, 100),
+        sell("decorative_blocks:spruce_palisade", 8, 100), sell("decorative_blocks:lattice", 8, 80),
+    ])
+    + group("Стекло, окна", [
+        sell("minecraft:glass", 16, 80), sell("minecraft:glass_pane", 16, 60),
+        sell("minecraft:tinted_glass", 8, 200),
+    ] + [sell(f"minecraft:{c}_stained_glass", 16, 100)
+         for c in ("white", "light_gray", "gray", "black", "light_blue", "blue", "cyan", "brown")]
+      + [sell(f"minecraft:{c}_stained_glass_pane", 16, 80)
+         for c in ("white", "light_gray", "gray", "black", "light_blue")]
+      + [sell(f"mcwwindows:{w}", 4, 200) for w in (
+          "oak_window", "spruce_window", "birch_window", "dark_oak_window", "oak_window2",
+          "oak_four_window", "oak_pane_window", "metal_window", "metal_four_window",
+          "metal_pane_window", "stone_window", "andesite_window", "blackstone_window")]
+      + [sell(f"mcwwindows:{w}", 4, 150) for w in (
+          "oak_shutter", "spruce_shutter", "oak_louvered_shutter", "iron_shutter",
+          "oak_blinds", "spruce_blinds", "birch_blinds", "oak_curtain_rod", "metal_curtain_rod",
+          "white_curtain", "gray_curtain", "black_curtain", "light_gray_curtain")])
+    + group("Двери", [
+        sell("minecraft:oak_door", 1, 60), sell("minecraft:spruce_door", 1, 60),
+        sell("minecraft:birch_door", 1, 60), sell("minecraft:dark_oak_door", 1, 60),
+        sell("minecraft:iron_door", 1, 200), sell("minecraft:oak_trapdoor", 2, 60),
+        sell("minecraft:spruce_trapdoor", 2, 60), sell("minecraft:iron_trapdoor", 1, 150),
+    ] + [sell(f"mcwdoors:{d}", 1, 400) for d in (
+        "oak_modern_door", "spruce_modern_door", "birch_modern_door", "oak_glass_door",
+        "spruce_glass_door", "birch_glass_door", "oak_four_panel_door",
+        "spruce_classic_door", "oak_cottage_door", "oak_barn_door", "oak_barn_glass_door",
+        "oak_stable_door", "oak_western_door", "oak_japanese_door", "metal_door",
+        "metal_windowed_door", "metal_reinforced_door", "metal_hospital_door")]
+      + [sell(f"mcwdoors:garage_{c}_door", 1, 1500) for c in ("white", "gray", "silver", "black")])
+    + group("Заборы", [
+        sell("minecraft:iron_bars", 16, 100), sell("minecraft:chain", 8, 80),
+    ] + [sell(f"mcwfences:{f}", 8, 150) for f in (
+        "oak_picket_fence", "spruce_picket_fence", "birch_picket_fence", "oak_stockade_fence",
+        "spruce_stockade_fence", "oak_horse_fence", "oak_wired_fence", "twilight_metal_fence",
+        "mesh_metal_fence", "panelled_metal_fence", "curved_metal_fence", "ornate_metal_fence",
+        "gothic_metal_fence", "oak_hedge", "spruce_hedge", "birch_hedge")]
+      + [sell(f"mcwfences:{g}", 1, 250) for g in (
+          "oak_curved_gate", "spruce_curved_gate", "oak_highley_gate", "oak_pyramid_gate",
+          "mesh_metal_fence_gate", "panelled_metal_fence_gate", "curved_metal_fence_gate")])
+    + group("Крыша", [sell(f"mcwroofs:{r}", 16, 160) for r in (
+        "gray_roof", "black_roof", "white_roof", "light_gray_roof", "stone_roof",
+        "cobblestone_roof", "sandstone_roof", "thatch_roof", "gray_concrete_roof",
+        "black_concrete_roof", "white_concrete_roof", "red_concrete_roof", "brown_concrete_roof",
+        "blue_concrete_roof", "green_concrete_roof", "light_gray_concrete_roof")])
+    + group("Свет", [
+        sell("minecraft:torch", 16, 30), sell("minecraft:lantern", 4, 100),
+        sell("minecraft:soul_lantern", 4, 120), sell("minecraft:sea_lantern", 4, 200),
+        sell("minecraft:glowstone", 8, 200), sell("minecraft:redstone_lamp", 4, 150),
+        sell("minecraft:end_rod", 8, 150), sell("minecraft:candle", 4, 40),
+        sell("decorative_blocks:chandelier", 1, 600), sell("decorative_blocks:brazier", 1, 300),
+    ] + [sell(f"mcwlights:{l}", 1, 300) for l in (
+        "white_lamp", "black_lamp", "gray_lamp", "white_ceiling_light", "black_ceiling_light",
+        "gray_ceiling_light", "white_paper_lamp", "oak_ceiling_fan_light", "spruce_ceiling_fan_light",
+        "chain_lantern", "classic_street_lamp", "double_street_lamp", "garden_light",
+        "covered_garden_light", "golden_chandelier", "copper_chandelier", "golden_small_chandelier",
+        "framed_torch", "oak_tiki_torch")]
+      + [sell("another_furniture:white_lamp", 1, 250)])
+    + group("Мебель", [sell(f"mcwfurnitures:oak_{m}", 1, 600) for m in (
+        "chair", "modern_chair", "striped_chair", "stool_chair", "table", "glass_table",
+        "coffee_table", "end_table", "desk", "modern_desk", "covered_desk", "wardrobe",
+        "modern_wardrobe", "double_wardrobe", "drawer", "double_drawer", "triple_drawer",
+        "bookshelf", "bookshelf_cupboard", "kitchen_cabinet", "glass_kitchen_cabinet",
+        "double_kitchen_cabinet", "kitchen_sink", "counter", "drawer_counter")]
+      + [sell(f"handcrafted:oak_{m}", 1, 800) for m in (
+          "couch", "fancy_bed", "nightstand", "side_table", "shelf", "counter", "cupboard",
+          "dining_bench", "bench", "chair", "table", "desk")]
+      + [sell(f"another_furniture:{m}", 1, 500) for m in (
+          "white_sofa", "oak_bench", "oak_chair", "oak_table", "oak_shelf", "oak_drawer",
+          "white_stool", "white_tall_stool", "white_curtain", "oak_flower_box")]
+      + [sell(f"minecraft:{c}_bed", 1, 150) for c in ("white", "light_gray", "gray", "black",
+                                                       "red", "light_blue", "blue")]
+      + [sell(f"decorative_blocks:{s}_seat", 1, 150) for s in ("oak", "spruce", "dark_oak")]
+      + [sell("supplementaries:item_shelf", 4, 200), sell("supplementaries:clock_block", 1, 300),
+         sell("supplementaries:globe", 1, 800), sell("supplementaries:safe", 1, 2000),
+         sell("supplementaries:doormat", 2, 100), sell("supplementaries:notice_board", 1, 300),
+         sell("minecraft:bookshelf", 1, 150), sell("minecraft:chiseled_bookshelf", 1, 200)])
+    + group("Ткани",
+            [sell(f"minecraft:{c}_carpet", 8, 80) for c in COLOURS16]
+            + [sell(f"minecraft:{c}_wool", 8, 100) for c in ("white", "gray", "black", "red",
+                                                             "blue", "brown", "light_gray")]
+            + [sell(f"handcrafted:{c}_cushion", 2, 150) for c in ("white", "gray", "black",
+                                                                  "red", "blue")]
+            + [sell(f"handcrafted:{c}_sheet", 1, 150) for c in ("white", "gray", "blue")])
+    + group("Сад", [
+        sell("minecraft:grass_block", 16, 60), sell("minecraft:dirt", 32, 30),
+        sell("minecraft:coarse_dirt", 16, 40), sell("minecraft:rooted_dirt", 16, 40),
+        sell("minecraft:moss_block", 8, 80), sell("minecraft:mud", 16, 40),
+        sell("minecraft:flower_pot", 4, 40), sell("minecraft:decorated_pot", 1, 150),
+        sell("minecraft:bone_meal", 16, 80), sell("minecraft:composter", 1, 60),
+        sell("minecraft:water_bucket", 1, 50), sell("minecraft:lily_pad", 4, 60),
+        sell("minecraft:oak_sapling", 2, 80), sell("minecraft:birch_sapling", 2, 80),
+        sell("minecraft:spruce_sapling", 2, 80), sell("minecraft:cherry_sapling", 2, 120),
+        sell("minecraft:azalea", 2, 100), sell("minecraft:flowering_azalea", 2, 120),
+        sell("supplementaries:planter", 2, 120), sell("supplementaries:flower_box", 2, 120),
+    ] + [sell(f"minecraft:{f}", 4, 40) for f in (
+        "poppy", "dandelion", "blue_orchid", "allium", "azure_bluet", "red_tulip", "white_tulip",
+        "pink_tulip", "oxeye_daisy", "cornflower", "lily_of_the_valley", "fern")]
+      + [sell(f"minecraft:{f}", 2, 60) for f in ("sunflower", "rose_bush", "peony", "lilac")]
+      + [sell(f"handcrafted:terracotta_{p}_pot", 1, 150) for p in ("medium", "thick", "wide")])
+    + group("Инструмент", [
+        sell("minecraft:iron_pickaxe", 1, 100), sell("minecraft:iron_axe", 1, 100),
+        sell("minecraft:iron_shovel", 1, 80), sell("minecraft:iron_hoe", 1, 80),
+        sell("minecraft:diamond_pickaxe", 1, 2500), sell("minecraft:diamond_axe", 1, 2500),
+        sell("minecraft:shears", 1, 50), sell("minecraft:bucket", 1, 20),
+        sell("minecraft:ladder", 16, 60), sell("minecraft:scaffolding", 16, 50),
+        sell("minecraft:brush", 1, 80), sell("minecraft:flint_and_steel", 1, 50),
+        sell("minecraft:lead", 2, 60), sell("minecraft:crafting_table", 1, 30),
+        sell("minecraft:furnace", 1, 50), sell("minecraft:smoker", 1, 120),
+        sell("minecraft:stonecutter", 1, 150), sell("minecraft:anvil", 1, 800),
+        sell("minecraft:chest", 1, 50), sell("minecraft:barrel", 1, 60),
+        sell("minecraft:oak_sign", 4, 40), sell("minecraft:spruce_hanging_sign", 2, 60),
+        sell("supplementaries:sign_post_oak", 2, 80),
+    ])
+    + group("Декор",
+            [sell(f"minecraft:{c}_dye", 8, 80) for c in COLOURS16]
+            + [sell("minecraft:painting", 2, 60), sell("minecraft:item_frame", 4, 60),
+               sell("minecraft:glow_item_frame", 2, 100), sell("minecraft:armor_stand", 1, 150),
+               sell("minecraft:white_banner", 1, 100), sell("minecraft:black_banner", 1, 100),
+               sell("supplementaries:candle_holder", 2, 120), sell("supplementaries:jar", 2, 100),
+               sell("supplementaries:hourglass", 1, 200), sell("supplementaries:statue", 1, 1500)])
+)
+
+
+# Магазин у дома и мини-маркет: продукты на каждый день и хозтовары.
+# Стройматериалы и мебель переехали в строймаркет.
+CORNER_SHOP_TRADES: list[dict] = (
+    group("Продукты", [
+        sell("minecraft:bread", 4, 40), sell("minecraft:baked_potato", 4, 40),
+        sell("minecraft:apple", 6, 40), sell("minecraft:carrot", 8, 30),
+        sell("minecraft:potato", 8, 30), sell("minecraft:beetroot", 8, 30),
+        sell("minecraft:egg", 6, 40), sell("minecraft:sugar", 8, 40),
+        sell("minecraft:cooked_chicken", 3, 60), sell("minecraft:cooked_cod", 3, 60),
+        sell("minecraft:cookie", 8, 50), sell("minecraft:pumpkin_pie", 2, 60),
+        sell("minecraft:dried_kelp", 8, 30), sell("minecraft:sweet_berries", 8, 30),
+        sell("farmersdelight:tomato", 6, 40), sell("farmersdelight:cabbage", 4, 40),
+        sell("farmersdelight:onion", 6, 40), sell("farmersdelight:rice", 8, 50),
+        sell("farmersdelight:raw_pasta", 4, 60), sell("farmersdelight:wheat_dough", 4, 40),
+        sell("farmersdelight:egg_sandwich", 2, 80), sell("farmersdelight:chicken_sandwich", 2, 100),
+        sell("farmersdelight:bacon_sandwich", 2, 100), sell("farmersdelight:cake_slice", 4, 60),
+    ])
+    + group("Напитки", [
+        sell("minecraft:milk_bucket", 1, 50), sell("minecraft:honey_bottle", 2, 60),
+        sell("farmersdelight:apple_cider", 2, 80), sell("farmersdelight:hot_cocoa", 2, 80),
+        sell("farmersdelight:melon_juice", 2, 60), sell("minecraft:potion", 2, 30,
+                                                       {"Potion": "minecraft:water"}),
+    ])
+    + group("Хозтовары", [
+        sell("minecraft:paper", 8, 40), sell("minecraft:book", 1, 50),
+        sell("minecraft:writable_book", 1, 80), sell("minecraft:candle", 4, 40),
+        sell("minecraft:white_candle", 4, 40), sell("minecraft:string", 8, 40),
+        sell("minecraft:bowl", 4, 20), sell("minecraft:glass_bottle", 4, 30),
+        sell("minecraft:bucket", 1, 20), sell("minecraft:shears", 1, 50),
+        sell("minecraft:flint_and_steel", 1, 50), sell("minecraft:torch", 16, 30),
+        sell("minecraft:fishing_rod", 1, 60), sell("minecraft:name_tag", 1, 300),
+        sell("farmersdelight:canvas", 4, 60), sell("farmersdelight:cutting_board", 1, 150),
+        sell("farmersdelight:cooking_pot", 1, 600), sell("farmersdelight:skillet", 1, 400),
+        sell("farmersdelight:iron_knife", 1, 150),
+    ])
+)
+
 # Прилавки.
 #
 # Правило одно: всё, что продаётся, должно работать сразу после покупки.
 # Камера видеонаблюдения — вместе с монитором, ПК — со всеми деталями,
 # зелье — с настоящим эффектом, а не «незельеваримое» без тега.
 ROLE_TRADES: dict[str, list[dict]] = {
-    # Продукты: еда на каждый день, от хлеба до торта.
-    "trader_food": [
+    # Продукты: еда на каждый день, от хлеба до торта, по отделам.
+    "trader_food": group("Выпечка", [
         sell("minecraft:bread", 4, 40),
-        sell("minecraft:baked_potato", 4, 40),
-        sell("minecraft:apple", 6, 40),
-        sell("minecraft:carrot", 8, 30),
-        sell("minecraft:sweet_berries", 8, 30),
-        sell("minecraft:melon_slice", 8, 30),
-        sell("minecraft:cooked_chicken", 3, 60),
-        sell("minecraft:cooked_salmon", 3, 60),
-        sell("minecraft:cooked_beef", 3, 90),
-        sell("minecraft:cooked_porkchop", 3, 90),
         sell("minecraft:cookie", 8, 50),
         sell("minecraft:pumpkin_pie", 2, 60),
-        sell("minecraft:honey_bottle", 2, 60),
-        sell("minecraft:milk_bucket", 1, 50),
-        sell("minecraft:golden_carrot", 4, 100),
         sell("minecraft:cake", 1, 150),
+        sell("farmersdelight:apple_pie", 1, 200),
+        sell("farmersdelight:chocolate_pie", 1, 250),
+        sell("farmersdelight:sweet_berry_cheesecake", 1, 250),
+        sell("farmersdelight:wheat_dough", 4, 40),
+        sell("farmersdelight:pie_crust", 2, 60),
+    ]) + group("Овощи, фрукты", [
+        sell("minecraft:apple", 6, 40),
+        sell("minecraft:carrot", 8, 30),
+        sell("minecraft:potato", 8, 30),
+        sell("minecraft:baked_potato", 4, 40),
+        sell("minecraft:beetroot", 8, 30),
+        sell("minecraft:sweet_berries", 8, 30),
+        sell("minecraft:glow_berries", 8, 40),
+        sell("minecraft:melon_slice", 8, 30),
+        sell("minecraft:golden_carrot", 4, 100),
+        sell("farmersdelight:tomato", 6, 40),
+        sell("farmersdelight:cabbage", 4, 40),
+        sell("farmersdelight:onion", 6, 40),
+        sell("farmersdelight:rice", 8, 50),
+        sell("farmersdelight:pumpkin_slice", 4, 30),
+    ]) + group("Мясо, рыба", [
+        sell("minecraft:cooked_chicken", 3, 60),
+        sell("minecraft:cooked_salmon", 3, 60),
+        sell("minecraft:cooked_cod", 3, 60),
+        sell("minecraft:cooked_beef", 3, 90),
+        sell("minecraft:cooked_porkchop", 3, 90),
+        sell("minecraft:cooked_mutton", 3, 80),
+        sell("farmersdelight:minced_beef", 4, 80),
+        sell("farmersdelight:chicken_cuts", 4, 60),
+        sell("farmersdelight:bacon", 4, 80),
+        sell("farmersdelight:salmon_slice", 4, 60),
+        sell("farmersdelight:ham", 1, 150),
+    ]) + group("Напитки", [
+        sell("minecraft:milk_bucket", 1, 50),
+        sell("farmersdelight:milk_bottle", 2, 40),
+        sell("minecraft:egg", 6, 40),
+        sell("minecraft:honey_bottle", 2, 60),
+        sell("farmersdelight:apple_cider", 2, 80),
+        sell("farmersdelight:hot_cocoa", 2, 80),
+        sell("farmersdelight:melon_juice", 2, 60),
+    ]) + group("Готовая еда", [
+        sell("farmersdelight:hamburger", 1, 150),
+        sell("farmersdelight:chicken_sandwich", 2, 100),
+        sell("farmersdelight:egg_sandwich", 2, 80),
+        sell("farmersdelight:mixed_salad", 1, 100),
+        sell("farmersdelight:dumplings", 4, 100),
+        sell("farmersdelight:cabbage_rolls", 4, 100),
+        sell("farmersdelight:pasta_with_meatballs", 1, 150),
+        sell("farmersdelight:fried_rice", 1, 120),
+    ]) + [
         # Скупка урожая и улова у фермеров и рыбаков.
         buy("minecraft:wheat", 16, 60),
         buy("minecraft:potato", 16, 50),
@@ -472,48 +731,8 @@ ROLE_TRADES: dict[str, list[dict]] = {
         sell("minecraft:honey_bottle", 2, 60),
         sell("minecraft:milk_bucket", 1, 50),
     ],
-    # Магазин у дома и мини-маркет: хозтовары, инструменты, мебель и хлеб.
-    "shopkeeper": [
-        sell("minecraft:bread", 4, 40),
-        sell("minecraft:torch", 16, 30),
-        sell("minecraft:lantern", 4, 100),
-        sell("minecraft:oak_planks", 32, 50),
-        sell("minecraft:glass", 16, 80),
-        sell("minecraft:ladder", 16, 60),
-        sell("minecraft:oak_door", 2, 60),
-        sell("minecraft:chest", 1, 50),
-        sell("minecraft:crafting_table", 1, 30),
-        sell("minecraft:furnace", 1, 50),
-        sell("minecraft:white_bed", 1, 150),
-        sell("minecraft:flower_pot", 4, 40),
-        sell("minecraft:painting", 2, 60),
-        sell("minecraft:item_frame", 4, 60),
-        sell("minecraft:bucket", 1, 20),
-        sell("minecraft:shears", 1, 50),
-        sell("minecraft:fishing_rod", 1, 60),
-        sell("minecraft:iron_shovel", 1, 80),
-        sell("minecraft:iron_axe", 1, 100),
-        sell("minecraft:iron_pickaxe", 1, 100),
-        # Мебель и свет для своего дома: стулья, люстры, лампы, шторы, полки.
-        sell("decorative_blocks:oak_seat", 1, 150),
-        sell("decorative_blocks:dark_oak_seat", 1, 150),
-        sell("decorative_blocks:spruce_seat", 1, 150),
-        sell("decorative_blocks:chandelier", 1, 600),
-        sell("mcwlights:white_lamp", 1, 300),
-        sell("mcwlights:black_lamp", 1, 300),
-        sell("mcwlights:white_ceiling_light", 1, 250),
-        sell("mcwlights:oak_ceiling_fan_light", 1, 900),
-        sell("mcwwindows:white_curtain", 2, 200),
-        sell("mcwwindows:oak_blinds", 4, 200),
-        sell("supplementaries:item_shelf", 4, 200),
-        sell("supplementaries:clock_block", 1, 300),
-        sell("supplementaries:globe", 1, 800),
-        sell("minecraft:red_bed", 1, 150),
-        sell("minecraft:light_blue_bed", 1, 150),
-        sell("minecraft:white_carpet", 8, 80),
-        sell("minecraft:gray_carpet", 8, 80),
-        sell("minecraft:bookshelf", 1, 150),
-    ],
+    # Магазин у дома и мини-маркет: продукты, напитки и хозтовары.
+    "shopkeeper": CORNER_SHOP_TRADES,
     # Бар и ночной клуб: напитки, музыка — и кое-что из-под стойки для тех,
     # кто выбрал криминальную ветку (отмычка и кодолом).
     "bartender": [
@@ -569,23 +788,9 @@ ROLE_TRADES: dict[str, list[dict]] = {
         buy("minecraft:raw_iron", 8, 120),
         buy("minecraft:cobblestone", 64, 20),
     ],
-    # Стройка и магазин стройматериалов: всё для своего дома.
-    "builder": [
-        sell("minecraft:scaffolding", 16, 50),
-        sell("minecraft:smooth_stone", 32, 100),
-        sell("minecraft:stone_bricks", 32, 100),
-        sell("minecraft:bricks", 16, 100),
-        sell("minecraft:white_concrete", 16, 100),
-        sell("minecraft:light_gray_concrete", 16, 100),
-        sell("minecraft:gray_concrete", 16, 100),
-        sell("minecraft:black_concrete", 16, 100),
-        sell("minecraft:glass_pane", 16, 60),
-        sell("minecraft:iron_bars", 16, 100),
-        sell("minecraft:oak_stairs", 16, 80),
-        sell("minecraft:spruce_planks", 32, 50),
-        sell("minecraft:white_terracotta", 16, 80),
-        sell("minecraft:quartz_block", 16, 200),
-    ],
+    # Строймаркет (и бригадир на стройке): стройматериалы, двери, окна,
+    # крыша, свет, мебель, сад и инструмент — по разделам.
+    "builder": HARDWARE_TRADES,
     # Роли без торговли: охрана, полиция, пожарные.
     "security": [],
     "cop": [],
@@ -1020,8 +1225,8 @@ GUIDE_PAGES = [
     ],
     [
         {"text": "Башня Старка\n\n", "bold": True},
-        {"text": "Под башней — мастерская (−1) и Зал брони (−2, −3): 73 "
-                 "костюма Железного человека.\n\n"
+        {"text": "Под башней — мастерская (−1) и Зал брони (−2, −3): 57 "
+                 "витрин с костюмами Железного человека.\n\n"
                  "Охраняет «Джарвис»: без допуска — отсчёт, тревога и розыск. "
                  "Допуск — на пульте охраны в мастерской."},
     ],
@@ -1033,9 +1238,10 @@ GUIDE_PAGES = [
     ],
     [
         {"text": "Джарвис\n\n", "bold": True},
-        {"text": "Приложение в телефоне: нажми на марку — костюм прилетит и "
-                 "наденется сам.\n\n"
-                 "Держи V — колесо брони — «Вся броня». Полёт — двойной прыжок."},
+        {"text": "Приложение в телефоне: нажми на марку — костюм с реактором "
+                 "прилетит и наденется сам.\n\n"
+                 "Или ПКМ по витрине в Зале брони. Полёт — двойной прыжок, "
+                 "способности — V, B, N."},
     ],
     [
         {"text": "3D-принтер\n\n", "bold": True},

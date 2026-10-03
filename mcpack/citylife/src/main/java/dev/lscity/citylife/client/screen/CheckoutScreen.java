@@ -6,6 +6,7 @@ import dev.lscity.citylife.economy.Money;
 import dev.lscity.citylife.net.Net;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.nbt.CompoundTag;
@@ -43,6 +44,10 @@ public class CheckoutScreen extends Screen {
     private CompoundTag data;
     private final Map<Integer, Integer> cart = new LinkedHashMap<>();
     private int scroll;
+    /** Выбранный раздел прилавка ("" — все товары). */
+    private String section = "";
+    private EditBox search;
+    private String query = "";
 
     private Stage stage = Stage.IDLE;
     private String method = "";
@@ -56,6 +61,13 @@ public class CheckoutScreen extends Screen {
     public CheckoutScreen(CompoundTag data) {
         super(Component.translatable("citylife.checkout.title", data.getString("title")));
         this.data = data;
+    }
+
+    /** Для кадров справки: открыть сразу с разделом и строкой поиска. */
+    public CheckoutScreen preset(String group, String text) {
+        section = group;
+        query = text;
+        return this;
     }
 
     public void update(CompoundTag fresh) {
@@ -80,11 +92,11 @@ public class CheckoutScreen extends Screen {
     // --- размеры и данные ---------------------------------------------------------
 
     private int w() {
-        return Math.min(width - 16, 430);
+        return Math.min(width - 16, grouped() ? 540 : 430);
     }
 
     private int h() {
-        return Math.min(height - 16, 250);
+        return Math.min(height - 16, grouped() ? 300 : 250);
     }
 
     private int left() {
@@ -95,8 +107,25 @@ public class CheckoutScreen extends Screen {
         return (height - h()) / 2;
     }
 
+    /** Ширина колонки разделов слева (0, если у прилавка нет разделов). */
+    private int side() {
+        return grouped() ? Math.min(100, w() / 5) : 0;
+    }
+
+    private int listX() {
+        return left() + 6 + side();
+    }
+
     private int listW() {
-        return w() * 54 / 100;
+        return (w() - side()) * (grouped() ? 52 : 54) / 100;
+    }
+
+    private int cartX() {
+        return listX() + listW() + 6;
+    }
+
+    private int cartW() {
+        return left() + w() - 8 - cartX();
     }
 
     private int rows() {
@@ -105,6 +134,67 @@ public class CheckoutScreen extends Screen {
 
     private ListTag items() {
         return data.getList("items", Tag.TAG_COMPOUND);
+    }
+
+    /** Разделы прилавка в порядке каталога. */
+    private List<String> groups() {
+        List<String> out = new ArrayList<>();
+        ListTag items = items();
+        for (int i = 0; i < items.size(); i++) {
+            String g = items.getCompound(i).getString("g");
+            if (!g.isEmpty() && !out.contains(g)) {
+                out.add(g);
+            }
+        }
+        return out;
+    }
+
+    private boolean grouped() {
+        return groups().size() > 1;
+    }
+
+    /** Есть ли поиск: у больших прилавков. */
+    private boolean searchable() {
+        return items().size() > 14;
+    }
+
+    private static String norm(String text) {
+        return text.toLowerCase(java.util.Locale.ROOT).replace('ё', 'е');
+    }
+
+    /** Товары выбранного раздела, подходящие под поиск. */
+    private List<CompoundTag> shown() {
+        List<CompoundTag> out = new ArrayList<>();
+        ListTag items = items();
+        String q = norm(query.trim());
+        for (int i = 0; i < items.size(); i++) {
+            CompoundTag entry = items.getCompound(i);
+            if (!q.isEmpty()) {
+                // Поиск идёт по всему прилавку, а не только по открытому разделу.
+                ItemStack stack = ItemStack.of(entry.getCompound("stack"));
+                if (!norm(stack.getHoverName().getString()).contains(q)
+                        && !norm(entry.getString("g")).contains(q)) {
+                    continue;
+                }
+            } else if (!section.isEmpty() && !section.equals(entry.getString("g"))) {
+                continue;
+            }
+            out.add(entry);
+        }
+        return out;
+    }
+
+    /** Строки колонки разделов: «Все товары» и разделы. */
+    private List<String> sideRows() {
+        List<String> out = new ArrayList<>();
+        out.add("");
+        out.addAll(groups());
+        return out;
+    }
+
+    /** Высота строки раздела: все разделы влезают в окно по высоте. */
+    private int sideRow() {
+        return Math.max(10, Math.min(15, (h() - 30) / Math.max(1, sideRows().size())));
     }
 
     private CompoundTag item(int index) {
@@ -136,11 +226,24 @@ public class CheckoutScreen extends Screen {
 
     @Override
     protected void init() {
+        search = null;
         if (stage != Stage.IDLE) {
             return;
         }
-        int x = left() + listW() + 12;
-        int bw = w() - listW() - 20;
+        if (searchable()) {
+            int sw = Math.min(130, listW() - 10);
+            search = new EditBox(font, listX() + listW() - sw, top() + 5, sw, 12,
+                    Component.translatable("citylife.checkout.search"));
+            search.setHint(Component.translatable("citylife.checkout.search"));
+            search.setValue(query);
+            search.setResponder(text -> {
+                query = text;
+                scroll = 0;
+            });
+            addRenderableWidget(search);
+        }
+        int x = cartX();
+        int bw = cartW();
         int y = top() + h() - 26;
         boolean any = !cart.isEmpty();
         Button cash = Button.builder(Component.translatable("citylife.checkout.pay_cash"),
@@ -148,9 +251,12 @@ public class CheckoutScreen extends Screen {
         cash.active = any;
         addRenderableWidget(cash);
         int half = bw / 2 - 2;
-        Button tap = Button.builder(Component.translatable("citylife.checkout.tap"),
-                b -> start("tap")).bounds(x, y - 22, half, 18).build();
-        Button swipe = Button.builder(Component.translatable("citylife.checkout.swipe"),
+        // В узком окне — короткие подписи, чтобы не обрезались.
+        boolean narrow = font.width(Component.translatable("citylife.checkout.tap")) + 8 > half;
+        Button tap = Button.builder(Component.translatable(narrow ? "citylife.checkout.tap_short"
+                : "citylife.checkout.tap"), b -> start("tap")).bounds(x, y - 22, half, 18).build();
+        Button swipe = Button.builder(Component.translatable(narrow ? "citylife.checkout.swipe_short"
+                : "citylife.checkout.swipe"),
                 b -> start("swipe")).bounds(x + half + 4, y - 22, half, 18).build();
         tap.active = any && hasCard();
         swipe.active = any && hasCard();
@@ -225,17 +331,37 @@ public class CheckoutScreen extends Screen {
         int y = top();
         PhoneUi.roundedRect(g, x, y, w(), h(), 8, 0xF0141824);
         g.drawString(font, title, x + 10, y + 9, 0xFFEDEFF7, false);
-        g.drawString(font, Component.translatable("citylife.checkout.hint"), x + 10, y + h() - 12,
-                0xFF5A6078, false);
+        g.drawString(font, font.plainSubstrByWidth(Component.translatable("citylife.checkout.hint")
+                .getString(), listW()), listX(), y + h() - 12, 0xFF5A6078, false);
+
+        // Разделы прилавка.
+        if (grouped()) {
+            List<String> side = sideRows();
+            for (int k = 0; k < side.size(); k++) {
+                int[] r = {x + 6, y + 24 + k * sideRow(), side() - 6, sideRow() - 2};
+                boolean active = query.isBlank() && side.get(k).equals(section);
+                boolean hover = idle() && inside(mouseX, mouseY, r);
+                PhoneUi.roundedRect(g, r[0], r[1], r[2], r[3], 4,
+                        active ? 0xFF1F6FD0 : hover ? 0xFF262B3B : 0xFF1B1F2B);
+                String label = side.get(k).isEmpty()
+                        ? Component.translatable("citylife.checkout.all").getString() : side.get(k);
+                g.drawString(font, font.plainSubstrByWidth(label, r[2] - 8), r[0] + 5, r[1] + (r[3] - 8) / 2,
+                        active ? 0xFFFFFFFF : 0xFFC8CDDA, false);
+            }
+        }
 
         // Товары.
-        ListTag items = items();
+        List<CompoundTag> items = shown();
         scroll = Math.max(0, Math.min(scroll, Math.max(0, items.size() - rows())));
         ItemStack hovered = ItemStack.EMPTY;
+        if (items.isEmpty()) {
+            g.drawString(font, Component.translatable("citylife.checkout.nothing"), listX() + 6,
+                    y + 30, 0xFF9AA0B4, false);
+        }
         for (int i = scroll; i < items.size() && i - scroll < rows(); i++) {
-            CompoundTag entry = items.getCompound(i);
+            CompoundTag entry = items.get(i);
             int ry = y + 24 + (i - scroll) * ROW;
-            int[] r = {x + 6, ry, listW(), ROW - 2};
+            int[] r = {listX(), ry, listW(), ROW - 2};
             boolean hover = idle() && inside(mouseX, mouseY, r);
             PhoneUi.roundedRect(g, r[0], r[1], r[2], r[3], 5, hover ? 0xFF262B3B : 0xFF1B1F2B);
             ItemStack stack = ItemStack.of(entry.getCompound("stack"));
@@ -258,8 +384,8 @@ public class CheckoutScreen extends Screen {
         }
 
         // Корзина и деньги.
-        int cx = x + listW() + 12;
-        int cw = w() - listW() - 20;
+        int cx = cartX();
+        int cw = cartW();
         g.drawString(font, Component.translatable("citylife.checkout.cart"), cx, y + 24, 0xFF9AA0B4, false);
         int ly = y + 36;
         List<Integer> keys = new ArrayList<>(cart.keySet());
@@ -451,11 +577,25 @@ public class CheckoutScreen extends Screen {
         if (super.mouseClicked(mx, my, button)) {
             return true;
         }
-        ListTag items = items();
+        if (grouped()) {
+            List<String> side = sideRows();
+            for (int k = 0; k < side.size(); k++) {
+                if (inside(mx, my, new int[]{left() + 6, top() + 24 + k * sideRow(), side() - 6,
+                        sideRow() - 2})) {
+                    section = side.get(k);
+                    scroll = 0;
+                    if (search != null && !query.isEmpty()) {
+                        search.setValue("");
+                    }
+                    return true;
+                }
+            }
+        }
+        List<CompoundTag> items = shown();
         for (int i = scroll; i < items.size() && i - scroll < rows(); i++) {
             int ry = top() + 24 + (i - scroll) * ROW;
-            if (inside(mx, my, new int[]{left() + 6, ry, listW(), ROW - 2})) {
-                int index = items.getCompound(i).getInt("i");
+            if (inside(mx, my, new int[]{listX(), ry, listW(), ROW - 2})) {
+                int index = items.get(i).getInt("i");
                 int step = hasShiftDown() ? 5 : 1;
                 int qty = cart.getOrDefault(index, 0) + (button == 1 ? -step : step);
                 if (qty <= 0) {

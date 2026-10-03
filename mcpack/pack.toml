@@ -96,14 +96,25 @@ side  = "both"
 group = "core"
 note = "Дрон-камера с удалённым управлением"
 
-# Броня Железного человека: 60 костюмов Марок с анимацией облачения, полётом,
-# репульсорами и ИИ в шлеме. Работает на фреймворке Palladium; в подвале
-# STARK TOWER стоит зал брони с костюмами на подставках.
+# Броня Железного человека — Sym's Armored Industries (ComicCraft): костюмы
+# MCU с анимациями облачения как в фильмах (кейс Mark 5, капсула Mark 7,
+# Mark 42 по частям), ракетами, лазерами, юнибимом и системой навыков.
+# Работает на Palladium. В подвале STARK TOWER — Зал брони с витринами мода.
+# Trinkets нужен только Fabric-версии, Ad Astra — лишь для совместимости.
 [[mods]]
-slug = "satsu-iron-man-addon"
+slug = "syms-armored-industries"
 side  = "both"
 group = "core"
-note = "Костюмы Железного человека: Марки 1–86, Халкбастер, Iron Legion"
+note = "Костюмы Железного человека: Марки 1–42 с анимациями облачения"
+skip_deps = ["trinkets", "ad-astra"]
+
+# Аддон-пак Sym's Armored Industries объявляет PantheonSent обязательным
+# (в зависимостях на Modrinth его нет): без него Palladium не грузит костюмы.
+[[mods]]
+slug = "pantheonsent"
+side  = "both"
+group = "lib"
+note = "Нужен костюмам Железного человека (Sym's Armored Industries)"
 
 [[mods]]
 slug = "threetag-palladium"
@@ -112,22 +123,10 @@ group = "lib"
 note = "Фреймворк супергероев: костюмы, способности, анимации"
 
 [[mods]]
-slug = "gravestone-core"
-side  = "both"
-group = "lib"
-note = "Библиотека способностей для дополнений Palladium"
-
-[[mods]]
-slug = "corewithstuff"
-side  = "both"
-group = "lib"
-note = "Библиотека для дополнений Palladium"
-
-[[mods]]
 slug = "pehkui"
 side  = "both"
 group = "lib"
-note = "Масштаб сущностей: Халкбастер и сжатие костюма"
+note = "Масштаб сущностей: нужен костюмам Железного человека"
 
 [[mods]]
 slug = "curios"

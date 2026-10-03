@@ -189,6 +189,11 @@ public final class ShotHarness {
                     CityLife.LOG.info("City Life: кадры карты ждут, экран {}",
                             mc.screen == null ? "нет" : mc.screen.getClass().getName());
                 }
+                // Приветствие мода (Supplementaries показывает его при новом конфиге) — закрыть.
+                if (mc.screen != null && mc.screen.getClass().getSimpleName().equals("WelcomeMessageScreen")
+                        && titleTicks % 100 == 50) {
+                    mc.setScreen(new net.minecraft.client.gui.screens.TitleScreen());
+                }
                 if (opening && mc.screen instanceof net.minecraft.client.gui.screens.ConfirmScreen confirm
                         && titleTicks % 100 == 50) {
                     // Вопрос при загрузке мира (резервная копия, изменённый набор модов) —
@@ -266,6 +271,34 @@ public final class ShotHarness {
         }
     }
 
+    /** Касса настоящего прилавка из каталога — как её пришлёт сервер. */
+    private static CompoundTag shopShot(String role) {
+        var shop = dev.lscity.citylife.trade.ShopCatalog.BY_ROLE.get(role);
+        CompoundTag tag = new CompoundTag();
+        tag.putString("title", shop.title());
+        tag.putUUID("clerk", java.util.UUID.randomUUID());
+        ListTag items = new ListTag();
+        for (var line : dev.lscity.citylife.trade.Checkout.lines(shop)) {
+            CompoundTag e = new CompoundTag();
+            e.putInt("i", line.index());
+            e.put("stack", line.goods().save(new CompoundTag()));
+            e.putLong("price", line.price());
+            String g = shop.offers().get(line.index()).group();
+            if (!g.isEmpty()) {
+                e.putString("g", g);
+            }
+            items.add(e);
+        }
+        tag.put("items", items);
+        tag.putLong("balance", 48250);
+        tag.putLong("cash", 3200);
+        tag.putBoolean("barter", dev.lscity.citylife.trade.Checkout.buysFromPlayers(shop));
+        tag.putString("card", "mir");
+        tag.putString("cardNumber", "2200 1234 5678 9012");
+        tag.putBoolean("cardMine", true);
+        return tag;
+    }
+
     private static Screen sceneScreen(String name) {
         var stark = dev.lscity.citylife.device.Devices.STARK;
         switch (name) {
@@ -278,6 +311,24 @@ public final class ShotHarness {
                 Minecraft.getInstance().setScreen(screen);
                 screen.open("bank");
                 return screen;
+            }
+            case "ui_checkout_hardware" -> {
+                return new dev.lscity.citylife.client.screen.CheckoutScreen(shopShot("builder"));
+            }
+            case "ui_checkout_hardware_doors" -> {
+                return new dev.lscity.citylife.client.screen.CheckoutScreen(shopShot("builder"))
+                        .preset("Двери", "");
+            }
+            case "ui_checkout_hardware_find" -> {
+                return new dev.lscity.citylife.client.screen.CheckoutScreen(shopShot("builder"))
+                        .preset("", "ламп");
+            }
+            case "ui_checkout_corner" -> {
+                return new dev.lscity.citylife.client.screen.CheckoutScreen(shopShot("shopkeeper"));
+            }
+            case "ui_checkout_food" -> {
+                return new dev.lscity.citylife.client.screen.CheckoutScreen(shopShot("trader_food"))
+                        .preset("Готовая еда", "");
             }
             case "ui_controls" -> {
                 return new dev.lscity.citylife.client.controls.ControlsScreen(null);
@@ -296,7 +347,7 @@ public final class ShotHarness {
                 CompoundTag jarvis = new CompoundTag();
                 jarvis.putBoolean("allowed", true);
                 jarvis.putBoolean("owner", true);
-                jarvis.putString("suit", "satsu_iron_man_addon:marks/mark_42/bracelet");
+                jarvis.putInt("mark", 33);
                 dev.put("jarvis", jarvis);
                 var screen = new dev.lscity.citylife.client.device.DeviceScreen(dev);
                 Minecraft.getInstance().setScreen(screen);

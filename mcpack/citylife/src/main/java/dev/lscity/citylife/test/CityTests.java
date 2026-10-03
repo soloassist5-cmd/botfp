@@ -1595,31 +1595,78 @@ public final class CityTests {
         });
     }
 
-    /** Зал брони: пульт ставит недостающую стойку и возвращает снятый костюм. */
+    /** Зал брони: опустевшая витрина получает свою марку обратно. */
     @SelfTest
     public static void starkSuitRestock(TestKit h) {
         BlockPos at = h.absolutePos(new BlockPos(5, 1, 5));
-        var suit = new dev.lscity.citylife.stark.SecurityConsoleBlockEntity.Suit(
-                new net.minecraft.world.phys.Vec3(at.getX() + 0.5, at.getY(), at.getZ() + 0.5), 180F,
-                "minecraft:diamond_chestplate", "chest");
-        var stand = dev.lscity.citylife.stark.StarkSecurity.stock(h.getLevel(), suit);
-        if (stand == null || !stand.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST)
-                .is(net.minecraft.world.item.Items.DIAMOND_CHESTPLATE)) {
-            h.fail("стойка с костюмом не появилась");
+        var block = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(new net.minecraft.resources.ResourceLocation(
+                dev.lscity.citylife.stark.StarkSecurity.CASE));
+        if (block == null || block == net.minecraft.world.level.block.Blocks.AIR) {
+            h.fail("нет витрины Sym's Armored Industries");
             return;
         }
-        stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.item.ItemStack.EMPTY);
-        var again = dev.lscity.citylife.stark.StarkSecurity.stock(h.getLevel(), suit);
-        int stands = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.decoration.ArmorStand.class,
-                new net.minecraft.world.phys.AABB(at).inflate(2)).size();
-        boolean refilled = again == stand && stand.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST)
-                .is(net.minecraft.world.item.Items.DIAMOND_CHESTPLATE);
-        stand.discard();
-        if (stands != 1) {
-            h.fail("стоек " + stands + ", нужна одна");
+        h.getLevel().setBlock(at, block.defaultBlockState(), 3);
+        var suit = new dev.lscity.citylife.stark.SecurityConsoleBlockEntity.Suit(
+                new net.minecraft.world.phys.Vec3(at.getX() + 0.5, at.getY(), at.getZ() + 0.5), 180F, "33", "case");
+        boolean filled = dev.lscity.citylife.stark.StarkSecurity.stock(h.getLevel(), suit);
+        var state = h.getLevel().getBlockState(at);
+        int mark = -1;
+        for (var prop : state.getProperties()) {
+            if ("mark_id".equals(prop.getName())) {
+                mark = (Integer) state.getValue(prop);
+            }
         }
-        if (!refilled) {
-            h.fail("снятый костюм не вернулся на стойку");
+        if (!filled || mark != 33) {
+            h.fail("пустая витрина не получила Mark 33 обратно (mark_id=" + mark + ")");
+        }
+        h.succeed();
+    }
+
+    /** Джарвис надевает марку целиком: броня, реактор нужного поколения, кейс у Mark 5. */
+    @SelfTest
+    public static void jarvisSuitsUp(TestKit h) {
+        FakePlayer tony = player(h, "TonyJarvis");
+        try {
+            var mk3 = dev.lscity.citylife.stark.StarkSuits.mark(3);
+            if (!dev.lscity.citylife.stark.StarkSuits.summon(tony, mk3)) {
+                h.fail("Mark 3 не наделся");
+                return;
+            }
+            String chest = String.valueOf(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(
+                    tony.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).getItem()));
+            String reactor = String.valueOf(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(
+                    dev.lscity.citylife.stark.StarkSuits.curio(tony, "body").getItem()));
+            if (!"sym_industries:mark_3_chestplate".equals(chest)) {
+                h.fail("на игроке не нагрудник Mark 3, а " + chest);
+            }
+            if (!"sym_industries:arc_reactor_tier_1".equals(reactor)) {
+                h.fail("нет дугового реактора первого поколения в слоте «тело», а " + reactor);
+            }
+            dev.lscity.citylife.stark.StarkSuits.summon(tony, dev.lscity.citylife.stark.StarkSuits.mark(5));
+            String suitcase = String.valueOf(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(
+                    dev.lscity.citylife.stark.StarkSuits.curio(tony, "necklace").getItem()));
+            if (!"sym_industries:mark_5_suitcase".equals(suitcase)
+                    || !tony.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).isEmpty()) {
+                h.fail("Mark 5 — это кейс в слоте «ожерелье», а броня Mark 3 должна уйти: " + suitcase);
+            }
+            dev.lscity.citylife.stark.StarkSuits.summon(tony, dev.lscity.citylife.stark.StarkSuits.mark(33));
+            reactor = String.valueOf(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(
+                    dev.lscity.citylife.stark.StarkSuits.curio(tony, "body").getItem()));
+            if (!"sym_industries:arc_reactor_tier_2".equals(reactor)
+                    || !dev.lscity.citylife.stark.StarkSuits.curio(tony, "necklace").isEmpty()) {
+                h.fail("Mark 33 нужен реактор второго поколения, а кейс Mark 5 должен уйти: " + reactor);
+            }
+            dev.lscity.citylife.stark.StarkSuits.off(tony);
+            if (!tony.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).isEmpty()
+                    || !dev.lscity.citylife.stark.StarkSuits.curio(tony, "body").isEmpty()) {
+                h.fail("«Снять» оставило костюм или реактор");
+            }
+            if (dev.lscity.citylife.stark.StarkSuits.mark(42).playable()
+                    || dev.lscity.citylife.stark.StarkSuits.mark(7).playable()) {
+                h.fail("Mark 7 и 42 — только для подписчиков мода, Джарвис не должен их предлагать");
+            }
+        } finally {
+            tony.getInventory().clearContent();
         }
         h.succeed();
     }
@@ -1777,15 +1824,14 @@ public final class CityTests {
             if (!dev.lscity.citylife.stark.StarkSecurity.cleared(tony)) {
                 h.fail("у владельца башни нет допуска охраны");
             }
-            var mark = new net.minecraft.resources.ResourceLocation("satsu_iron_man_addon", "marks/mark_42/bracelet");
-            if (!dev.lscity.citylife.stark.StarkSuits.isSuit(mark)
+            var sym = "sym_industries";
+            if (dev.lscity.citylife.stark.StarkSuits.markOf(new net.minecraft.resources.ResourceLocation(
+                    sym, "mark_33_helmet")) != 33
+                    || dev.lscity.citylife.stark.StarkSuits.markOf(new net.minecraft.resources.ResourceLocation(
+                    sym, "mark_5_suitcase")) != 5
                     || dev.lscity.citylife.stark.StarkSuits.isSuit(new net.minecraft.resources.ResourceLocation(
-                    "satsu_iron_man_addon", "steel_ingot"))) {
+                    sym, "titanium_ingot"))) {
                 h.fail("Джарвис путает костюмы и прочие предметы");
-            }
-            if (!"hulkbuster_armor".equals(dev.lscity.citylife.stark.StarkSuits.slot(
-                    "satsu_iron_man_addon:marks/mark_44/bracelet"))) {
-                h.fail("Халкбастер не в своём слоте");
             }
         } finally {
             if (previous == null) {

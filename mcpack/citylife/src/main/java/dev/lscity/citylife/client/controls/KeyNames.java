@@ -26,7 +26,7 @@ public final class KeyNames {
 
     public static final List<Group> GROUPS = List.of(
             new Group("move", 0xFF4F7CAC, List.of("key.categories.movement")),
-            new Group("suit", 0xFFC9473F, List.of("palladium", "satsu", "curios", "corewithstuff")),
+            new Group("suit", 0xFFC9473F, List.of("palladium", "sym_industries", "curios")),
             new Group("weapon", 0xFFD08A2E, List.of("tacz")),
             new Group("transport", 0xFF2F9C95, List.of("vehicle", "citylife")),
             new Group("voice", 0xFF3A8FD6, List.of("voicechat")),

@@ -65,6 +65,7 @@ class NavigatorApp extends DeviceApp {
     private static final java.util.Map<String, String> ALIASES = java.util.Map.of(
             "realty", "риелтор риэлтор недвижимость жилье дом квартира купить дом агентство",
             "bank", "деньги счет карта кредит",
+            "hardware", "стройматериалы строительный доски кирпич бетон двери окна мебель ремонт",
             "hospital", "врач лечение скорая",
             "police", "полиция штраф розыск",
             "gas", "заправка бензин топливо",

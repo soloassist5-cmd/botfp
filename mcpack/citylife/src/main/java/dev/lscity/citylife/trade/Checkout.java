@@ -98,6 +98,10 @@ public final class Checkout {
             entry.putInt("i", line.index());
             entry.put("stack", line.goods().save(new CompoundTag()));
             entry.putLong("price", line.price());
+            String group = shop.offers().get(line.index()).group();
+            if (!group.isEmpty()) {
+                entry.putString("g", group);
+            }
             items.add(entry);
         }
         tag.put("items", items);

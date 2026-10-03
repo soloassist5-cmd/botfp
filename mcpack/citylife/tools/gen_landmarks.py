@@ -112,6 +112,17 @@ def main() -> int:
                      x + dx, y, z + dz))
     rows += sorted(atms, key=lambda row: (row[2], row[4]))
 
+    # Строймаркеты: их несколько по городу, и в навигаторе каждый подписан
+    # улицей, чтобы выбрать ближайший.
+    hardware = []
+    for lot in city.lots:
+        if lot.kind != "shop" or lot.shop_role != "builder":
+            continue
+        x, y, z = entrance(lot)
+        street = lot.address.rsplit(", ", 1)[0] if lot.address else ""
+        hardware.append((f"Строймаркет — {street}".strip(" —"), "hardware", x, y, z))
+    rows += sorted(hardware, key=lambda row: (row[2], row[4]))
+
     # Пункты выдачи маркетплейса: сюда навигатор ведёт за заказом.
     pickups = []
     for lot in city.lots:

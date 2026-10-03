@@ -71,7 +71,11 @@ public record Shop(String title, List<ShopOffer> offers) {
         }
     }
 
-    /** Одно предложение: что отдаём и что получаем. */
-    public record ShopOffer(ShopItem buy, ShopItem sell) {
+    /** Одно предложение: что отдаём, что получаем и раздел прилавка (может быть пустым). */
+    public record ShopOffer(ShopItem buy, ShopItem sell, String group) {
+
+        public ShopOffer(ShopItem buy, ShopItem sell) {
+            this(buy, sell, "");
+        }
     }
 }

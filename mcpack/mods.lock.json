@@ -1,11 +1,11 @@
 {
-  "generated": "2026-10-02T15:56:35Z",
+  "generated": "2026-10-03T07:49:21Z",
   "pack_version": "1.0.0",
   "minecraft": "1.20.1",
   "loader": "forge",
   "loader_version": "47.4.23",
-  "mod_count": 71,
-  "total_size": 327293168,
+  "mod_count": 69,
+  "total_size": 320173503,
   "mods": [
     {
       "slug": "cameracraft",
@@ -238,29 +238,6 @@
       "page": "https://modrinth.com/mod/mrcrayfishs-vehicle-unofficial"
     },
     {
-      "slug": "satsu-iron-man-addon",
-      "title": "Satsu Iron man addon (Palladium)",
-      "project_id": "b8DiFMOK",
-      "version_id": "NbiZbpIk",
-      "version_number": "3.5.4",
-      "version_type": "release",
-      "filename": "Satsu_iron_man_addon-3.5.4.jar",
-      "url": "https://cdn.modrinth.com/data/b8DiFMOK/versions/NbiZbpIk/Satsu_iron_man_addon-3.5.4.jar",
-      "size": 11671767,
-      "sha1": "464964dc2190ff0a1e887e8d4297728fd34c633b",
-      "sha512": "e82098793ce7eefb4f1a8df6ea4c2cf00825746c9da4c6a17a6de2bae02cdc297749321241626026c0f6ce7d69e1d1fe57c30700ab84fd4df63cf83a4a68e390",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "core",
-      "note": "Костюмы Железного человека: Марки 1–86, Халкбастер, Iron Legion",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/satsu-iron-man-addon"
-    },
-    {
       "slug": "security-craft",
       "title": "SecurityCraft",
       "project_id": "v8jzRtAt",
@@ -282,6 +259,29 @@
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/security-craft"
+    },
+    {
+      "slug": "syms-armored-industries",
+      "title": "Sym's Armored Industries",
+      "project_id": "X3IrezTg",
+      "version_id": "4gkLu4P2",
+      "version_number": "1.0.6",
+      "version_type": "release",
+      "filename": "sym-industries-1.0.6.jar",
+      "url": "https://cdn.modrinth.com/data/X3IrezTg/versions/4gkLu4P2/sym-industries-1.0.6.jar",
+      "size": 9529791,
+      "sha1": "5e5766b1dc4fea4987a70b5e7ee479ac7b0fddf2",
+      "sha512": "6793bcba9aef18464d61d68c2c0c770fed88c7cefb7d8eeea3e9cf59a0f9b9d9af1e2e21c8346b93cca9f0ef96eae1239dfed51f8e842992164c09ea3d527eab",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "core",
+      "note": "Костюмы Железного человека: Марки 1–42 с анимациями облачения",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/syms-armored-industries"
     },
     {
       "slug": "timeless-and-classics-zero",
@@ -717,7 +717,7 @@
       "group": "lib",
       "note": "Библиотека-зависимость",
       "optional": false,
-      "required_by": "gravestone-core",
+      "required_by": "kubejs",
       "page": "https://modrinth.com/mod/architectury-api"
     },
     {
@@ -765,29 +765,6 @@
       "optional": false,
       "required_by": "waystones",
       "page": "https://modrinth.com/mod/balm"
-    },
-    {
-      "slug": "corewithstuff",
-      "title": "CoreWithStuff",
-      "project_id": "MBGhXGlQ",
-      "version_id": "RHv1uy6j",
-      "version_number": "1.6-Fix",
-      "version_type": "release",
-      "filename": "corewithstuff-v1.6.jar",
-      "url": "https://cdn.modrinth.com/data/MBGhXGlQ/versions/RHv1uy6j/corewithstuff-v1.6.jar",
-      "size": 4581777,
-      "sha1": "4c0c2044f78b47a5524cedae8a7d413c81b513c3",
-      "sha512": "308225839718980e444ce53fd55aa26397b3678f44f59f275e99fcace72d6ed4103848f4d32339779a2ecb7021bdcb1aa8afd1a70ed3b3a319a7e743c08f0714",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "lib",
-      "note": "Библиотека для дополнений Palladium",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/corewithstuff"
     },
     {
       "slug": "curios",
@@ -886,52 +863,6 @@
       "page": "https://modrinth.com/mod/geckolib"
     },
     {
-      "slug": "gravestone-core",
-      "title": "Gravestone: Core",
-      "project_id": "jKzIQ1it",
-      "version_id": "b2MmrOHu",
-      "version_number": "1.2.6",
-      "version_type": "release",
-      "filename": "gravecore-1.2.6-forge.jar",
-      "url": "https://cdn.modrinth.com/data/jKzIQ1it/versions/b2MmrOHu/gravecore-1.2.6-forge.jar",
-      "size": 1576752,
-      "sha1": "2c9b22185256f6fb47a374a3e5eaa498e1205957",
-      "sha512": "a51182352455955d626b31412ff97860ce4f54839c1041e48e43c51a894a6a9cef67cabd69d60c4a4270e0beec9a98eb3b2077f0d11b626bf7aef0291578f66a",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "lib",
-      "note": "Библиотека способностей для дополнений Palladium",
-      "optional": false,
-      "required_by": null,
-      "page": "https://modrinth.com/mod/gravestone-core"
-    },
-    {
-      "slug": "lodestonelib",
-      "title": "Lodestone",
-      "project_id": "bN3xUWdo",
-      "version_id": "dRIycWqx",
-      "version_number": "1.20.1-1.6.4.1",
-      "version_type": "release",
-      "filename": "lodestone-1.20.1-1.6.4.1.jar",
-      "url": "https://cdn.modrinth.com/data/bN3xUWdo/versions/dRIycWqx/lodestone-1.20.1-1.6.4.1.jar",
-      "size": 670934,
-      "sha1": "e6346060ae70cbf103b231d8a1536bcd044c84a8",
-      "sha512": "fec5107deb73c06c4b1756349cb874e0933c4181fd20e8528e46a24e35ccb048898c8607830deea3242d7303784a9c3a03f3fadd40d13fb6dc27a34a77f5cc85",
-      "side": "both",
-      "env": {
-        "client": "required",
-        "server": "required"
-      },
-      "group": "lib",
-      "note": "Библиотека-зависимость",
-      "optional": false,
-      "required_by": "gravestone-core",
-      "page": "https://modrinth.com/mod/lodestonelib"
-    },
-    {
       "slug": "mezzconfig",
       "title": "MezzConfig",
       "project_id": "7tEfOcA7",
@@ -1001,6 +932,29 @@
       "page": "https://modrinth.com/mod/packet-fixer"
     },
     {
+      "slug": "pantheonsent",
+      "title": "PantheonSent",
+      "project_id": "SIKMQqt0",
+      "version_id": "p2gTYHA9",
+      "version_number": "1.1.1+1.20.1-forge",
+      "version_type": "release",
+      "filename": "pantheonsent-1.1.1+1.20.1-forge.jar",
+      "url": "https://cdn.modrinth.com/data/SIKMQqt0/versions/p2gTYHA9/pantheonsent-1.1.1%2B1.20.1-forge.jar",
+      "size": 1970793,
+      "sha1": "b56df72973c55a3d7d0caf80b0d0333d9893007d",
+      "sha512": "4f01ff71a255bedf62db8783dc566d8550298e5360a300ba62de032ae59bb22b9139dee9e93dcfbe01bb50fd46383971e9097d7bbb02df7b4c38b986984c58c8",
+      "side": "both",
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "group": "lib",
+      "note": "Нужен костюмам Железного человека (Sym's Armored Industries)",
+      "optional": false,
+      "required_by": null,
+      "page": "https://modrinth.com/mod/pantheonsent"
+    },
+    {
       "slug": "pehkui",
       "title": "Pehkui",
       "project_id": "t5W7Jfwy",
@@ -1018,7 +972,7 @@
         "server": "required"
       },
       "group": "lib",
-      "note": "Масштаб сущностей: Халкбастер и сжатие костюма",
+      "note": "Масштаб сущностей: нужен костюмам Железного человека",
       "optional": false,
       "required_by": null,
       "page": "https://modrinth.com/mod/pehkui"
@@ -1066,7 +1020,7 @@
       "group": "lib",
       "note": "Библиотека-зависимость",
       "optional": false,
-      "required_by": "gravestone-core",
+      "required_by": "kubejs",
       "page": "https://modrinth.com/mod/rhino"
     },
     {

@@ -104,6 +104,19 @@ if (project.hasProperty('scenes')) {
         meta.jars = meta.jars.findAll { !nested.containsKey(it.path.tokenize('/').last()) }
         groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(meta)).getBytes('UTF-8')
     }
+    // PantheonSent (его требует аддон-пак костюмов) тоже везёт SherdsAPI внутри.
+    def sherds = ['sherdsapi-4.0.4+Forge.jar': 'sherdsapi-4.0.4-scenes.jar']
+    rewrite('pantheonsent-1.1.1+1.20.1-forge.jar', 'pantheonsent-1.1.1-scenes.jar') { String name, byte[] data ->
+        def base = name.tokenize('/').last()
+        if (sherds.containsKey(base)) {
+            new File(out, sherds[base]).bytes = data
+            return null
+        }
+        if (name != 'META-INF/jarjar/metadata.json') return data
+        def meta = new groovy.json.JsonSlurper().parseText(new String(data, 'UTF-8'))
+        meta.jars = meta.jars.findAll { !sherds.containsKey(it.path.tokenize('/').last()) }
+        groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(meta)).getBytes('UTF-8')
+    }
 }
 
 dependencies {
@@ -118,12 +131,12 @@ dependencies {
          'FarmersDelight-1.20.1:1.3.4', 'supplementaries-1.20:3.1.43-forge',
          'moonlight-1.20:2.16.35-forge',
          // Костюмы Железного человека и всё, что им нужно.
-         'Satsu_iron_man_addon:3.5.4', 'palladium:4.5.9-scenes',
-         'palladiumcore:1.0.1-scenes', 'playeranimator:1.0.2-scenes', 'gravecore:1.2.6-forge',
-         'corewithstuff:v1.6', 'kubejs-forge:2001.6.5-build.26', 'rhino-forge:2001.2.3-build.10',
+         'sym-industries:1.0.6', 'pantheonsent:1.1.1-scenes', 'sherdsapi:4.0.4-scenes',
+         'palladium:4.5.9-scenes',
+         'palladiumcore:1.0.1-scenes', 'playeranimator:1.0.2-scenes',
+         'kubejs-forge:2001.6.5-build.26', 'rhino-forge:2001.2.3-build.10',
          'architectury:9.2.14-forge', 'geckolib-forge-1.20.1:4.8.4', 'Pehkui:3.8.2+1.20.1-scenes',
-         'curios-forge:5.14.1+1.20.1', 'packetfixer:3.3.2-1.18-1.20.4-merged',
-         'lodestone-1.20.1:1.6.4.1'].each {
+         'curios-forge:5.14.1+1.20.1', 'packetfixer:3.3.2-1.18-1.20.4-merged'].each {
             runtimeOnly fg.deobf("scenes:${it}")
         }
     }

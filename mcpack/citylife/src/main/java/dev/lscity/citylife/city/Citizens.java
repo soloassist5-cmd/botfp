@@ -115,6 +115,7 @@ public final class Citizens {
         WAYS.put("police", "полиция");
         WAYS.put("metro", "метро");
         WAYS.put("realty", "купить дом");
+        WAYS.put("hardware", "строймаркет");
         WAYS.put("food", "поесть");
     }
 

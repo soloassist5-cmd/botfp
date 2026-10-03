@@ -38,14 +38,12 @@ public class PrinterScreen extends Screen {
 
     /** Вкладка «Старк»: телефон, техника башни и любимые марки брони. */
     private static final String[] FEATURED = {"citylife:phone_stark", "citylife:holo_screen",
-            "citylife:laser_sensor", "citylife:security_console", "satsu_iron_man_addon:marks/mark_42/bracelet",
-            "satsu_iron_man_addon:marks/mark_85/main", "satsu_iron_man_addon:marks/mark_50/main",
-            "satsu_iron_man_addon:marks/mark_44/bracelet", "satsu_iron_man_addon:marks/mark_07/bracelet",
-            "satsu_iron_man_addon:marks/mark_33/bracelet", "satsu_iron_man_addon:marks/model_prime/main",
-            "satsu_iron_man_addon:war_machine/marks/mark_02/main", "satsu_iron_man_addon:arc_reactor",
-            "satsu_iron_man_addon:repulsor", "satsu_iron_man_addon:stark_hammer",
-            "satsu_iron_man_addon:extremis_3_0/phone", "satsu_iron_man_addon:watch",
-            "satsu_iron_man_addon:donuts/donut_chocolate"};
+            "citylife:laser_sensor", "citylife:security_console", "sym_industries:mark_17_chestplate",
+            "sym_industries:mark_25_chestplate", "sym_industries:mark_5_suitcase", "sym_industries:mark_3_chestplate",
+            "sym_industries:mark_33_chestplate", "sym_industries:mark_39_chestplate",
+            "sym_industries:arc_reactor_tier_1", "sym_industries:arc_reactor_tier_2", "sym_industries:repulsor",
+            "sym_industries:rocket", "sym_industries:jarvis_module", "sym_industries:display_case",
+            "sym_industries:stark_computer", "sym_industries:titanium_ingot"};
     private static final String[] TABS = {"stark", "all", "blocks", "items", "suits"};
 
     private final BlockPos pos;
@@ -160,7 +158,7 @@ public class PrinterScreen extends Screen {
             ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
             String path = id == null ? "" : id.toString();
             boolean block = stack.getItem() instanceof BlockItem;
-            boolean suit = path.startsWith("satsu_iron_man_addon:") && path.contains("marks/");
+            boolean suit = dev.lscity.citylife.stark.StarkSuits.isSuit(id);
             boolean ok = switch (tab) {
                 case "blocks" -> block;
                 case "items" -> !block;

@@ -32,8 +32,8 @@ TITLES = {
     "arms_dealer": "Пистолеты, ПП, дробовики", "rifle_dealer": "Винтовки и пулемёты",
     "ammo_seller": "Патроны",
     "car_dealer": "Автосалон", "realtor": "Агентство недвижимости", "clerk": "Мэрия",
-    "cook": "Закусочная", "shopkeeper": "Магазин", "bartender": "Бар",
-    "fuel_seller": "Заправка", "medic": "Аптека", "foreman": "Прораб", "builder": "Стройка",
+    "cook": "Закусочная", "shopkeeper": "Магазин у дома", "bartender": "Бар",
+    "fuel_seller": "Заправка", "medic": "Аптека", "foreman": "Прораб", "builder": "Строймаркет",
 }
 
 
@@ -101,8 +101,10 @@ def main() -> int:
     for role, offers in sorted(G.ROLE_TRADES.items()):
         entries = []
         for offer in offers:
+            group = offer.get("group")
+            tail = f', "{group}"' if group else ""
             entries.append(f"                    new ShopOffer({item_line(offer['buy'])}, "
-                           f"{item_line(offer['sell'])})")
+                           f"{item_line(offer['sell'])}{tail})")
         title = TITLES.get(role, "Магазин")
         rows.append(f'            Map.entry("{role}", new Shop("{title}", List.of(\n'
                     + ",\n".join(entries) + ")))")

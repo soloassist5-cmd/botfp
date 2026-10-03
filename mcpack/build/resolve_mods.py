@@ -129,6 +129,14 @@ def main() -> int:
               m.get("note", ""), None, m.get("optional", False), m.get("beta", False))
              for m in pack["mods"]]
 
+    # Зависимости, которые мод объявил «обязательными» зря: Fabric-only
+    # библиотеки в Forge-версии или моды, нужные только для совместимости.
+    # Задаются в pack.toml ключом skip_deps = ["slug", ...].
+    skip: dict[str, set[str]] = {}
+    for m in pack["mods"]:
+        if m.get("skip_deps"):
+            skip[m["slug"]] = {modrinth.project(s)["id"] for s in m["skip_deps"]}
+
     while queue:
         ident, side, group, note, required_by, optional, beta = queue.pop(0)
         try:
@@ -181,7 +189,7 @@ def main() -> int:
             dep_id = dep.get("project_id")
             if not dep_id and dep.get("version_id"):
                 dep_id = modrinth.version(dep["version_id"])["project_id"]
-            if not dep_id:
+            if not dep_id or dep_id in skip.get(proj["slug"], set()):
                 continue
             # Зависимость наследует сторону родителя: библиотека клиентского
             # мода серверу не нужна, и в серверный пак она не попадёт.

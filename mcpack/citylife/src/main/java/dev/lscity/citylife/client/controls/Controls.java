@@ -54,7 +54,7 @@ public final class Controls {
         // Ванильные «сохранить/загрузить панель» нужны только в творческом, а C и X нужны модам.
         put("key.saveToolbarActivator", "none");
         put("key.loadToolbarActivator", "none");
-        // Костюм Железного человека (Palladium): колесо брони и способности.
+        // Костюм Железного человека (Palladium): способности по порядку панели.
         put("key.palladium.ability_1", "key.keyboard.v");
         put("key.palladium.ability_2", "key.keyboard.b");
         put("key.palladium.ability_3", "key.keyboard.n");
@@ -101,10 +101,6 @@ public final class Controls {
         put("key.diligentstalker.view.desc", "alt+key.keyboard.b");
         put("key.diligentstalker.disconnect.desc", "key.keyboard.delete");
         // Служебное прочих модов — с дороги.
-        put("key.corewithstuff.open_phone", "none");
-        put("key.corewithstuff.studio_panels", "none");
-        put("key.corewithstuff.ponder", "none");
-        put("key.corewithstuff.open_abilities", "alt+key.keyboard.k");
         put("key.tctcore.tc_tcore_key", "alt+key.keyboard.o");
         put("key.corpse.death_history", "alt+key.keyboard.u");
         // Наш справочник управления.

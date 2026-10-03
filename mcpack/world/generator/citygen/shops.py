@@ -52,7 +52,11 @@ TECH = ["minecraft:clock", "minecraft:compass", "minecraft:spyglass", "minecraft
         "minecraft:music_disc_cat", "minecraft:music_disc_blocks", "minecraft:music_disc_chirp"]
 TOOLS = ["minecraft:iron_pickaxe", "minecraft:iron_shovel", "minecraft:iron_axe",
          "minecraft:iron_hoe", "minecraft:shears", "minecraft:bucket", "minecraft:lantern",
-         "minecraft:chain", "minecraft:ladder", "minecraft:torch", "minecraft:brush"]
+         "minecraft:chain", "minecraft:ladder", "minecraft:torch", "minecraft:brush",
+         "minecraft:white_dye", "minecraft:gray_dye", "minecraft:black_dye", "minecraft:blue_dye",
+         "minecraft:flower_pot", "minecraft:oak_door", "minecraft:iron_door", "minecraft:glass_pane",
+         "minecraft:oak_trapdoor", "mcwlights:white_lamp", "mcwlights:chain_lantern",
+         "minecraft:item_frame", "minecraft:painting", "minecraft:flint_and_steel"]
 COLORS = [0xB02E26, 0x3C44AA, 0xF9FFFE, 0x1D1D21, 0x5E7C16, 0xF38BAA, 0xFED83D, 0x8932B8,
           0x169C9C, 0x835432, 0x9D9D97]
 CLOTHES = ["chestplate", "leggings", "boots", "helmet"]
@@ -118,7 +122,9 @@ def aisles(fl: Floor, u0: int, v0: int, u1: int, v1: int, profile: str) -> None:
                     continue
                 if v == v0 and profile in ("trader_food", "shopkeeper"):
                     fl.frame.set(u + du, fl.y, v, rng.choice(CRATES))
-                elif profile == "builder":
+                elif profile == "builder" and (u - u0) % 8 < 4:
+                    # Ряды строймаркета: поддоны с кирпичом и досками
+                    # чередуются со стеллажами инструмента и фурнитуры.
                     _pallet(fl, u + du, v)
                 else:
                     shelf_tower(fl, u + du, v, face, profile)
@@ -150,7 +156,7 @@ def back_wall(fl: Floor, u0: int, u1: int, v: int, profile: str) -> None:
         elif profile in ("trader_food", "shopkeeper"):
             f.set(u, y, v, rng.choice(CRATES))
             f.set(u, y + 1, v, rng.choice(CRATES))
-        elif profile == "builder":
+        elif profile == "builder" and (u - u0) % 3 == 0:
             _pallet(fl, u, v)
         else:
             shelf_tower(fl, u, v, "front", profile)

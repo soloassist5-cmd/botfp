@@ -43,8 +43,8 @@ summon easy_npc:humanoid -33.5 69 170.5 {CustomName:'{"text": "Продавец 
 summon easy_npc:humanoid -34.5 69 214.5 {CustomName:'{"text": "Повар"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_cook","lsgen_3"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/cook.png",Name:"",URL:""}}
 # apartment — Управдом
 summon easy_npc:humanoid -31.5 70 334.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor","lsgen_3"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[180.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
-# МАГАЗИН — Продавец
-summon easy_npc:humanoid -23.5 69 430.5 {CustomName:'{"text": "Продавец"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_shopkeeper","lsgen_3"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/shopkeeper.png",Name:"",URL:""}}
+# СТРОЙМАРКЕТ — Продавец стройматериалов
+summon easy_npc:humanoid -23.5 69 430.5 {CustomName:'{"text": "Продавец стройматериалов"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_builder","lsgen_3"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/builder.png",Name:"",URL:""}}
 # apartment — Управдом
 summon easy_npc:humanoid 26.5 70 -209.5 {CustomName:'{"text": "Управдом"}',CustomNameVisible:1b,Tags:["citylife_npc","citylife_realtor","lsgen_3"],PersistenceRequired:1b,Invulnerable:1b,Rotation:[0.0f,0.0f],NoAI:1b,SkinData:{Type:"RESOURCE_LOCATION",Texture:"citylife:textures/entity/npc/realtor.png",Name:"",URL:""}}
 # apartment — Управдом

@@ -209,6 +209,14 @@ Quality Guns**, всего 93 ствола. В оружейной четыре �
 Картой платят со своего счёта в банке — нужна своя карта Мир или
 Mastercard (её выпускает банкомат); чужую терминал не примет. В выписке
 банка — «Покупка: магазин». Скупка товара — кнопкой «Скупка».
+У больших прилавков слева — разделы, сверху — поиск по товарам.
+
+**Магазины по профилю.** «Продукты» — выпечка, овощи, мясо и рыба, напитки
+и готовая еда; «Магазин у дома» — продукты на каждый день и хозтовары;
+**строймаркеты** (22 по городу, в навигаторе — «Строймаркет — улица») —
+почти 500 товаров: камень и кирпич, бетон и плитка всех цветов, дерево
+восьми пород, стекло и окна, двери (и гаражные), заборы, крыша, свет,
+мебель, ткани, сад, инструмент и декор.
 
 ### Телефоны, планшет, ноутбук и компьютер
 Подходящего мода на 1.20.1 не существует, поэтому он **написан с нуля** —
@@ -375,7 +383,8 @@ Furniture, Handcrafted, Farmer's Delight, Supplementaries): в магазина�
 
 В центре — **Сантос-Сити**: STARK TOWER (34 этажа, светящиеся буквы STARK,
 посадочная площадка у вершины, а под ней — мастерская Тони и Зал брони из
-«Железного человека 3» с 73 костюмами, охраной «Джарвиса», лазерами,
+«Железного человека 3» — 57 витрин с костюмами Sym's Armored Industries,
+охраной «Джарвиса», лазерами,
 голо-мониторами и 3D-принтером, который печатает что угодно, включая
 стеклянный телефон Старка; башню целиком можно купить в агентстве за
 10 000 000 ₽, а костюм вызвать через «Джарвиса» в телефоне), круглый
@@ -409,9 +418,9 @@ SUNSET PLAZA с мостом. Между этажами ходит лифт: к�
 | [Guard Villagers](https://modrinth.com/mod/guard-villagers) | `1.6.19` | клиент+сервер | Полиция и охрана города |
 | [KubeJS](https://modrinth.com/mod/kubejs) | `2001.6.5-build.26+forge` | клиент+сервер | Скрипты городской логики: цены, рецепты, правила |
 | [MrCrayfish's Vehicle Unofficial](https://modrinth.com/mod/mrcrayfishs-vehicle-unofficial) | `1.20.1-20260413` | клиент+сервер | Машины целиком в ящике: вскрыл ключом — поехал. 28 видов техники |
-| [Satsu Iron man addon (Palladium)](https://modrinth.com/mod/satsu-iron-man-addon) | `3.5.4` | клиент+сервер | Костюмы Железного человека: Марки 1–86, Халкбастер, Iron Legion |
 | [SecurityCraft](https://modrinth.com/mod/security-craft) | `v1.10.2.1` | клиент+сервер | Умные замки, карты-ключи, сканеры, камеры наблюдения, сигнализации |
 | [SecurityCraft: More Protectables](https://modrinth.com/mod/more-protectables) | `1.2.3.10` | клиент+сервер | Расширение SecurityCraft на блоки других модов |
+| [Sym's Armored Industries](https://modrinth.com/mod/syms-armored-industries) | `1.0.6` | клиент+сервер | Костюмы Железного человека: Марки 1–42 с анимациями облачения |
 | [Traffic Control + Roads (City) mod by Teerth](https://modrinth.com/mod/traffic-control-+-roads-mod-by-teerth) | `5.5.0` | клиент+сервер | Дороги, разметка, светофоры, знаки, отбойники |
 
 ### Строительство и декор (16)
@@ -466,32 +475,30 @@ SUNSET PLAZA с мостом. Между этажами ходит лифт: к�
 | [ModernFix](https://modrinth.com/mod/modernfix) | `5.27.83+mc1.20.1` | клиент+сервер | Ускорение запуска и снижение потребления памяти |
 | [Oculus](https://modrinth.com/mod/oculus) | `1.20.1-1.8.0` | клиент | Шейдеры. Отключить, если слабая видеокарта или конфликт с Distant Horizons |
 
-### Библиотеки (20)
+### Библиотеки (18)
 
 | Мод | Версия | Сторона | Зачем |
 |---|---|---|---|
 | [Architectury API](https://modrinth.com/mod/architectury-api) | `9.2.14+forge` | клиент+сервер | Библиотека-зависимость |
 | [Athena](https://modrinth.com/mod/athena-ctm) | `3.1.2` | клиент+сервер | Библиотека-зависимость |
 | [Balm](https://modrinth.com/mod/balm) | `7.3.44+forge-1.20.1` | клиент+сервер | Библиотека-зависимость |
-| [CoreWithStuff](https://modrinth.com/mod/corewithstuff) | `1.6-Fix` | клиент+сервер | Библиотека для дополнений Palladium |
 | [Curios API](https://modrinth.com/mod/curios) | `5.14.1+1.20.1` | клиент+сервер | Слот костюма и браслета |
 | [Framework](https://www.curseforge.com/minecraft/mc-mods/framework) | `0.8.0` | клиент+сервер | Библиотека MrCrayfish, нужна моду машин |
 | [Fusion (Connected Textures)](https://modrinth.com/mod/fusion-connected-textures) | `1.3.15b-forge-mc1.20.1` | клиент+сервер | Библиотека-зависимость |
 | [Geckolib](https://modrinth.com/mod/geckolib) | `4.8.4` | клиент+сервер | Библиотека-зависимость |
-| [Gravestone: Core](https://modrinth.com/mod/gravestone-core) | `1.2.6` | клиент+сервер | Библиотека способностей для дополнений Palladium |
-| [Lodestone](https://modrinth.com/mod/lodestonelib) | `1.20.1-1.6.4.1` | клиент+сервер | Библиотека-зависимость |
 | [MezzConfig](https://modrinth.com/mod/mezzconfig) | `0.6.5` | клиент+сервер | Библиотека-зависимость |
 | [Moonlight Lib](https://modrinth.com/mod/moonlight) | `1.20-2.16.35-forge` | клиент+сервер | Библиотека-зависимость |
 | [Packet Fixer](https://modrinth.com/mod/packet-fixer) | `3.3.2` | клиент+сервер | Большие сетевые пакеты для костюмов |
 | [Palladium](https://modrinth.com/mod/threetag-palladium) | `4.5.9+1.20.1-forge` | клиент+сервер | Фреймворк супергероев: костюмы, способности, анимации |
-| [Pehkui](https://modrinth.com/mod/pehkui) | `3.8.2+1.20.1-forge` | клиент+сервер | Масштаб сущностей: Халкбастер и сжатие костюма |
+| [PantheonSent](https://modrinth.com/mod/pantheonsent) | `1.1.1+1.20.1-forge` | клиент+сервер | Нужен костюмам Железного человека (Sym's Armored Industries) |
+| [Pehkui](https://modrinth.com/mod/pehkui) | `3.8.2+1.20.1-forge` | клиент+сервер | Масштаб сущностей: нужен костюмам Железного человека |
 | [Resourceful Lib](https://modrinth.com/mod/resourceful-lib) | `2.1.29` | клиент+сервер | Библиотека-зависимость |
 | [Rhino](https://modrinth.com/mod/rhino) | `2001.2.3-build.10+forge` | клиент+сервер | Библиотека-зависимость |
 | [SuperMartijn642's Config Lib](https://modrinth.com/mod/supermartijn642s-config-lib) | `1.1.8-forge-mc1.20` | клиент+сервер | Библиотека-зависимость |
 | [SuperMartijn642's Core Lib](https://modrinth.com/mod/supermartijn642s-core-lib) | `1.1.24b-forge-mc1.20.1` | клиент+сервер | Библиотека-зависимость |
 | [TCT Core](https://modrinth.com/mod/tct-core) | `2.2` | клиент+сервер | Библиотека-зависимость |
 
-Всего 71 модов с Modrinth плюс самописный `citylife`.
+Всего 69 модов с Modrinth плюс самописный `citylife`.
 
 <!-- mods:end -->
 

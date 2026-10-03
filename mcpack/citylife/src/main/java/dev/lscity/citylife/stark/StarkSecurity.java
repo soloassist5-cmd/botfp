@@ -26,8 +26,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -70,9 +68,6 @@ public final class StarkSecurity {
     public static final int ALARM_TAIL = 600;
     /** Как далеко от пульта слышна сирена и видно состояние на мониторах. */
     public static final double RANGE = 96.0D;
-    /** Стойки с костюмами Зала брони: метка и префикс метки с предметом. */
-    public static final String SUIT_TAG = "citylife_suit";
-    public static final String SUIT_ITEM = "citylife_suit=";
 
     private static final Map<GlobalPos, List<AABB>> ZONES = new HashMap<>();
     private static final Set<GlobalPos> LASERS = new HashSet<>();
@@ -426,33 +421,72 @@ public final class StarkSecurity {
 
     // --- Зал брони ---------------------------------------------------------------
 
-    /** Снял костюм со стойки без допуска — это кража из башни Старка. */
+    /** Витрина Зала брони из Sym's Armored Industries. */
+    public static final String CASE = "sym_industries:display_case";
+
+    private static boolean isCase(net.minecraft.world.level.block.state.BlockState state) {
+        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+        return id != null && CASE.equals(id.toString());
+    }
+
+    private static int caseMark(net.minecraft.world.level.block.state.BlockState state) {
+        for (var prop : state.getProperties()) {
+            if ("mark_id".equals(prop.getName()) && state.getValue(prop) instanceof Integer mark) {
+                return mark;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Витрина Зала брони: ПКМ пустой рукой — костюм на игрока (это делает
+     * сам мод). Мы следим за остальным: экспонаты для подписчиков (Mark 7 и
+     * 42) не выдаём, с допуском — ставим реактор и навыки, чтобы костюм ожил,
+     * а без допуска это кража: розыск, и костюм без реактора мёртвый груз.
+     */
     @SubscribeEvent
-    public static void onStand(PlayerInteractEvent.EntityInteractSpecific event) {
-        if (event.getLevel().isClientSide || !(event.getTarget() instanceof ArmorStand stand)
-                || !stand.getTags().contains(SUIT_TAG)
-                || !(event.getEntity() instanceof ServerPlayer player)) {
+    public static void onCase(PlayerInteractEvent.RightClickBlock event) {
+        if (event.getLevel().isClientSide || !(event.getEntity() instanceof ServerPlayer player)
+                || event.getHand() != InteractionHand.MAIN_HAND) {
             return;
         }
-        if (stand.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
-                || !player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty()) {
+        var state = event.getLevel().getBlockState(event.getPos());
+        if (!isCase(state) || !player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty()) {
             return;
         }
-        ItemStack suit = stand.getItemBySlot(EquipmentSlot.CHEST);
+        int markId = caseMark(state);
+        StarkSuits.Mark mark = StarkSuits.mark(markId);
+        if (mark == null) {
+            return;   // пустая витрина: игрок сдаёт костюм на место
+        }
+        if (!mark.playable()) {
+            event.setCanceled(true);
+            player.displayClientMessage(Component.translatable("citylife.stark.exhibit", mark.title())
+                    .withStyle(ChatFormatting.GOLD), true);
+            return;
+        }
         StarkData data = StarkData.get(player.server);
         long now = player.level().getGameTime();
         if (cleared(player) || !data.armed()) {
-            data.log(now, Texts.ru("citylife.stark.log.took", player.getGameProfile().getName(),
-                    suit.getHoverName().getString()), false);
+            data.log(now, Texts.ru("citylife.stark.log.took", player.getGameProfile().getName(), mark.title()),
+                    false);
+            // Мод надевает костюм в этом же клике; реактор и навыки — следом.
+            player.server.tell(new net.minecraft.server.TickTask(player.server.getTickCount() + 1, () -> {
+                if (StarkSuits.worn(player) == markId || markId == 5) {
+                    StarkSuits.prepare(player, mark);
+                    player.displayClientMessage(Component.translatable("citylife.stark.case_ready", mark.title())
+                            .withStyle(ChatFormatting.AQUA), false);
+                }
+            }));
         } else {
             raise(player, 4, "citylife.wanted.stark_theft");
         }
     }
 
     /**
-     * Стойки Зала брони. Генератор карты не ставит сущности: места стоек
-     * записаны в пульте, и мод сам ставит недостающие стойки, как только
-     * чанк с ними загрузился, а пустые раз в минуту получают костюм обратно.
+     * Витрины Зала брони ставит генератор карты, а места и марки записаны в
+     * пульте. Опустевшая витрина раз в минуту получает свою марку обратно,
+     * если рядом никого нет: Зал не пустеет, даже если костюмы разобрали.
      */
     private static void restock(MinecraftServer server, long now) {
         for (GlobalPos console : ZONES.keySet()) {
@@ -476,40 +510,33 @@ public final class StarkSecurity {
         }
     }
 
-    /** Поставить стойку на место, если её нет, и вернуть костюм на пустую. */
-    public static ArmorStand stock(ServerLevel level, SecurityConsoleBlockEntity.Suit suit) {
-        var item = ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(suit.item()));
-        if (item == null || item == net.minecraft.world.item.Items.AIR) {
-            return null;
+    /** Вернуть марку в пустую витрину (если никого рядом). true — витрина с костюмом. */
+    public static boolean stock(ServerLevel level, SecurityConsoleBlockEntity.Suit suit) {
+        BlockPos at = BlockPos.containing(suit.pos());
+        var state = level.getBlockState(at);
+        if (!isCase(state)) {
+            return false;
         }
-        EquipmentSlot slot = "head".equals(suit.slot()) ? EquipmentSlot.HEAD : EquipmentSlot.CHEST;
-        List<ArmorStand> found = level.getEntitiesOfClass(ArmorStand.class, new AABB(suit.pos(), suit.pos())
-                .inflate(0.45), s -> s.getTags().contains(SUIT_TAG));
-        ArmorStand stand;
-        if (found.isEmpty()) {
-            stand = new ArmorStand(level, suit.pos().x, suit.pos().y, suit.pos().z);
-            stand.setYRot(suit.yaw());
-            stand.setYBodyRot(suit.yaw());
-            stand.setYHeadRot(suit.yaw());
-            CompoundTag extra = new CompoundTag();
-            stand.addAdditionalSaveData(extra);
-            extra.putBoolean("ShowArms", true);
-            extra.putBoolean("NoBasePlate", true);
-            // Брать и ставить можно только костюм; остальные слоты заперты.
-            extra.putInt("DisabledSlots", slot == EquipmentSlot.HEAD ? 47 : 55);
-            stand.readAdditionalSaveData(extra);
-            stand.setNoGravity(true);
-            stand.setInvulnerable(true);
-            stand.addTag(SUIT_TAG);
-            stand.addTag(SUIT_ITEM + suit.item());
-            level.addFreshEntity(stand);
-        } else {
-            stand = found.get(0);
+        if (caseMark(state) != 0) {
+            return true;
         }
-        if (stand.getItemBySlot(slot).isEmpty()) {
-            stand.setItemSlot(slot, new ItemStack(item));
+        int mark;
+        try {
+            mark = Integer.parseInt(suit.item());
+        } catch (NumberFormatException e) {
+            return false;
         }
-        return stand;
+        if (level.getNearestPlayer(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 8, false) != null) {
+            return false;
+        }
+        for (var prop : state.getProperties()) {
+            if ("mark_id".equals(prop.getName()) && prop instanceof net.minecraft.world.level.block.state
+                    .properties.IntegerProperty ints && ints.getPossibleValues().contains(mark)) {
+                level.setBlock(at, state.setValue(ints, mark), 3);
+                return true;
+            }
+        }
+        return false;
     }
 
     // --- команды -------------------------------------------------------------------

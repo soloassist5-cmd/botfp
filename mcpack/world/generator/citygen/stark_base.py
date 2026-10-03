@@ -5,20 +5,20 @@
 Подвал занимает весь участок под площадью и башней и опускается на два
 уровня:
 
-* −1, мастерская (пол на 60): станки Satsu, два 3D-принтера Stark
-  Industries, голостол, Дубина у верстака, склад, бар и пост охраны за
-  стеклом — пульт «Джарвис» и стена голо-мониторов;
+* −1, мастерская (пол на 60): компьютеры Stark и сборочные рамы Mark 3
+  из Sym's Armored Industries, три 3D-принтера Stark Industries, голостол,
+  Дубина у верстака, склад, бар и пост охраны за стеклом — пульт «Джарвис»
+  и стена голо-мониторов;
 * −2 и −3, Зал брони (пол на 44, потолок на 60): по стенам в два яруса
-  стоят стеклянные капсулы с подсветкой, в каждой — костюм на стойке и
-  табличка с маркой. Верхний ярус — галерея на 52 вдоль стен; в центре
-  вокруг ядра — площадка, от неё к галерее идут четыре мостика. Под
-  южным мостиком на круглой сцене стоит Халкбастер, на стенах ядра —
-  голо-мониторы со списком брони.
+  стоят подсвеченные ниши, в каждой — витрина мода с костюмом и табличка
+  с маркой. Верхний ярус — галерея на 52 вдоль стен; в центре вокруг ядра —
+  площадка, от неё к галерее идут четыре мостика. Под южным мостиком на
+  круглой сцене — Mark 42, на стенах ядра — голо-мониторы со списком брони.
 
 Попасть вниз можно по лестнице ядра и на лифте (кнопки −1, −2, −3).
 Пульт охраны знает, что охраняет: зоны подвала, камеры SecurityCraft
-и места стоек с костюмами — стойки ставит и пополняет мод (citylife:
-stark), поэтому в генераторе сущностей нет.
+и витрины с костюмами — опустевшую витрину мод (citylife:stark) раз в
+минуту заполняет её маркой снова.
 
 Координаты — локальные u/v участка Старка (фасадом на север, u = x - x0,
 v = z - z0); высоты абсолютные.
@@ -73,9 +73,11 @@ def _side_cell(side: str, a: int, d: int) -> tuple[int, int]:
 
 
 SIDE_OUT = {"N": "back", "S": "front", "W": "right", "E": "left"}
-# Капсулы по 2 клетки и перегородка: вдоль северной и южной стен — 12, по бокам — 7.
-SIDE_PODS = {"N": list(range(4, 38, 3)), "S": list(range(4, 38, 3)),
-             "W": list(range(12, 31, 3)), "E": list(range(12, 31, 3))}
+# Ниша на 3 клетки (витрина мода — 2 блока шириной, стоит по центру) и
+# общая перегородка: вдоль северной и южной стен — по 9, по бокам — по 5.
+# a0 — средняя клетка ниши.
+SIDE_PODS = {"N": list(range(5, 38, 4)), "S": list(range(5, 38, 4)),
+             "W": list(range(13, 30, 4)), "E": list(range(13, 30, 4))}
 YAW = {"south": 0.0, "west": 90.0, "north": 180.0, "east": 270.0}
 
 
@@ -86,23 +88,15 @@ class Basement:
         self.suits: list[dict] = []
         self.cams: list[dict] = []
 
-    # --- координаты мира ---------------------------------------------------------
+    # --- витрины, камеры, экраны ------------------------------------------------------
 
-    def world_point(self, u: float, v: float) -> tuple[float, float]:
-        """Точка внутри участка (дробные u, v) — в координаты мира."""
-        iu, iv = int(u // 1), int(v // 1)
-        fu, fv = u - iu, v - iv
-        x, z = self.f.world(iu, iv)
-        du, dv = self.f.du, self.f.dv
-        # Клетка (iu, iv) в мире — блок (x, z); смещение внутри неё поворачиваем.
-        ox = du[0] * (fu - 0.5) + dv[0] * (fv - 0.5)
-        oz = du[1] * (fu - 0.5) + dv[1] * (fv - 0.5)
-        return x + 0.5 + ox, z + 0.5 + oz
-
-    def stand(self, u: float, y: float, v: float, out: str, item: str, slot: str = "chest") -> None:
-        x, z = self.world_point(u, v)
-        self.suits.append({"x": nbt.Double(round(x, 3)), "y": nbt.Double(y), "z": nbt.Double(round(z, 3)),
-                           "yaw": nbt.Float(YAW[self.f.dir(out)]), "item": item, "slot": slot})
+    def case(self, u: int, y: int, v: int, out: str, mark: int) -> None:
+        """Витрина Sym's Armored Industries с маркой; место и марку помнит пульт охраны."""
+        facing = self.f.dir(out)
+        self.f.block_entity(u, y, v, S.case(mark, facing), f"{S.SYM}:display_case", {})
+        x, z = self.f.world(u, v)
+        self.suits.append({"x": nbt.Double(x + 0.5), "y": nbt.Double(y), "z": nbt.Double(z + 0.5),
+                           "yaw": nbt.Float(YAW[facing]), "item": str(mark), "slot": "case"})
 
     def camera(self, u: int, y: int, v: int, name: str, facing: str = "down") -> None:
         state = (f"securitycraft:security_camera[being_viewed=false,facing={facing},"
@@ -176,15 +170,19 @@ class Basement:
             self._pod_shell(side, a0, yb)
         self._platform()
         self._floor_lights()
-        # Костюмы по капсулам; Халкбастер — на сцене, свободные капсулы ждут новых марок.
-        queue = [s for s in S.SUITS if s[0] != S.HULKBUSTER]
+        # Нижний ярус: все марки по порядку, с табличками. Остальные ниши —
+        # Дом вечеринок, как в фильме: десятки костюмов ждут команды Тони.
+        queue = [s for s in S.SUITS if s[0] != S.CENTER]
+        party = 0
         for side, a0, yb in pods:
             if queue:
-                item, l1, l2 = queue.pop(0)
-                self._pod_suit(side, a0, yb, item, l1, l2)
+                mark, l1, l2 = queue.pop(0)
             else:
-                self._pod_sign(side, a0, yb, ["MARK ??", "В РАЗРАБОТКЕ"])
-        self._hulkbuster()
+                mark = S.HOUSE_PARTY[party % len(S.HOUSE_PARTY)]
+                party += 1
+                l1, l2 = f"MARK {mark}", "HOUSE PARTY"
+            self._pod_suit(side, a0, yb, mark, l1, l2)
+        self._center_stage()
         # Мониторы на стенах ядра: список брони, «Джарвис», реактор.
         self.screen(16, FLOOR_B2 + 2, 23, "left", "armor", 4, 3)
         self.screen(26, FLOOR_B2 + 2, 26, "right", "jarvis", 4, 3)
@@ -226,56 +224,44 @@ class Basement:
                 f.set(u, FLOOR_MEZZ, v, TRIM)
 
     def _pod_shell(self, side: str, a0: int, yb: int) -> None:
-        """Капсула: подсвеченная ниша 2×2, стекло спереди, перегородки, световая крышка."""
+        """Ниша 3×2 под витрину: подсвеченные пол и потолок, перегородки, карниз с табличкой."""
         f = self.f
-        for a in (a0 - 1, a0 + 2):
+        for a in (a0 - 2, a0 + 2):
             for d in range(0, 3):
                 u, v = _side_cell(side, a, d)
                 f.fill(u, yb + 1, v, u, yb + 5, v, FRAME if d == 2 else WALL)
-        for a in (a0, a0 + 1):
+        for a in (a0 - 1, a0, a0 + 1):
             for d in (0, 1):
                 u, v = _side_cell(side, a, d)
-                # Пол ниши светится: костюм подсвечен снизу, как в фильме.
+                # Пол и потолок ниши светятся: витрина подсвечена, как в фильме.
                 f.set(u, yb, v, GLOW)
-                f.fill(u, yb + 1, v, u, yb + 4, v, B.AIR)
-                f.set(u, yb + 5, v, GLOW)
+                f.fill(u, yb + 1, v, u, yb + 3, v, B.AIR)
+                f.set(u, yb + 4, v, GLOW)
+                f.set(u, yb + 5, v, WALL)
             u, v = _side_cell(side, a, 2)
             f.set(u, yb, v, FRAME)
-            f.fill(u, yb + 1, v, u, yb + 4, v, B.GLASS)
-            f.set(u, yb + 5, v, FRAME)
-            # Задняя стенка капсулы светлая — силуэт костюма читается издали.
+            f.fill(u, yb + 1, v, u, yb + 3, v, B.AIR)
+            # Карниз над нишей: на нём табличка с маркой.
+            f.fill(u, yb + 4, v, u, yb + 5, v, FRAME)
+            # Задняя стенка ниши светлая — силуэт витрины читается издали.
             u, v = _side_cell(side, a, -1)
             f.fill(u, yb + 1, v, u, yb + 4, v, "minecraft:white_concrete")
-        # Над капсулой нижнего яруса — карниз до настила галереи.
-        if yb == FLOOR_B2:
-            for a in range(a0 - 1, a0 + 3):
-                for d in range(0, 3):
-                    u, v = _side_cell(side, a, d)
-                    f.fill(u, yb + 6, v, u, FLOOR_MEZZ - 1, v, WALL)
-        else:
-            for a in range(a0 - 1, a0 + 3):
-                for d in range(0, 3):
-                    u, v = _side_cell(side, a, d)
-                    f.fill(u, yb + 6, v, u, FLOOR_B1 - 1, v, WALL)
-        u, v = _side_cell(side, a0, 0)
-        f.light(u, yb + 4, v)
+        # Над нишей нижнего яруса — карниз до настила галереи.
+        top = FLOOR_MEZZ - 1 if yb == FLOOR_B2 else FLOOR_B1 - 1
+        for a in range(a0 - 2, a0 + 3):
+            for d in range(0, 3):
+                u, v = _side_cell(side, a, d)
+                f.fill(u, yb + 6, v, u, top, v, WALL)
 
     def _pod_sign(self, side: str, a0: int, yb: int, lines: list[str]) -> None:
         u, v = _side_cell(side, a0, 2)
-        self.f.wall_sign(u, yb + 1, v, SIDE_OUT[side], lines, color="light_blue", glowing=True, wood=SIGN)
+        self.f.wall_sign(u, yb + 4, v, SIDE_OUT[side], lines, color="light_blue", glowing=True, wood=SIGN)
 
-    def _pod_suit(self, side: str, a0: int, yb: int, item: str, l1: str, l2: str) -> None:
-        f = self.f
-        out = SIDE_OUT[side]
-        # Подставка — полублок по центру ниши, стойка стоит на нём.
-        cu, cv = _side_cell(side, a0, 0)
-        ou, ov = LOCAL_VEC[out]
-        # Центр ниши: граница двух клеток вдоль стены, ближе к задней стенке.
-        along = {"N": (1, 0), "S": (1, 0), "W": (0, 1), "E": (0, 1)}[side]
-        pu = cu + 0.5 + along[0] * 0.5 + ou * 0.4
-        pv = cv + 0.5 + along[1] * 0.5 + ov * 0.4
-        slot = "head" if item == "mark_01_head" else "chest"
-        self.stand(pu, yb + 1, pv, out, S.item(item), slot)
+    def _pod_suit(self, side: str, a0: int, yb: int, mark: int, l1: str, l2: str) -> None:
+        # Витрина в 2 блока шириной стоит на средней клетке ниши и как раз
+        # её заполняет; спиной к стене, лицом в зал.
+        u, v = _side_cell(side, a0, 0)
+        self.case(u, yb + 1, v, SIDE_OUT[side], mark)
         self._pod_sign(side, a0, yb, [l1, l2])
 
     def _platform(self) -> None:
@@ -345,25 +331,23 @@ class Basement:
         for v in range(V0 + 8, 21):
             f.set(21, FLOOR_B2, v, GLOW)
 
-    def _hulkbuster(self) -> None:
-        """Круглая сцена под южным мостиком: Халкбастер лицом к ядру."""
+    def _center_stage(self) -> None:
+        """Круглая сцена под южным мостиком: Mark 42 лицом к ядру."""
         f = self.f
         cu, cv = 21, 31
         for u in range(cu - 3, cu + 4):
             for v in range(cv - 3, cv + 4):
                 d = ((u - cu) ** 2 + (v - cv) ** 2) ** 0.5
                 if d <= 3.2:
-                    # Невысокий подиум-полублок, по краю — светящееся кольцо в полу.
-                    f.set(u, FLOOR_B2 + 1, v, B.slab("smooth_quartz"))
-                    if d > 2.3:
-                        f.set(u, FLOOR_B2, v, GLOW)
+                    # Подиум вровень с полом, по краю — светящееся кольцо.
+                    f.set(u, FLOOR_B2, v, GLOW if d > 2.3 else "minecraft:smooth_quartz")
                 elif d <= 4.2:
                     f.set(u, FLOOR_B2, v, FRAME)
-        self.stand(cu + 0.5, FLOOR_B2 + 1.5, cv + 0.5, "front", S.item(S.HULKBUSTER))
+        self.case(cu, FLOOR_B2 + 1, cv, "front", S.CENTER)
         for u, v in ((cu - 3, cv), (cu + 3, cv), (cu, cv + 3)):
-            f.set(u, FLOOR_B2 + 2, v, "minecraft:end_rod[facing=up]")
+            f.set(u, FLOOR_B2 + 1, v, "minecraft:end_rod[facing=up]")
         f.set(cu, FLOOR_B2 + 1, cv - 4, FRAME)
-        f.wall_sign(cu, FLOOR_B2 + 1, cv - 4, "front", ["MARK 44", "HULKBUSTER", "VERONICA"],
+        f.wall_sign(cu, FLOOR_B2 + 1, cv - 4, "front", ["MARK 42", "PRODIGAL SON", "EXTREMIS"],
                     color="light_blue", glowing=True, wood=SIGN)
 
     # --- мастерская −1 ------------------------------------------------------------
@@ -394,11 +378,12 @@ class Basement:
             for v in range(V0 + 1, V1):
                 if not _in_core(u, v):
                     f.set(u, CEIL_B1, v, GLOW)
-        # Станки Satsu вдоль северной стены.
-        machines = ["gantry_station", "stark_station", "armored_construct", "recipe_table",
-                    "reactor_ark_recharge_on", "gantry_station", "stark_station", "reactor_ark_recharge_on"]
-        for i, block in enumerate(machines):
-            f.set(5 + i * 2, y, V0, f"{S.SATSU}:{block}")
+        # Вдоль северной стены: компьютеры Stark (на них собирают костюмы)
+        # и сборочные рамы Mark 3.
+        for i, u in enumerate(range(5, 21, 3)):
+            block = "stark_computer" if i % 2 == 0 else "mk3_construction"
+            name = "stark_computer" if i % 2 == 0 else "mark_3_construction"
+            f.block_entity(u, y, V0, f"{S.SYM}:{name}[facing={f.dir('front')}]", f"{S.SYM}:{block}", {})
         f.wall_sign(4, y, V0 - 1, "back", ["МАСТЕРСКАЯ", "STARK", "INDUSTRIES"], color="light_blue",
                     glowing=True, wood=SIGN)
         # Три 3D-принтера в стеклянном боксе и монитор «Джарвиса» над ними.
@@ -445,9 +430,9 @@ class Basement:
         # Склад на востоке: стальные блоки, бочки и зарядные станции реактора.
         for v in range(28, 38):
             for u in (37, 38):
-                f.set(u, y, v, self.rng.choice((f"{S.SATSU}:steel_block", "minecraft:barrel[facing=up,open=false]",
-                                                f"{S.SATSU}:steel_gold_alloy_block")))
-            f.set(U1, y, v, f"{S.SATSU}:reactor_ark_recharge_on" if v % 3 == 0 else f"{S.SATSU}:steel_block")
+                f.set(u, y, v, self.rng.choice((f"{S.SYM}:titanium_block", "minecraft:barrel[facing=up,open=false]",
+                                                "minecraft:iron_block")))
+            f.set(U1, y, v, "minecraft:beacon" if v % 3 == 0 else f"{S.SYM}:titanium_block")
         # Бар и диван Тони на западе.
         F.sofa(f, 5, y, 22, 4, "back", "right", "black")
         F.put(f, 8, y, 23, "another_furniture:dark_oak_table", "front")
