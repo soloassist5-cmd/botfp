@@ -414,17 +414,15 @@ SUNSET PLAZA с мостом. Между этажами ходит лифт: к�
 
 <!-- mods:begin -->
 
-### Ядро геймплея (14)
+### Ядро геймплея (12)
 
 | Мод | Версия | Сторона | Зачем |
 |---|---|---|---|
 | [[TaCZ] Timeless and Classics Zero](https://modrinth.com/mod/timeless-and-classics-zero) | `1.1.8-hotfix` | клиент+сервер | Огнестрел: кастомизация, прицелы, магазины, баллистика |
 | [CameraCraft](https://modrinth.com/mod/cameracraft) | `2.1` | клиент+сервер | Фотоаппарат с альбомом, видеокамеры на штативе |
-| [Diligent Stalker](https://modrinth.com/mod/diligentstalker) | `1.1.1` | клиент+сервер | Дрон-камера с удалённым управлением |
 | [Easy NPC: Config UI](https://modrinth.com/mod/easy-npc-config-ui) | `7.12.1` | клиент+сервер | Интерфейс настройки NPC в игре |
 | [Easy NPC: Core](https://modrinth.com/mod/easy-npc-core) | `7.12.1` | клиент+сервер | NPC: диалоги, скины, профессии, торговля |
 | [Elite X Quality Guns (TACZ)](https://modrinth.com/mod/elite-x-quality-guns) | `5.1` | клиент+сервер | Пак современного оружия для TaCZ |
-| [FPV Drones](https://modrinth.com/mod/fpvdrones) | `1.1.4` | клиент+сервер | Дроны с пультом и FPV-очками: полёты, гонки, груз |
 | [Guard Villagers](https://modrinth.com/mod/guard-villagers) | `1.6.19` | клиент+сервер | Полиция и охрана города |
 | [KubeJS](https://modrinth.com/mod/kubejs) | `2001.6.5-build.26+forge` | клиент+сервер | Скрипты городской логики: цены, рецепты, правила |
 | [MrCrayfish's Vehicle Unofficial](https://modrinth.com/mod/mrcrayfishs-vehicle-unofficial) | `1.20.1-20260413` | клиент+сервер | Машины целиком в ящике: вскрыл ключом — поехал. 28 видов техники |
@@ -508,7 +506,7 @@ SUNSET PLAZA с мостом. Между этажами ходит лифт: к�
 | [SuperMartijn642's Core Lib](https://modrinth.com/mod/supermartijn642s-core-lib) | `1.1.24b-forge-mc1.20.1` | клиент+сервер | Библиотека-зависимость |
 | [TCT Core](https://modrinth.com/mod/tct-core) | `2.2` | клиент+сервер | Библиотека-зависимость |
 
-Всего 69 модов с Modrinth плюс самописный `citylife`.
+Всего 67 модов с Modrinth плюс самописный `citylife`.
 
 <!-- mods:end -->
 

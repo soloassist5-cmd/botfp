@@ -19,7 +19,7 @@ ls-city-life-1.0.0-curseforge.zip
    previously created profile»).
 3. Выбери `ls-city-life-1.0.0-curseforge.zip`.
 4. Появится профиль **LS City Life**: Forge 1.20.1-47.4.23 ставится сам, все
-   моды CurseForge скачивает со своих страниц (66 модов, около 300 МБ). Ещё
+   моды CurseForge скачивает со своих страниц (64 мода, около 300 МБ). Ещё
    два файла лежат прямо в zip: самописный мод `citylife` и Memory Leak Fix
    (его нет в каталоге CurseForge, лицензия LGPL разрешает класть файл в
    сборку). Город `Los Santos` разворачивается в `saves` вместе с конфигами.
