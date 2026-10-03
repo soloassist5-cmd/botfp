@@ -50,11 +50,11 @@ def get(url: str, tries: int = 8) -> dict | None:
     return None
 
 
-def project(slug: str) -> dict | None:
-    """Проект CurseForge по слагу, с кэшем на диске."""
+def project(slug: str, fresh: bool = False) -> dict | None:
+    """Проект CurseForge по слагу, с кэшем на диске (fresh — мимо кэша)."""
     os.makedirs(CACHE, exist_ok=True)
     path = os.path.join(CACHE, f"{slug}.json")
-    if os.path.isfile(path):
+    if os.path.isfile(path) and not fresh:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
         return data or None
@@ -73,6 +73,31 @@ def search(title: str) -> list[dict]:
     data = get(f"{API}/search?{query}")
     time.sleep(1.0)
     return data if isinstance(data, list) else []
+
+
+# Номера проектов CurseForge для модов, которые зеркало не находит по слагу
+# (его поиск по адресу отвечает 404 даже на существующие проекты, а по номеру
+# отдаёт). Номер — со страницы мода на curseforge.com.
+CF_IDS = {
+    "architectury-api": 419699, "balm": 531761, "moonlight": 499980,
+    "ferrite-core": 429235, "simple-voice-chat": 416089, "entityculling": 448233,
+    "chipped": 456956, "framedblocks": 441647, "macaws-lights-and-lamps": 502372,
+    "macaws-fences-and-walls": 453925, "supermartijn642s-core-lib": 454372,
+    "supermartijn642s-config-lib": 438332, "cameracraft": 819401,
+}
+
+
+def by_id(pid: int) -> dict | None:
+    """Проект по номеру; кладётся в тот же кэш под своим слагом."""
+    data = get(f"{API}/{pid}")
+    if data:
+        slug = (data.get("urls", {}).get("curseforge", "") or "").rstrip("/").split("/")[-1]
+        if slug:
+            os.makedirs(CACHE, exist_ok=True)
+            with open(os.path.join(CACHE, f"{slug}.json"), "w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+    time.sleep(1.5)
+    return data
 
 
 def slug_variants(mod: dict) -> list[str]:
@@ -105,15 +130,24 @@ def main() -> int:
             if not data:
                 continue
             entry = match_file(data, mod["filename"])
+            if not entry:
+                # В кэше мог остаться снимок проекта до выхода нужного файла.
+                data = project(slug, fresh=True) or data
+                entry = match_file(data, mod["filename"])
             if entry:
                 hit = (data, entry)
                 break
+        if not hit and mod["slug"] in CF_IDS:
+            data = by_id(CF_IDS[mod["slug"]])
+            entry = match_file(data, mod["filename"]) if data else None
+            if entry:
+                hit = (data, entry)
         if not hit:
             for candidate in search(mod["title"])[:4]:
                 slug = (candidate.get("urls", {}).get("curseforge", "") or "").rstrip("/").split("/")[-1]
                 if not slug:
                     continue
-                data = project(slug)
+                data = project(slug, fresh=True)
                 if not data:
                     continue
                 entry = match_file(data, mod["filename"])

@@ -4,7 +4,7 @@
 
 Цели (--target):
   mrpack      .mrpack для Modrinth App, Prism Launcher, ATLauncher, MultiMC
-  curseforge  zip-профиль для CurseForge App (моды доливает установщик)
+  curseforge  zip для импорта в CurseForge App (manifest.json: моды он качает сам)
   server      каркас серверной сборки (без клиентских модов)
   all         всё сразу
 
@@ -244,7 +244,7 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 2. Выбери инструкцию под свой лаунчер в папке docs:
      docs/official-launcher.md официальный Minecraft Launcher
      docs/legacy-launcher.md   Legacy Launcher, TLauncher и прочие
-     docs/curseforge.md        CurseForge App (импорт профиля + установщик)
+     docs/curseforge.md        CurseForge App (импорт zip, моды качает сам)
      docs/modrinth-prism.md    Modrinth App, Prism, MultiMC, ATLauncher
      docs/server-radmin.md     сервер для игры с друзьями через Radmin VPN
 
@@ -252,6 +252,9 @@ Minecraft {p['minecraft']} + Forge {p['loader_version']}, Java 17, 6 ГБ ОЗУ
 ----------------
   Запусти УСТАНОВИТЬ.bat двойным кликом — он сам найдёт профиль
   лаунчера и поставит сборку. Больше ничего делать не нужно.
+
+  CurseForge App: распаковывать ничего не нужно — Create Custom Profile →
+  Import → dist/{p['id']}-{p['version']}-curseforge.zip, моды он скачает сам.
 
 БЫСТРО (Linux / macOS)
 ----------------------
@@ -538,6 +541,34 @@ def build_mrpack(pack: dict, lock: dict) -> str:
     return out
 
 
+# Моды не из каталога CurseForge, чьи лицензии разрешают класть jar в архив.
+CF_EMBED = {
+    "memoryleakfix": "LGPL-2.1-only",
+}
+JARS = os.path.join(ROOT, "build", ".cache", "jars")
+
+
+def cached_jar(m: dict) -> str | None:
+    """jar мода из кэша сборки; нет — скачать по ссылке из mods.lock.json и сверить sha512."""
+    path = os.path.join(JARS, m["filename"])
+    if not os.path.isfile(path):
+        import hashlib
+        import urllib.request
+        try:
+            with urllib.request.urlopen(m["url"], timeout=120) as resp:
+                data = resp.read()
+        except OSError as exc:
+            print(f"  не скачался {m['filename']}: {exc}")
+            return None
+        if hashlib.sha512(data).hexdigest() != m["sha512"]:
+            print(f"  {m['filename']}: sha512 не совпал")
+            return None
+        os.makedirs(JARS, exist_ok=True)
+        with open(path, "wb") as fh:
+            fh.write(data)
+    return path
+
+
 def load_curseforge() -> dict | None:
     """curseforge.lock.json: пары projectID/fileID, собранные resolve_curseforge.py."""
     path = os.path.join(ROOT, "curseforge.lock.json")
@@ -570,7 +601,13 @@ def build_curseforge(pack: dict, lock: dict) -> str:
 
     wanted = [m for m in lock["mods"] if not m.get("optional") and m["side"] != "server"]
     matched = [by_file[m["filename"]] for m in wanted if m["filename"] in by_file]
-    absent = [m for m in wanted if m["filename"] not in by_file]
+    # Чего нет в каталоге CurseForge, кладём в архив сам jar — только если
+    # лицензия мода это разрешает (CF_EMBED). Тогда импорт zip даёт полный
+    # профиль: CurseForge App скачивает моды по манифесту, остальное лежит
+    # в overrides/mods.
+    embed = [m for m in wanted if m["filename"] not in by_file and m["slug"] in CF_EMBED
+             and cached_jar(m)]
+    absent = [m for m in wanted if m["filename"] not in by_file and m not in embed]
     complete = bool(matched) and not absent
 
     manifest = {
@@ -595,7 +632,10 @@ def build_curseforge(pack: dict, lock: dict) -> str:
         for src, rel in iter_overrides():
             z.write(src, f"overrides/{rel.replace(os.sep, '/')}")
         jars, saves = add_client_extras(z)
-        if not complete:
+        if complete:
+            for m in embed:
+                z.write(os.path.join(JARS, m["filename"]), f"overrides/mods/{m['filename']}")
+        else:
             z.writestr("overrides/READ-ME-FIRST.txt",
                        "Этот профиль импортируется в CurseForge App без модов:\n"
                        "для части модов нет идентификаторов файлов CurseForge.\n\n"
@@ -603,13 +643,15 @@ def build_curseforge(pack: dict, lock: dict) -> str:
                        "и запусти УСТАНОВИТЬ.bat, указав папку этого профиля\n"
                        "(в CurseForge App: Profile -> Open Folder).\n\n"
                        "Либо поставь Prism Launcher или Modrinth App и импортируй\n"
-                       "ls-city-life-1.0.0.mrpack — там всё ставится одним файлом.\n")
+                       f"{p['id']}-{p['version']}.mrpack — там всё ставится одним файлом.\n")
     if complete:
         print(f"  curseforge: манифест на {len(matched)} модов — CurseForge App "
-              f"скачает их сам")
+              f"скачает их сам; в архиве с разрешения лицензии: "
+              f"{', '.join(m['title'] for m in embed) or 'ничего'}")
     else:
         print(f"  curseforge: манифест пуст, нет CF-идентификаторов у "
-              f"{len(absent)} модов из {len(wanted)} — профиль ставится установщиком")
+              f"{len(absent)} модов из {len(wanted)} — профиль ставится установщиком: "
+              f"{', '.join(m['title'] for m in absent)}")
     print(f"  curseforge: самописных модов {jars}, файлов мира {saves}")
     return out
 

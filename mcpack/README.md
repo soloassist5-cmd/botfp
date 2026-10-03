@@ -51,7 +51,11 @@ ATLauncher — **Add Pack → Import**. Дальше Play, и всё.
 `УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat` — он сам поставит Forge, скачает моды в
 отдельную папку и добавит в лаунчер профиль «LS City Life».
 
-CurseForge App, Legacy Launcher и TLauncher `.mrpack` не понимают. Для них есть
+CurseForge App импортирует zip, а не `.mrpack`: для него
+`dist/ls-city-life-1.0.0-curseforge.zip` — Create Custom Profile → Import, моды
+CurseForge скачает сам ([docs/curseforge.md](docs/curseforge.md)).
+
+Legacy Launcher и TLauncher импорт не умеют вовсе. Для них есть
 архив сборки: распаковать и запустить `УСТАНОВИТЬ.bat` (Linux и macOS —
 `install/install.sh --target client --path ~/.minecraft-ls-city`). Установщик
 скачает моды с Modrinth, сверит SHA-512, разложит конфиги и распакует город.

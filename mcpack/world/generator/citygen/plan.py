@@ -60,8 +60,17 @@ AVENUE_Z = {
 }
 
 
+# Несколько обычных улиц тоже с именем. Алмазная — бывший 19-й проезд в
+# пригороде: почти одни частные дома, и на ней есть дом 33.
+NAMED_X: dict[int, str] = {}
+NAMED_Z: dict[int, str] = {IZ_MIN + 18: "АЛМАЗНАЯ УЛИЦА"}
+
+
 def street_name(index: int, vertical: bool) -> str:
     """Название линии сетки: проспект по имени, остальные — по номеру."""
+    named = (NAMED_X if vertical else NAMED_Z).get(index)
+    if named:
+        return named
     if is_avenue(index):
         names = AVENUE_X if vertical else AVENUE_Z
         known = names.get(index)

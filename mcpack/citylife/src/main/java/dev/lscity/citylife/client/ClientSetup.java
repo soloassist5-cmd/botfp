@@ -40,5 +40,32 @@ public final class ClientSetup {
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> MenuScreens.register(Registration.PC_CASE_MENU.get(),
                 PcCaseScreen::new));
+        event.enqueueWork(ClientSetup::fixUserType);
+    }
+
+    /**
+     * Часть лаунчеров запускает игру с пустым --userType, и тогда у учётки
+     * нет типа вовсе (null). Ванильной игре всё равно, а Sym's Armored
+     * Industries каждый такт спрашивает тип учётки и на null падает — игра
+     * закрывается через несколько секунд после входа в мир. Пустой тип и есть
+     * офлайн-учётка, так что ставим ей LEGACY — как и записал бы лаунчер.
+     */
+    private static void fixUserType() {
+        net.minecraft.client.User user = net.minecraft.client.Minecraft.getInstance().getUser();
+        if (user == null || user.getType() != null) {
+            return;
+        }
+        try {
+            for (java.lang.reflect.Field field : net.minecraft.client.User.class.getDeclaredFields()) {
+                if (field.getType() == net.minecraft.client.User.Type.class) {
+                    field.setAccessible(true);
+                    field.set(user, net.minecraft.client.User.Type.LEGACY);
+                    CityLife.LOG.info("City Life: лаунчер не указал тип учётки — считаем её офлайн (legacy)");
+                    return;
+                }
+            }
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            CityLife.LOG.warn("City Life: не удалось задать тип учётки: {}", e.toString());
+        }
     }
 }

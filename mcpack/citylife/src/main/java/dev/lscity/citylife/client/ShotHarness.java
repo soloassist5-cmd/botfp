@@ -243,6 +243,9 @@ public final class ShotHarness {
             return;
         }
         if (view > 0 && VIEWS.get(view - 1).length > 1) {
+            // Для замеров: сколько кадров в секунду и что в мире вокруг на этой точке.
+            CityLife.LOG.info("City Life: кадр {}: {} FPS, {}", VIEWS.get(view - 1)[0], mc.getFps(),
+                    mc.levelRenderer.getChunkStatistics() + " · " + mc.levelRenderer.getEntityStatistics());
             Screenshot.grab(mc.gameDirectory, "scene_" + VIEWS.get(view - 1)[0] + ".png",
                     mc.getMainRenderTarget(), msg -> {
                     });

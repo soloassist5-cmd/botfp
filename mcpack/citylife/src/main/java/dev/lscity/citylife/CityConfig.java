@@ -52,6 +52,10 @@ public final class CityConfig {
     public final ForgeConfigSpec.BooleanValue policeShoot;
     public final ForgeConfigSpec.IntValue policeRange;
     public final ForgeConfigSpec.DoubleValue policeDamage;
+    public final ForgeConfigSpec.IntValue lanViewDistance;
+    public final ForgeConfigSpec.IntValue lanSimulationDistance;
+    public final ForgeConfigSpec.BooleanValue tuneDistantHorizons;
+    public final ForgeConfigSpec.IntValue dhBandwidthPerPlayer;
 
     private CityConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("City Life — телефоны, банк и умные замки").push("general");
@@ -212,6 +216,27 @@ public final class CityConfig {
         lockpickAlarm = builder
                 .comment("Поднимать тревогу и уведомлять владельца при неудачном вскрытии.")
                 .define("lockpickAlarm", true);
+        builder.pop();
+
+        builder.comment("Сетевая игра (мир, открытый по LAN или через Radmin/Hamachi, и сервер)").push("network");
+        lanViewDistance = builder
+                .comment("Когда к открытому миру подключился друг, дальность прорисовки хозяина (а значит,",
+                        "и сервера) снижается до стольких чанков: каждый лишний чанк — это данные, которые",
+                        "идут другу по сети. Дальше город дорисует Distant Horizons. 0 — не трогать.")
+                .defineInRange("lanViewDistance", 8, 0, 32);
+        lanSimulationDistance = builder
+                .comment("То же для дальности симуляции (где работают жители, машины, механизмы).")
+                .defineInRange("lanSimulationDistance", 6, 0, 32);
+        tuneDistantHorizons = builder
+                .comment("Distant Horizons отдаёт игрокам дальнюю прорисовку по той же сети, что и игра.",
+                        "По умолчанию он шлёт до 500 КБ/с каждому и не подстраивается под канал — через",
+                        "VPN это забивает соединение, и игрок не может сдвинуться. Если включено, мод",
+                        "ставит ограничение ниже и включает подстройку скорости (только если значения",
+                        "в config/DistantHorizons.toml не меняли вручную).")
+                .define("tuneDistantHorizons", true);
+        dhBandwidthPerPlayer = builder
+                .comment("Сколько КБ/с Distant Horizons может отдавать одному игроку.")
+                .defineInRange("dhBandwidthPerPlayer", 96, 16, 100_000);
         builder.pop();
     }
 

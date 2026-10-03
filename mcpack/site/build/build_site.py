@@ -43,6 +43,9 @@ MIRROR_URL = "https://soloassist5-cmd.github.io/botfp/"
 # Пак в формате Modrinth: лаунчер разворачивает его сам, установщик не нужен.
 MRPACK_NAME = "ls-city-life-1.0.0.mrpack"
 MRPACK_URL = f"download/{MRPACK_NAME}"
+# Профиль CurseForge App: zip с manifest.json, моды он качает сам.
+CF_NAME = "ls-city-life-1.0.0-curseforge.zip"
+CF_URL = f"download/{CF_NAME}"
 
 KIND_RU = {
     "empty": "Свободные участки", "house": "Частные дома", "shop": "Магазины",
@@ -170,6 +173,9 @@ def main() -> int:
     mrpack_path = os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}.mrpack")
     mrpack_mb, mrpack_tag, mrpack_date = file_facts(mrpack_path)
     mrpack_href = f"{MRPACK_URL}?v={mrpack_tag}"
+    cf_path = os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-curseforge.zip")
+    cf_mb, cf_tag, _ = file_facts(cf_path)
+    cf_href = f"{CF_URL}?v={cf_tag}"
     map_svg, pins = build_svg()
 
     mc = pack["minecraft"]
@@ -455,7 +461,9 @@ def main() -> int:
       <a class="btn btn-ghost" href="#start">Как поставить</a>
     </div>
     <div class="hero-note">Один файл для Prism Launcher, Modrinth App и ATLauncher:
-      импорт — и можно играть. Для CurseForge и Legacy Launcher есть
+      импорт — и можно играть. Для CurseForge App —
+      <a href="{cf_href}" download>свой zip · {cf_mb} МБ</a> (Import → выбрать файл),
+      для Legacy Launcher и TLauncher —
       <a href="{archive_href}" download>архив с установщиком · {archive_mb} МБ</a>.</div>
     <div class="hero-build">Пак от {mrpack_date} · метка {mrpack_tag}</div>
     <div class="hero-stats">{stats_html}</div>
@@ -576,8 +584,11 @@ def main() -> int:
     <p class="note">Официальный Minecraft Launcher сборки не импортирует — для него
       <a href="{official_href}" download>zip с установщиком</a>: распаковать и запустить
       УСТАНОВИТЬ-ОФИЦИАЛЬНЫЙ-ЛАУНЧЕР.bat, он поставит Forge и добавит профиль сам.</p>
-    <p class="note">CurseForge App, Legacy Launcher и TLauncher формат .mrpack не читают.
-      Для них есть <a href="{archive_href}" download>архив с установщиком</a>: распаковать,
+    <p class="note">CurseForge App импортирует сборку из zip, а не из .mrpack. Для него
+      есть <a href="{cf_href}" download>профиль CurseForge · {cf_mb} МБ</a>: Create Custom
+      Profile → Import → этот файл, и CurseForge сам скачает все моды. Распаковывать не нужно.</p>
+    <p class="note">Legacy Launcher и TLauncher импорт не умеют. Для них есть
+      <a href="{archive_href}" download>архив с установщиком</a>: распаковать,
       запустить УСТАНОВИТЬ.bat, выбрать профиль — дальше он всё сделает сам.</p>
     <p class="note">Для игры с друзьями в комплекте серверная часть: скрипты запуска,
       настроенные конфиги и голосовой чат. Работает через Radmin VPN без проброса
@@ -629,11 +640,13 @@ def main() -> int:
           <li>Prism Launcher</li><li>Modrinth App</li><li>ATLauncher</li>
           <li>CurseForge App</li>
         </ul>
-        <p class="dl-hint">Prism, Modrinth App и ATLauncher ставят пак одним импортом.
-          CurseForge App формат .mrpack не читает — ему подойдёт архив с установщиком
-          из карточки «Пиратский лаунчер», он ставится так же.</p>
+        <p class="dl-hint">Prism, Modrinth App и ATLauncher ставят пак .mrpack одним импортом.
+          CurseForge App импортирует zip: Create Custom Profile → Import → файл ниже,
+          моды он скачает сам.</p>
         <a class="btn btn-primary dl-go" href="{mrpack_href}" download>
           Пак .mrpack · {mrpack_mb} МБ<span class="dl-arrow">↓</span></a>
+        <a class="btn btn-ghost dl-alt" href="{cf_href}" download>
+          Для CurseForge · zip {cf_mb} МБ<span class="dl-arrow">↓</span></a>
       </article>
       <article class="dl-card" style="--accent:#7be07b">
         <div class="dl-badge">Mojang</div>
@@ -689,7 +702,8 @@ def main() -> int:
                       (os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-full.zip"),
                        ARCHIVE_NAME),
                       (os.path.join(PACK, "dist", f"{pack['id']}-{pack['version']}-official.zip"),
-                       OFFICIAL_NAME)):
+                       OFFICIAL_NAME),
+                      (cf_path, CF_NAME)):
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(download_dir, name))
             print(f"  download/{name} ({os.path.getsize(src) / 1048576:.1f} МБ)")

@@ -34,6 +34,12 @@ import java.util.Set;
  * Alt / Ctrl / Shift — сочетания; красная рамка с «!» — две команды
  * срабатывают от одного нажатия.
  *
+ * Переназначить можно прямо здесь: клик по клавише закрепляет её в панели,
+ * у каждого действия — «Изменить» (нажми новую клавишу или кликни её на
+ * схеме, Alt/Ctrl/Shift — с удержанием), «По умолч.» и «Снять». Клик по
+ * строке «Главного» сразу ждёт новую клавишу. «Развести конфликты» сам
+ * переносит совпавшие действия на Alt+ или Ctrl+.
+ *
  * Данные берутся из настроек игры прямо сейчас, поэтому справочник всегда
  * совпадает с тем, что реально назначено, в том числе после переназначения.
  */
@@ -117,6 +123,13 @@ public class ControlsScreen extends Screen {
     private String status = "";
     private final List<Object[]> legendHits = new ArrayList<>();
     private final Map<String, int[]> capRects = new HashMap<>();
+    /** Кнопки в панели: x, y, w, h, действие, что сделать («edit», «default», «unbind»). */
+    private final List<Object[]> panelHits = new ArrayList<>();
+    /** Действие, которому сейчас назначают клавишу (ждём нажатия), или null. */
+    private KeyMapping listening;
+    /** Нажата одна клавиша-модификатор: назначить её саму, если отпустят без другой клавиши. */
+    private InputConstants.Key pendingModifier;
+    private boolean statusBad;
 
     public ControlsScreen(Screen parent) {
         super(Component.translatable("citylife.controls.title"));
@@ -309,6 +322,16 @@ public class ControlsScreen extends Screen {
         int ew = font.width(edit) + 12;
         addRenderableWidget(Button.builder(edit, b -> minecraft.setScreen(new KeyBindsScreen(this,
                 minecraft.options))).bounds(right - rw - ew - 4, 4, ew, 14).build());
+        int clashes = Controls.clashes(minecraft).size();
+        Component fix = Component.translatable("citylife.controls.fix", clashes);
+        int fw = font.width(fix) + 12;
+        Button fixButton = Button.builder(fix, b -> {
+            int n = Controls.untangle(minecraft);
+            say(Component.translatable("citylife.controls.fix_done", n).getString(), false);
+            rebuildWidgets();
+        }).bounds(right - rw - ew - fw - 8, 4, fw, 14).build();
+        fixButton.active = clashes > 0;
+        addRenderableWidget(fixButton);
         int sx = x + 8;
         int sw = Math.max(80, right - sx);
         search = new EditBox(font, sx, y + 1, sw, 14, Component.translatable("citylife.controls.search"));
@@ -361,8 +384,136 @@ public class ControlsScreen extends Screen {
         int py = legendBottom + 4;
         panel(g, x0, py, panelW(), (int) Math.max(70, vh() - py - 6), bad, mouseX, mouseY);
         g.pose().popPose();
+        if (listening != null) {
+            String what = KeyNames.shortName(listening);
+            String text = Component.translatable("citylife.controls.listen", what).getString();
+            int tw = Math.min(width - 20, font.width(text) + 16);
+            int bx = (width - tw) / 2;
+            int by = height / 2 - 14;
+            PhoneUi.roundedRect(g, bx, by, tw, 28, 6, 0xF0101820);
+            PhoneUi.roundedOutline(g, bx, by, tw, 28, 6, System.currentTimeMillis() / 400 % 2 == 0
+                    ? ACCENT : 0xFF2F8F9F);
+            g.drawString(font, font.plainSubstrByWidth(text, tw - 16), bx + 8, by + 5, TEXT, false);
+            g.drawString(font, font.plainSubstrByWidth(Component.translatable("citylife.controls.listen_hint")
+                    .getString(), tw - 16), bx + 8, by + 16, DIM, false);
+        }
         if (!status.isEmpty()) {
-            g.drawString(font, status, guiLeft(), height - 11, 0xFF5CFF9D, false);
+            g.drawString(font, status, guiLeft(), height - 11, statusBad ? 0xFFFF6B6B : 0xFF5CFF9D, false);
+        }
+    }
+
+    private void say(String text, boolean bad) {
+        status = text;
+        statusBad = bad;
+    }
+
+    // --- переназначение -----------------------------------------------------------
+
+    /** Назначить действию клавишу (с модификатором) и сохранить настройки. */
+    private void assign(KeyMapping km, KeyModifier mod, InputConstants.Key key) {
+        km.setKeyModifierAndCode(key == InputConstants.UNKNOWN ? KeyModifier.NONE : mod, key);
+        KeyMapping.resetMapping();
+        minecraft.options.save();
+        listening = null;
+        pendingModifier = null;
+        List<String> with = new ArrayList<>();
+        for (KeyMapping o : minecraft.options.keyMappings) {
+            if (Controls.clash(km, o)) {
+                with.add("«" + KeyNames.shortName(o) + "»");
+            }
+        }
+        String now = km.isUnbound() ? Component.translatable("citylife.controls.unbound").getString()
+                : km.getTranslatedKeyMessage().getString();
+        String text = Component.translatable("citylife.controls.assigned", KeyNames.shortName(km), now).getString();
+        if (!with.isEmpty()) {
+            text += " · " + Component.translatable("citylife.controls.assigned_clash", String.join(", ", with))
+                    .getString();
+        }
+        say(text, !with.isEmpty());
+        // Показать новую клавишу: открыть её слой и закрепить её в панели.
+        if (!km.isUnbound()) {
+            layer = switch (km.getKeyModifier()) {
+                case ALT -> "alt";
+                case CONTROL -> "ctrl";
+                case SHIFT -> "shift";
+                default -> "none";
+            };
+            pinned = km.getKey().getName();
+        }
+        rebuildWidgets();
+    }
+
+    private static boolean isModifier(InputConstants.Key key) {
+        String n = key.getName();
+        return n.endsWith(".shift") || n.endsWith(".control") || n.endsWith(".alt");
+    }
+
+    private static KeyModifier fromMods(int mods) {
+        if ((mods & 4) != 0) {
+            return KeyModifier.ALT;
+        }
+        if ((mods & 2) != 0) {
+            return KeyModifier.CONTROL;
+        }
+        if ((mods & 1) != 0) {
+            return KeyModifier.SHIFT;
+        }
+        return KeyModifier.NONE;
+    }
+
+    @Override
+    public boolean keyPressed(int code, int scan, int mods) {
+        if (listening == null) {
+            return super.keyPressed(code, scan, mods);
+        }
+        if (code == 256) {
+            listening = null;
+            pendingModifier = null;
+            say(Component.translatable("citylife.controls.listen_cancel").getString(), false);
+            return true;
+        }
+        if (code == 259) {
+            assign(listening, KeyModifier.NONE, InputConstants.UNKNOWN);
+            return true;
+        }
+        InputConstants.Key key = InputConstants.getKey(code, scan);
+        if (isModifier(key)) {
+            pendingModifier = key;
+            return true;
+        }
+        assign(listening, fromMods(mods), key);
+        return true;
+    }
+
+    @Override
+    public boolean keyReleased(int code, int scan, int mods) {
+        if (listening != null && pendingModifier != null
+                && pendingModifier.equals(InputConstants.getKey(code, scan))) {
+            // Отпустили Shift/Ctrl/Alt, ничего больше не нажав, — значит, нужна сама эта клавиша.
+            assign(listening, KeyModifier.NONE, pendingModifier);
+            return true;
+        }
+        return super.keyReleased(code, scan, mods);
+    }
+
+    /** Строка действия в панели: кнопки «Изменить», «По умолч.», «Снять». */
+    private void actionButtons(GuiGraphics g, KeyMapping km, int right, int y, int mouseX, int mouseY) {
+        String[][] buttons = {{"unbind", "citylife.controls.unbind"}, {"default", "citylife.controls.default"},
+                {"edit", "citylife.controls.change"}};
+        int x = right;
+        for (String[] b : buttons) {
+            if ("default".equals(b[0]) && km.isDefault()) {
+                continue;
+            }
+            String label = Component.translatable(b[1]).getString();
+            int w = font.width(label) + 8;
+            x -= w;
+            boolean hover = mouseX >= x && mouseX < x + w && mouseY >= y - 1 && mouseY < y + 10;
+            PhoneUi.roundedRect(g, x, y - 1, w, 10, 3, "edit".equals(b[0])
+                    ? (hover ? 0xFF2F9FCF : 0xFF1F6FA0) : (hover ? 0x40FFFFFF : 0x22FFFFFF));
+            g.drawString(font, label, x + 4, y, TEXT, false);
+            panelHits.add(new Object[]{x, y - 1, w, 10, km, b[0]});
+            x -= 3;
         }
     }
 
@@ -441,6 +592,7 @@ public class ControlsScreen extends Screen {
 
     /** Полоса под клавиатурой: слева выбранная клавиша или «Главное», справа — мышь. */
     private void panel(GuiGraphics g, int x, int y, int w, int h, Set<String> bad, int mouseX, int mouseY) {
+        panelHits.clear();
         PhoneUi.roundedRect(g, x, y, w, h, 6, PANEL);
         PhoneUi.roundedOutline(g, x, y, w, h, 6, 0x3357D8FF);
         int mouseW = Math.min(230, w / 3);
@@ -473,8 +625,14 @@ public class ControlsScreen extends Screen {
                 PhoneUi.roundedRect(g, cx + colW - kw, rowY - 1, kw, 11, 3,
                         PhoneUi.lerp(0xFF1B2029, KeyNames.group(km).colour(), 0.65F));
                 g.drawString(font, keyText, cx + colW - kw + 4, rowY + 1, TEXT, false);
+                boolean hover = mouseX >= cx && mouseX < cx + colW && mouseY >= rowY - 1 && mouseY < rowY + 10;
+                if (hover) {
+                    g.fill(cx - 2, rowY - 1, cx + colW - kw - 2, rowY + 10, 0x22FFFFFF);
+                }
                 g.drawString(font, font.plainSubstrByWidth(KeyNames.shortName(km), colW - kw - 6), cx, rowY + 1,
                         TEXT, false);
+                // Клик по строке «Главного» — сразу ждать новую клавишу.
+                panelHits.add(new Object[]{cx, rowY - 1, colW, 11, km, "edit"});
                 rowY += 12;
             }
             String tip = Component.translatable("citylife.controls.tip").getString();
@@ -494,6 +652,9 @@ public class ControlsScreen extends Screen {
             List<KeyMapping> acts = on(key);
             if (acts.isEmpty()) {
                 g.drawString(font, Component.translatable("citylife.controls.free"), x + 8, ty, DIM, false);
+                ty += 11;
+                g.drawString(font, font.plainSubstrByWidth(Component.translatable("citylife.controls.free_hint")
+                        .getString(), listW - 8), x + 8, ty, DIM, false);
             }
             for (KeyMapping km : acts) {
                 KeyNames.Group grp = KeyNames.group(km);
@@ -503,10 +664,15 @@ public class ControlsScreen extends Screen {
                 PhoneUi.disc(g, x + 11, ty + 4, 3, grp.colour());
                 String head = KeyNames.shortName(km);
                 g.drawString(font, head, x + 18, ty, TEXT, false);
+                // Кнопки — только у закреплённой клавиши: до наведённой мышь не дотянется.
+                int buttonsW = key.equals(pinned) ? 150 : 0;
+                if (buttonsW > 0) {
+                    actionButtons(g, km, x + listW, ty, mouseX, mouseY);
+                }
                 String sub = "  " + KeyNames.groupTitle(grp) + " · " + KeyNames.fullName(km);
-                g.drawString(font, font.plainSubstrByWidth(sub, listW - 22 - font.width(head)),
+                g.drawString(font, font.plainSubstrByWidth(sub, Math.max(0, listW - 22 - font.width(head) - buttonsW)),
                         x + 18 + font.width(head), ty, DIM, false);
-                ty += 11;
+                ty += 12;
             }
             if (acts.size() > 1 && ty + 10 <= bottom) {
                 boolean clash = bad.contains(key);
@@ -596,11 +762,44 @@ public class ControlsScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double gx, double gy, int button) {
+        double mx = gx / zoom();
+        double my = gy / zoom();
+        if (listening != null) {
+            // Ждём клавишу: клик по клавише схемы (или кнопке мыши на рисунке) назначает её
+            // в текущем слое; клик мимо — отмена.
+            for (var e : capRects.entrySet()) {
+                int[] r = e.getValue();
+                if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] && my < r[1] + r[3]) {
+                    assign(listening, modifier(), InputConstants.getKey(e.getKey()));
+                    return true;
+                }
+            }
+            listening = null;
+            say(Component.translatable("citylife.controls.listen_cancel").getString(), false);
+            return true;
+        }
         if (super.mouseClicked(gx, gy, button)) {
             return true;
         }
-        double mx = gx / zoom();
-        double my = gy / zoom();
+        for (Object[] hit : panelHits) {
+            int x = (int) hit[0];
+            int y = (int) hit[1];
+            if (mx >= x && mx < x + (int) hit[2] && my >= y && my < y + (int) hit[3]) {
+                KeyMapping km = (KeyMapping) hit[4];
+                switch ((String) hit[5]) {
+                    case "edit" -> {
+                        listening = km;
+                        pendingModifier = null;
+                        say("", false);
+                    }
+                    case "default" -> assign(km, km.getDefaultKeyModifier(), km.getDefaultKey());
+                    case "unbind" -> assign(km, KeyModifier.NONE, InputConstants.UNKNOWN);
+                    default -> {
+                    }
+                }
+                return true;
+            }
+        }
         for (Object[] hit : legendHits) {
             int x = (int) hit[0];
             int y = (int) hit[1];

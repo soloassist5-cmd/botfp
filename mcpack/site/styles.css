@@ -921,3 +921,14 @@ footer {
   .dl-overlay.open .dl-card { animation: none; opacity: 1; transform: none; }
   .dl-card:hover { transform: none; }
 }
+
+/* Вторая кнопка карточки: zip для CurseForge App под основным .mrpack. */
+.dl-alt {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+.dl-alt:hover .dl-arrow { transform: translateY(3px); }

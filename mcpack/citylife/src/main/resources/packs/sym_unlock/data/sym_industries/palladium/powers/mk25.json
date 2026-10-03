@@ -1,0 +1,1173 @@
+{
+ "name": "Iron Man (Mark 25)",
+ "persistent_data": true,
+ "background": "sym_industries:textures/gui/background.png",
+ "icon": "sym_industries:mark_25_chestplate",
+ "ability_bar_texture": "sym_industries:textures/gui/ability_bar.png",
+ "energy_bars": {
+  "bar": {
+   "max": 1000,
+   "auto_increase_per_tick": 5,
+   "auto_increase_interval": 1,
+   "color": "#b6b9da"
+  }
+ },
+ "abilities": {
+  "model": {
+   "type": "palladium:render_layer",
+   "hidden": true,
+   "render_layer": "sym_industries:mk25",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:or",
+      "conditions": [
+       {
+        "type": "palladium:ability_unlocked",
+        "ability": "suit"
+       },
+       {
+        "type": "palladium:ability_unlocked",
+        "ability": "only_armor"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "only_armor": {
+   "type": "palladium:command",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "null",
+   "commands": [],
+   "conditions": {
+    "unlocking": {
+     "type": "palladium:and",
+     "conditions": [
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_helmet"
+       },
+       "slot": "head"
+      },
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_chestplate"
+       },
+       "slot": "chest"
+      },
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_leggings"
+       },
+       "slot": "legs"
+      },
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_boots"
+       },
+       "slot": "feet"
+      },
+      {
+       "type": "palladium:not",
+       "conditions": [
+        {
+         "type": "palladium:or",
+         "conditions": [
+          {
+           "type": "palladium:item_in_slot",
+           "item": {
+            "item": "sym_industries:arc_reactor_tier_2"
+           },
+           "slot": "curios:body"
+          },
+          {
+           "type": "palladium:item_in_slot",
+           "item": {
+            "item": "sym_industries:arc_reactor_tier_2"
+           },
+           "slot": "trinkets:chest/necklace"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "suit": {
+   "title": "Arc Reactor",
+   "type": "palladium:command",
+   "hidden": false,
+   "icon": "sym_industries:textures/icons/arc_reactor_2.png",
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": [
+    0,
+    -1
+   ],
+   "description": "null",
+   "commands": [],
+   "conditions": {
+    "unlocking": {
+     "type": "palladium:and",
+     "conditions": [
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_helmet"
+       },
+       "slot": "head"
+      },
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_chestplate"
+       },
+       "slot": "chest"
+      },
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_leggings"
+       },
+       "slot": "legs"
+      },
+      {
+       "type": "palladium:item_in_slot",
+       "item": {
+        "item": "sym_industries:mark_25_boots"
+       },
+       "slot": "feet"
+      },
+      {
+       "type": "palladium:or",
+       "conditions": [
+        {
+         "type": "palladium:item_in_slot",
+         "item": {
+          "item": "sym_industries:arc_reactor_tier_2"
+         },
+         "slot": "curios:body"
+        },
+        {
+         "type": "palladium:item_in_slot",
+         "item": {
+          "item": "sym_industries:arc_reactor_tier_2"
+         },
+         "slot": "trinkets:chest/necklace"
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "flight_bar_usage": {
+   "type": "palladium:command",
+   "title": "Mark 1 Flying",
+   "icon": "sym_industries:textures/icons/flying_mk1.png",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "null",
+   "commands": [],
+   "energy_bar_usage": {
+    "energy_bar": "bar",
+    "amount": 10
+   },
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "power": "sym_industries:mk25_flight",
+      "ability": "thrusterflight"
+     },
+     {
+      "type": "palladium:energy_bar",
+      "energy_bar": "bar",
+      "min": 10
+     }
+    ]
+   }
+  },
+  "unibeam_start": {
+   "type": "palladium:command",
+   "title": "Unibeam",
+   "icon": "sym_industries:textures/icons/unibeam.png",
+   "hidden": false,
+   "hidden_in_bar": false,
+   "list_index": 2,
+   "gui_position": [
+    0,
+    2
+   ],
+   "description": "null",
+   "commands": [],
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:held",
+      "cooldown": 0,
+      "key_type": "key_bind",
+      "needs_empty_hand": false
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "ultimate"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "drill_ability"
+       }
+      ]
+     },
+     {
+      "type": "palladium:energy_bar",
+      "energy_bar": "bar",
+      "min": 10
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "ultimate"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "drill_ability"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "unibeam": {
+   "type": "palladium:render_layer",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": [
+    0,
+    2
+   ],
+   "description": "null",
+   "render_layer": "sym_industries:unibeam",
+   "energy_bar_usage": {
+    "energy_bar": "bar",
+    "amount": 10
+   },
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_ticks",
+      "power": "null",
+      "ability": "unibeam_start",
+      "min": 20,
+      "max": 100
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       }
+      ]
+     },
+     {
+      "type": "palladium:ability_enabled",
+      "power": "null",
+      "ability": "unibeam_start"
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:energy_bar",
+      "energy_bar": "bar",
+      "min": 10
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:energy_bar",
+      "energy_bar": "bar",
+      "min": 15
+     }
+    ]
+   }
+  },
+  "unibeam_projectile": {
+   "type": "palladium:command",
+   "commands": [],
+   "title": "",
+   "list_index": -1,
+   "hidden": true,
+   "hidden_in_bar": true,
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_ticks",
+      "power": "null",
+      "ability": "unibeam_start",
+      "min": 20,
+      "max": 100
+     },
+     {
+      "type": "palladium:ability_enabled",
+      "power": "null",
+      "ability": "unibeam_start"
+     },
+     {
+      "type": "palladium:energy_bar",
+      "energy_bar": "bar",
+      "min": 15
+     }
+    ]
+   }
+  },
+  "ultimate_animation_player": {
+   "type": "palladium:player_animation",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "animation": "sym_industries:animation.player.mark25_ultimate",
+   "gui_position": "null",
+   "description": "null",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "ability": "ultimate"
+     },
+     {
+      "type": "palladium:symindustries_is"
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "ultimate_animation_player2": {
+   "type": "palladium:player_animation",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "animation": "sym_industries:animation.player.mark25_ultimate2",
+   "gui_position": "null",
+   "description": "null",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "ability": "ultimate"
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is"
+       }
+      ]
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "ultimate_layer": {
+   "type": "palladium:render_layer",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "null",
+   "render_layer": "sym_industries:mk25_ultimate",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "ability": "ultimate"
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "ultimate_animation": {
+   "type": "geckolib:render_layer_animation",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "render_layer": "sym_industries:mk25",
+   "controller": "ultimate2",
+   "animation_trigger": "ultimate1",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "ability": "ultimate"
+     }
+    ]
+   }
+  },
+  "ultimate": {
+   "type": "palladium:animation_timer",
+   "title": "Ultimate",
+   "icon": "sym_industries:textures/icons/mark_25_drilling.png",
+   "time": 2,
+   "arm": "both",
+   "hidden": false,
+   "hidden_in_bar": false,
+   "list_index": 0,
+   "gui_position": [
+    0,
+    0
+   ],
+   "description": "",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:activation",
+      "cooldown": 120,
+      "ticks": 110,
+      "key_type": "key_bind",
+      "needs_empty_hand": false,
+      "allow_scrolling_when_crouching": true
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "unibeam_start"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "drill_ability"
+       }
+      ]
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "unibeam_start"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "drill_ability"
+       }
+      ]
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "drill_ability": {
+   "type": "palladium:animation_timer",
+   "title": "Drilling",
+   "icon": "sym_industries:textures/icons/mark_25_drilling.png",
+   "time": 2,
+   "arm": "both",
+   "hidden": false,
+   "hidden_in_bar": false,
+   "list_index": 1,
+   "gui_position": [
+    0,
+    1
+   ],
+   "description": "",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:toggle",
+      "cooldown": 0,
+      "key_type": "key_bind",
+      "needs_empty_hand": false,
+      "allow_scrolling_when_crouching": true
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "unibeam_start"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "ultimate"
+       }
+      ]
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "unibeam_start"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "ultimate"
+       }
+      ]
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "destroy_animation": {
+   "type": "geckolib:render_layer_animation",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "render_layer": "sym_industries:mk25",
+   "controller": "drill_mine",
+   "animation_trigger": "start",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "ability": "destroy_timer"
+     }
+    ]
+   }
+  },
+  "destroy_animation_off": {
+   "type": "geckolib:render_layer_animation",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "render_layer": "sym_industries:mk25",
+   "controller": "drill_mine",
+   "animation_trigger": "stop",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:ability_enabled",
+        "ability": "destroy_timer"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "destroy_timer": {
+   "type": "palladium:animation_timer",
+   "title": "",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "null",
+   "commands": [],
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:held",
+      "cooldown": 0,
+      "key_type": "left_click",
+      "needs_empty_hand": false
+     },
+     {
+      "type": "palladium:ability_enabled",
+      "ability": "aim_both"
+     }
+    ]
+   }
+  },
+  "aim_both": {
+   "type": "palladium:aim",
+   "title": "",
+   "time": 2,
+   "arm": "both",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:held",
+      "cooldown": 0,
+      "key_type": "right_click",
+      "needs_empty_hand": false
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:symindustries_is_flying"
+       }
+      ]
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "strength1": {
+   "type": "palladium:attribute_modifier",
+   "icon": "sym_industries:textures/icons/strength.png",
+   "title": "Strength Level 1",
+   "hidden": false,
+   "hidden_in_bar": true,
+   "attribute": "palladium:punch_damage",
+   "amount": 7,
+   "gui_position": [
+    -1,
+    0
+   ],
+   "operation": 0,
+   "uuid": "733bfd69-c0d6-4352-8bd6-994887dd8bb9",
+   "conditions": {
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "strength2": {
+   "type": "palladium:attribute_modifier",
+   "icon": "sym_industries:textures/icons/strength.png",
+   "title": "Strength Level 2",
+   "hidden": false,
+   "hidden_in_bar": true,
+   "attribute": "palladium:punch_damage",
+   "amount": 9,
+   "gui_position": [
+    -1,
+    1
+   ],
+   "operation": 0,
+   "uuid": "a014f7e7-e45b-4320-ba0c-25473bde4085",
+   "conditions": {
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "strength1"
+     }
+    ]
+   }
+  },
+  "strength3": {
+   "type": "palladium:attribute_modifier",
+   "icon": "sym_industries:textures/icons/strength.png",
+   "title": "Strength Level 3",
+   "hidden": false,
+   "hidden_in_bar": true,
+   "attribute": "palladium:punch_damage",
+   "amount": 12,
+   "gui_position": [
+    -1,
+    2
+   ],
+   "operation": 0,
+   "uuid": "2cb22787-546e-41f0-aaea-e4e95b950046",
+   "conditions": {
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "strength2"
+     }
+    ]
+   }
+  },
+  "defense1": {
+   "type": "palladium:attribute_modifier",
+   "icon": "sym_industries:textures/icons/defence.png",
+   "title": "Defense Level 1",
+   "hidden": false,
+   "hidden_in_bar": true,
+   "attribute": "minecraft:generic.armor",
+   "amount": 11,
+   "gui_position": [
+    1,
+    0
+   ],
+   "operation": 0,
+   "uuid": "551c92ac-ed16-4696-b918-ca7e28b6204c",
+   "conditions": {
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "defense2": {
+   "type": "palladium:attribute_modifier",
+   "icon": "sym_industries:textures/icons/defence.png",
+   "title": "Defense Level 2",
+   "hidden": false,
+   "hidden_in_bar": true,
+   "attribute": "minecraft:generic.armor",
+   "amount": 13,
+   "gui_position": [
+    1,
+    1
+   ],
+   "operation": 0,
+   "uuid": "0373184c-47bb-419e-a6bf-af09b9251b7e",
+   "conditions": {
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "defense1"
+     }
+    ]
+   }
+  },
+  "defense3": {
+   "type": "palladium:attribute_modifier",
+   "icon": "sym_industries:textures/icons/defence.png",
+   "title": "Defense Level 3",
+   "hidden": false,
+   "hidden_in_bar": true,
+   "attribute": "minecraft:generic.armor",
+   "amount": 17,
+   "gui_position": [
+    1,
+    2
+   ],
+   "operation": 0,
+   "uuid": "bc8dacad-cfb2-42d6-90c5-19dd663c3cfc",
+   "conditions": {
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "power": "null",
+      "ability": "defense2"
+     }
+    ]
+   }
+  },
+  "helmet": {
+   "type": "palladium:animation_timer",
+   "title": "Helmet",
+   "hidden": true,
+   "hidden_in_bar": false,
+   "list_index": 4,
+   "gui_position": "null",
+   "description": "null",
+   "commands": [],
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:toggle",
+      "cooldown": 0,
+      "key_type": "key_bind",
+      "needs_empty_hand": false
+     },
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   },
+   "icon": "sym_industries:textures/icons/mark_25_helmet.png"
+  },
+  "hide": {
+   "type": "palladium:hide_body_part",
+   "body_parts": [
+    "cape",
+    "head_overlay",
+    "chest_overlay",
+    "right_arm_overlay",
+    "left_arm_overlay",
+    "right_leg_overlay",
+    "left_leg_overlay",
+    "chest",
+    "right_arm",
+    "left_arm",
+    "right_leg",
+    "left_leg"
+   ],
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "togglehelmet": {
+   "type": "palladium:remove_body_part",
+   "title": "Toggle Helmet",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "null",
+   "body_parts": [
+    "head_overlay"
+   ],
+   "affects_first_person": true,
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "conditions": [
+       {
+        "type": "palladium:ability_enabled",
+        "power": "null",
+        "ability": "helmet"
+       }
+      ],
+      "power": "null",
+      "ability": "model"
+     }
+    ]
+   }
+  },
+  "open": {
+   "type": "geckolib:render_layer_animation",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "render_layer": "sym_industries:mk25",
+   "controller": "helmet",
+   "animation_trigger": "open",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "power": "null",
+      "ability": "helmet"
+     }
+    ]
+   }
+  },
+  "close": {
+   "type": "geckolib:render_layer_animation",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "render_layer": "sym_industries:mk25",
+   "controller": "helmet",
+   "animation_trigger": "close",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:ability_enabled",
+        "power": "null",
+        "ability": "helmet"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "light": {
+   "type": "palladium:render_layer",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "null",
+   "render_layer": "sym_industries:mk25_e",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:ability_enabled",
+        "power": "null",
+        "ability": "animation_power_on"
+       }
+      ]
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "open_light": {
+   "type": "geckolib:render_layer_animation",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "render_layer": "sym_industries:mk25_e",
+   "controller": "helmet",
+   "animation_trigger": "open",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_enabled",
+      "power": "null",
+      "ability": "helmet"
+     }
+    ]
+   }
+  },
+  "close_light": {
+   "type": "geckolib:render_layer_animation",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "render_layer": "sym_industries:mk25_e",
+   "controller": "helmet",
+   "animation_trigger": "close",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:ability_enabled",
+        "power": "null",
+        "ability": "helmet"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "animation_power_loop": {
+   "type": "palladium:animation_timer",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "gui_position": "null",
+   "description": "null",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "only_armor"
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:ability_enabled",
+        "power": "null",
+        "ability": "animation_power_off"
+       },
+       {
+        "type": "palladium:ability_enabled",
+        "power": "null",
+        "ability": "suit"
+       }
+      ]
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "only_armor"
+     }
+    ]
+   }
+  },
+  "animation_power_on": {
+   "type": "palladium:player_animation",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "animation": "sym_industries:animation.player.poweron",
+   "gui_position": "null",
+   "description": "null",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     },
+     {
+      "type": "palladium:activation",
+      "ticks": 20
+     },
+     {
+      "type": "palladium:not",
+      "conditions": [
+       {
+        "type": "palladium:ability_enabled",
+        "power": "null",
+        "ability": "light"
+       }
+      ]
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "suit"
+     }
+    ]
+   }
+  },
+  "animation_power_off": {
+   "type": "palladium:player_animation",
+   "icon": "minecraft:blaze_rod",
+   "title": "null",
+   "bar_color": "light_gray",
+   "hidden": true,
+   "hidden_in_bar": true,
+   "list_index": -1,
+   "animation": "sym_industries:animation.player.poweroff_start",
+   "gui_position": "null",
+   "description": "null",
+   "conditions": {
+    "enabling": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "only_armor"
+     },
+     {
+      "type": "palladium:activation",
+      "ticks": 20
+     }
+    ],
+    "unlocking": [
+     {
+      "type": "palladium:ability_unlocked",
+      "ability": "only_armor"
+     }
+    ]
+   }
+  }
+ }
+}

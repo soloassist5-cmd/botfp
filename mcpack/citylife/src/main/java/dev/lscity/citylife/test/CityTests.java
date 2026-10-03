@@ -37,6 +37,7 @@ import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -1618,6 +1619,38 @@ public final class CityTests {
         }
         if (!filled || mark != 33) {
             h.fail("пустая витрина не получила Mark 33 обратно (mark_id=" + mark + ")");
+        }
+        h.succeed();
+    }
+
+    /** Способности костюмов Sym открыты сразу: Palladium видит наши файлы сил, а не файлы мода. */
+    @SelfTest
+    public static void symAbilitiesUnlocked(TestKit h) {
+        var resources = h.getLevel().getServer().getResourceManager();
+        var powers = resources.listResources("palladium/powers",
+                id -> id.getNamespace().equals("sym_industries") && id.getPath().endsWith(".json"));
+        if (powers.isEmpty()) {
+            h.fail("силы Sym's Armored Industries не загружены");
+            return;
+        }
+        List<String> locked = new ArrayList<>();
+        for (var entry : powers.entrySet()) {
+            String name = entry.getKey().getPath().replace("palladium/powers/", "");
+            if (name.equals("mk7.json") || name.equals("mk42.json")) {
+                continue;   // марки для подписчиков автора не трогаем
+            }
+            try (var in = entry.getValue().open()) {
+                if (new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
+                        .contains("symindustries_iron_man_level")) {
+                    locked.add(name + " (" + entry.getValue().sourcePackId() + ")");
+                }
+            } catch (java.io.IOException e) {
+                locked.add(name + ": " + e);
+            }
+        }
+        if (!locked.isEmpty()) {
+            h.fail("у костюмов остались способности под замком: " + locked);
+            return;
         }
         h.succeed();
     }

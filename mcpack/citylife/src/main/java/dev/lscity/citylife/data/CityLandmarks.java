@@ -61,6 +61,7 @@ public final class CityLandmarks {
             new Waypoint("Агентство недвижимости (мэрия)", -33, 69, 22, "realty", true),
             new Waypoint("Район «Береговой»", -519, 69, -475, "pin", true),
             new Waypoint("Район «Приморский»", -519, 69, 827, "pin", true),
+            new Waypoint("Алмазная улица, 33", 686, 69, 697, "pin", true),
             new Waypoint("Банкомат — Метро «пляж»", -285, 69, 312, "atm", true),
             new Waypoint("Банкомат — АЗС", -223, 69, 395, "atm", true),
             new Waypoint("Банкомат — Мэрия", -36, 69, 12, "atm", true),
