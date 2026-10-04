@@ -2,11 +2,11 @@
 
 Отчёт собирается скриптом `build/gen_trades_doc.py` из каталога, который уходит в игру, — расхождений с игрой нет. Все товары проверены на сервере командой `/citylife shops`: каждый предмет существует.
 
-Всего 22 ролей у 210 жителей, 881 предложений. Цены в рублях, оплата наличными.
+Всего 22 ролей у 210 жителей, 952 предложений. Цены в рублях, оплата наличными.
 
 | Кто | Где | Жителей | Товаров |
 |---|---|---|---|
-| Продавец продуктов | «Продукты», ТЦ | 31 | 58 |
+| Продавец продуктов | «Продукты», ТЦ | 31 | 84 |
 | Продавец одежды | «Одежда», ТЦ | 14 | 28 |
 | Продавец техники | «Электроника», ТЦ | 26 | 23 |
 | Продавец связи | Салон связи | 1 | 9 |
@@ -19,7 +19,7 @@
 | Управдом | Мэрия, многоквартирные дома | 37 | 13 |
 | Чиновник | Мэрия | 1 | 9 |
 | Повар | Закусочные, кафе, фастфуд | 12 | 12 |
-| Продавец | «Магазин», «Мини-маркет» | 33 | 49 |
+| Продавец | «Магазин», «Мини-маркет» | 33 | 94 |
 | Бармен | Ночной клуб, пляжный бар | 2 | 15 |
 | Заправщик | АЗС | 2 | 6 |
 | Аптекарь | Аптеки, больница | 12 | 10 |
@@ -82,6 +82,32 @@
 | farmersdelight:cabbage_rolls | 4 | 100 |
 | farmersdelight:pasta_with_meatballs | 1 | 150 |
 | farmersdelight:fried_rice | 1 | 120 |
+| farmersdelight:cabbage_leaf | 8 | 30 |
+| farmersdelight:cooked_rice | 2 | 60 |
+| farmersdelight:raw_pasta | 4 | 60 |
+| farmersdelight:tomato_sauce | 2 | 60 |
+| farmersdelight:beef_patty | 4 | 90 |
+| farmersdelight:mutton_chops | 4 | 70 |
+| farmersdelight:cod_slice | 4 | 60 |
+| farmersdelight:fried_egg | 4 | 60 |
+| farmersdelight:cabbage_seeds | 8 | 30 |
+| farmersdelight:tomato_seeds | 8 | 30 |
+| Пшеница | 16 | 100 |
+| minecraft:sugar | 8 | 40 |
+| minecraft:cocoa_beans | 8 | 60 |
+| Тыква | 1 | 40 |
+| minecraft:brown_mushroom | 6 | 40 |
+| minecraft:red_mushroom | 6 | 40 |
+| minecraft:beef | 4 | 70 |
+| minecraft:porkchop | 4 | 70 |
+| minecraft:chicken | 4 | 50 |
+| minecraft:mutton | 4 | 60 |
+| minecraft:rabbit | 2 | 60 |
+| Сырая треска | 4 | 60 |
+| Сырой лосось | 4 | 70 |
+| minecraft:ink_sac | 4 | 60 |
+| minecraft:kelp | 8 | 30 |
+| minecraft:bone | 4 | 30 |
 
 **Скупка** — житель покупает у игрока:
 
@@ -448,6 +474,38 @@
 | farmersdelight:chicken_sandwich | 2 | 100 |
 | farmersdelight:bacon_sandwich | 2 | 100 |
 | farmersdelight:cake_slice | 4 | 60 |
+| farmersdelight:cabbage_leaf | 8 | 30 |
+| farmersdelight:cooked_rice | 2 | 60 |
+| farmersdelight:pie_crust | 2 | 60 |
+| farmersdelight:tomato_sauce | 2 | 60 |
+| farmersdelight:pumpkin_slice | 4 | 30 |
+| farmersdelight:milk_bottle | 2 | 40 |
+| farmersdelight:minced_beef | 4 | 80 |
+| farmersdelight:beef_patty | 4 | 90 |
+| farmersdelight:chicken_cuts | 4 | 60 |
+| farmersdelight:bacon | 4 | 80 |
+| farmersdelight:ham | 1 | 150 |
+| farmersdelight:mutton_chops | 4 | 70 |
+| farmersdelight:cod_slice | 4 | 60 |
+| farmersdelight:salmon_slice | 4 | 60 |
+| farmersdelight:fried_egg | 4 | 60 |
+| farmersdelight:cabbage_seeds | 8 | 30 |
+| farmersdelight:tomato_seeds | 8 | 30 |
+| Пшеница | 16 | 100 |
+| minecraft:cocoa_beans | 8 | 60 |
+| Тыква | 1 | 40 |
+| minecraft:brown_mushroom | 6 | 40 |
+| minecraft:red_mushroom | 6 | 40 |
+| minecraft:beef | 4 | 70 |
+| minecraft:porkchop | 4 | 70 |
+| minecraft:chicken | 4 | 50 |
+| minecraft:mutton | 4 | 60 |
+| minecraft:rabbit | 2 | 60 |
+| Сырая треска | 4 | 60 |
+| Сырой лосось | 4 | 70 |
+| minecraft:ink_sac | 4 | 60 |
+| minecraft:kelp | 8 | 30 |
+| minecraft:bone | 4 | 30 |
 | Ведро молока | 1 | 50 |
 | Бутылочка мёда | 2 | 60 |
 | farmersdelight:apple_cider | 2 | 80 |
@@ -469,10 +527,23 @@
 | Удочка | 1 | 60 |
 | Бирка | 1 | 300 |
 | farmersdelight:canvas | 4 | 60 |
-| farmersdelight:cutting_board | 1 | 150 |
+| farmersdelight:rope | 8 | 60 |
+| farmersdelight:stove | 1 | 1500 |
 | farmersdelight:cooking_pot | 1 | 600 |
 | farmersdelight:skillet | 1 | 400 |
+| farmersdelight:cutting_board | 1 | 150 |
+| farmersdelight:flint_knife | 1 | 60 |
 | farmersdelight:iron_knife | 1 | 150 |
+| farmersdelight:golden_knife | 1 | 300 |
+| farmersdelight:diamond_knife | 1 | 1500 |
+| farmersdelight:netherite_knife | 1 | 6000 |
+| farmersdelight:wooden_basket | 1 | 100 |
+| farmersdelight:bamboo_basket | 1 | 100 |
+| farmersdelight:oak_cabinet | 1 | 250 |
+| farmersdelight:spruce_cabinet | 1 | 250 |
+| farmersdelight:birch_cabinet | 1 | 250 |
+| farmersdelight:dark_oak_cabinet | 1 | 250 |
+| minecraft:campfire | 1 | 100 |
 
 ## Бармен — Ночной клуб, пляжный бар
 

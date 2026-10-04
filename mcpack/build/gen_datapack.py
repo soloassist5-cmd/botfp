@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import shutil
@@ -494,10 +495,59 @@ HARDWARE_TRADES: list[dict] = (
 )
 
 
+# Всё, из чего готовят по рецептам Farmer's Delight: овощи и крупы мода,
+# заготовки (фарш, нарезка, тесто, соус) и ванильное сырьё для кастрюли и
+# сковородки. Цены продажи выше скупки (пшеница, рыба) — перепродажей не
+# заработать.
+FD_INGREDIENTS: list[dict] = [
+    sell("farmersdelight:tomato", 6, 40), sell("farmersdelight:cabbage", 4, 40),
+    sell("farmersdelight:cabbage_leaf", 8, 30), sell("farmersdelight:onion", 6, 40),
+    sell("farmersdelight:rice", 8, 50), sell("farmersdelight:cooked_rice", 2, 60),
+    sell("farmersdelight:raw_pasta", 4, 60), sell("farmersdelight:wheat_dough", 4, 40),
+    sell("farmersdelight:pie_crust", 2, 60), sell("farmersdelight:tomato_sauce", 2, 60),
+    sell("farmersdelight:pumpkin_slice", 4, 30), sell("farmersdelight:milk_bottle", 2, 40),
+    sell("farmersdelight:minced_beef", 4, 80), sell("farmersdelight:beef_patty", 4, 90),
+    sell("farmersdelight:chicken_cuts", 4, 60), sell("farmersdelight:bacon", 4, 80),
+    sell("farmersdelight:ham", 1, 150), sell("farmersdelight:mutton_chops", 4, 70),
+    sell("farmersdelight:cod_slice", 4, 60), sell("farmersdelight:salmon_slice", 4, 60),
+    sell("farmersdelight:fried_egg", 4, 60),
+    sell("farmersdelight:cabbage_seeds", 8, 30), sell("farmersdelight:tomato_seeds", 8, 30),
+    sell("minecraft:wheat", 16, 100), sell("minecraft:sugar", 8, 40),
+    sell("minecraft:cocoa_beans", 8, 60), sell("minecraft:egg", 6, 40),
+    sell("minecraft:carrot", 8, 30), sell("minecraft:potato", 8, 30),
+    sell("minecraft:beetroot", 8, 30), sell("minecraft:pumpkin", 1, 40),
+    sell("minecraft:brown_mushroom", 6, 40), sell("minecraft:red_mushroom", 6, 40),
+    sell("minecraft:beef", 4, 70), sell("minecraft:porkchop", 4, 70),
+    sell("minecraft:chicken", 4, 50), sell("minecraft:mutton", 4, 60),
+    sell("minecraft:rabbit", 2, 60), sell("minecraft:cod", 4, 60),
+    sell("minecraft:salmon", 4, 70), sell("minecraft:ink_sac", 4, 60),
+    sell("minecraft:kelp", 8, 30), sell("minecraft:bone", 4, 30),
+]
+
+# Кухонная утварь Farmer's Delight: плита, кастрюля, сковородка, доска, ножи.
+FD_KITCHEN: list[dict] = [
+    sell("farmersdelight:stove", 1, 1500), sell("farmersdelight:cooking_pot", 1, 600),
+    sell("farmersdelight:skillet", 1, 400), sell("farmersdelight:cutting_board", 1, 150),
+    sell("farmersdelight:flint_knife", 1, 60), sell("farmersdelight:iron_knife", 1, 150),
+    sell("farmersdelight:golden_knife", 1, 300), sell("farmersdelight:diamond_knife", 1, 1500),
+    sell("farmersdelight:netherite_knife", 1, 6000),
+    sell("farmersdelight:wooden_basket", 1, 100), sell("farmersdelight:bamboo_basket", 1, 100),
+    sell("farmersdelight:oak_cabinet", 1, 250), sell("farmersdelight:spruce_cabinet", 1, 250),
+    sell("farmersdelight:birch_cabinet", 1, 250), sell("farmersdelight:dark_oak_cabinet", 1, 250),
+    sell("minecraft:bowl", 8, 30), sell("minecraft:glass_bottle", 4, 30),
+    sell("minecraft:campfire", 1, 100),
+]
+
+
+def fresh(goods: list[dict], *taken: list[dict]) -> list[dict]:
+    """Товары, которых ещё нет в остальных отделах этой же лавки."""
+    seen = {t["sell"]["id"] for part in taken for t in part if "sell" in t}
+    return [copy.deepcopy(t) for t in goods if t["sell"]["id"] not in seen]
+
+
 # Магазин у дома и мини-маркет: продукты на каждый день и хозтовары.
 # Стройматериалы и мебель переехали в строймаркет.
-CORNER_SHOP_TRADES: list[dict] = (
-    group("Продукты", [
+_CORNER_FOOD = group("Продукты", [
         sell("minecraft:bread", 4, 40), sell("minecraft:baked_potato", 4, 40),
         sell("minecraft:apple", 6, 40), sell("minecraft:carrot", 8, 30),
         sell("minecraft:potato", 8, 30), sell("minecraft:beetroot", 8, 30),
@@ -510,14 +560,14 @@ CORNER_SHOP_TRADES: list[dict] = (
         sell("farmersdelight:raw_pasta", 4, 60), sell("farmersdelight:wheat_dough", 4, 40),
         sell("farmersdelight:egg_sandwich", 2, 80), sell("farmersdelight:chicken_sandwich", 2, 100),
         sell("farmersdelight:bacon_sandwich", 2, 100), sell("farmersdelight:cake_slice", 4, 60),
-    ])
-    + group("Напитки", [
+])
+_CORNER_DRINKS = group("Напитки", [
         sell("minecraft:milk_bucket", 1, 50), sell("minecraft:honey_bottle", 2, 60),
         sell("farmersdelight:apple_cider", 2, 80), sell("farmersdelight:hot_cocoa", 2, 80),
         sell("farmersdelight:melon_juice", 2, 60), sell("minecraft:potion", 2, 30,
                                                        {"Potion": "minecraft:water"}),
-    ])
-    + group("Хозтовары", [
+])
+_CORNER_GOODS = group("Хозтовары", [
         sell("minecraft:paper", 8, 40), sell("minecraft:book", 1, 50),
         sell("minecraft:writable_book", 1, 80), sell("minecraft:candle", 4, 40),
         sell("minecraft:white_candle", 4, 40), sell("minecraft:string", 8, 40),
@@ -525,10 +575,14 @@ CORNER_SHOP_TRADES: list[dict] = (
         sell("minecraft:bucket", 1, 20), sell("minecraft:shears", 1, 50),
         sell("minecraft:flint_and_steel", 1, 50), sell("minecraft:torch", 16, 30),
         sell("minecraft:fishing_rod", 1, 60), sell("minecraft:name_tag", 1, 300),
-        sell("farmersdelight:canvas", 4, 60), sell("farmersdelight:cutting_board", 1, 150),
-        sell("farmersdelight:cooking_pot", 1, 600), sell("farmersdelight:skillet", 1, 400),
-        sell("farmersdelight:iron_knife", 1, 150),
-    ])
+        sell("farmersdelight:canvas", 4, 60), sell("farmersdelight:rope", 8, 60),
+])
+CORNER_SHOP_TRADES: list[dict] = (
+    _CORNER_FOOD
+    + group("Для готовки", fresh(FD_INGREDIENTS, _CORNER_FOOD, _CORNER_DRINKS))
+    + _CORNER_DRINKS
+    + _CORNER_GOODS
+    + group("Кухня", fresh(FD_KITCHEN, _CORNER_GOODS))
 )
 
 # Прилавки.
@@ -538,7 +592,7 @@ CORNER_SHOP_TRADES: list[dict] = (
 # зелье — с настоящим эффектом, а не «незельеваримое» без тега.
 ROLE_TRADES: dict[str, list[dict]] = {
     # Продукты: еда на каждый день, от хлеба до торта, по отделам.
-    "trader_food": group("Выпечка", [
+    "trader_food": (_FOOD_SHELVES := group("Выпечка", [
         sell("minecraft:bread", 4, 40),
         sell("minecraft:cookie", 8, 50),
         sell("minecraft:pumpkin_pie", 2, 60),
@@ -592,7 +646,7 @@ ROLE_TRADES: dict[str, list[dict]] = {
         sell("farmersdelight:cabbage_rolls", 4, 100),
         sell("farmersdelight:pasta_with_meatballs", 1, 150),
         sell("farmersdelight:fried_rice", 1, 120),
-    ]) + [
+    ])) + group("Для готовки", fresh(FD_INGREDIENTS, _FOOD_SHELVES)) + [
         # Скупка урожая и улова у фермеров и рыбаков.
         buy("minecraft:wheat", 16, 60),
         buy("minecraft:potato", 16, 50),
